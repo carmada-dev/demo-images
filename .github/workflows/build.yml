@@ -15,22 +15,36 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  images:
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(ls */image.pkr.hcl | jq -R -s -c 'split("\n")[:-1]')"
+
+  build:
+    needs: images
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        image: ${{ fromJson(needs.images.outputs.matrix) }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.image }}
+
+    steps:
+
       - uses: actions/checkout@v3
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Using image definition
+        run: echo ${{ matrix.image }}
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+
