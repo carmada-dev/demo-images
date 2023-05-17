@@ -2,20 +2,14 @@
 
 name: CI
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  images:
+  build-matrix:
     runs-on: ubuntu-latest
 
     outputs:
@@ -29,13 +23,13 @@ jobs:
         run: echo "matrix=$(find . -type f -name 'image.pkr.hcl' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
   build:
-    needs: images
+    needs: build-matrix
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.images.outputs.matrix) }}
+        image: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
 
     defaults:
       run:
@@ -50,22 +44,16 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Prepare Image Definition
+        run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
+
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
         with:
           version: "1.8.7"
 
-      - name: Packer Info
-        run: packer version
-
-      - name: Setup Image
-        run: cp -rf ${{ github.workspace }}/_core/*.pkr.hcl ./
-
       - name: Init Packer
         run: packer init .
-
-      - name: Validate Image Definition
-        run: packer validate .
 
       - name: Build Image
         run: packer build -force -color=false -on-error=abort -timestamp-ui .
