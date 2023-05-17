@@ -1,1 +1,4 @@
 */image.pkr.log
+*/build.pkr.hcl
+*/config.pkr.hcl
+*/variables.pkr.hcl
