@@ -53,14 +53,17 @@ jobs:
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
 
+      - name: Packer Info
+        run: packer version
+
       - name: Setup Image
         run: cp -rf ${{ github.workspace }}/_core/*.pkr.hcl ./
 
       - name: Init Packer
-        run: "packer init ."
+        run: packer init .
 
       - name: Validate Image Definition
-        run: "packer validate ."
+        run: packer validate .
 
       - name: Build Image
-        run: "packer build -force -color=false -on-error=abort -timestamp-ui ."
+        run: packer build -force -color=false -on-error=abort -timestamp-ui .
