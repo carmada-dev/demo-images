@@ -33,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         image: ${{ fromJson(needs.images.outputs.matrix) }}
 
@@ -51,6 +52,9 @@ jobs:
 
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
+
+      - name: Setup Image
+        run: cp -rf ${{ github.workspace }}/_core/*.pkr.hcl .
 
       - name: Init Packer
         run: "packer init ."
