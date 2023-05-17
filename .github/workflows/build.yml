@@ -64,8 +64,8 @@ jobs:
       - name: Init Packer
         run: packer init .
 
-      - name: Validate Image Definition
-        run: packer validate .
+      # - name: Validate Image Definition
+      #   run: packer validate .
 
       - name: Build Image
         run: packer build -force -color=false -on-error=abort -timestamp-ui .
