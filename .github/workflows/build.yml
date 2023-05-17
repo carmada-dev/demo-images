@@ -54,7 +54,7 @@ jobs:
         uses: hashicorp/setup-packer@main
 
       - name: Setup Image
-        run: cp -rf ${{ github.workspace }}/_core/*.pkr.hcl .
+        run: cp -rf ${{ github.workspace }}/_core/*.pkr.hcl ./
 
       - name: Init Packer
         run: "packer init ."
