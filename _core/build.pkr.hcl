@@ -16,7 +16,7 @@ source "azure-arm" "vm" {
 
   skip_create_image                   = false
   async_resourcegroup_delete          = true
-  secure_boot_enabled                 = true
+  # secure_boot_enabled                 = true
   vm_size                             = "Standard_D8d_v4" # default is Standard_A1
 
   # winrm options
