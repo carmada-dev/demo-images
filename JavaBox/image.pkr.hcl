@@ -3,8 +3,8 @@ locals {
 
     image = {
 
-	  	name = "${basename(abspath(path.root))}"
-  		version = "${formatdate("YYYY.MMDD.hhmm", timestamp())}"
+	  	name = "${var.imageName}"
+  		version = "${var.imageVersion}"
 		regions = [ "West Europe" ]
 
 		publisher = "CarmadaRnD"

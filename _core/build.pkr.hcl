@@ -21,16 +21,20 @@ locals {
 
 source "azure-arm" "vm" {
 
+  # general settings
   skip_create_image                   = false
   async_resourcegroup_delete          = true
   secure_boot_enabled                 = true
-  vm_size                             = "Standard_D8d_v4" # default is Standard_A1
+  use_azure_cli_auth                  = true
+  vm_size                             = "Standard_D8d_v4" 
 
   # winrm options
   communicator                        = "winrm"
   winrm_username                      = "packer"
   winrm_insecure                      = true
   winrm_use_ssl                       = true
+
+  # os settings
   os_type                             = "Windows"
   os_disk_size_gb                     = 1024
   
@@ -39,9 +43,8 @@ source "azure-arm" "vm" {
   image_offer                         = local.image.base.offer
   image_sku                           = local.image.base.sku
   image_version                       = local.image.base.version
-  use_azure_cli_auth                  = true
 
-  # packer creates a temporary resource group
+  # temporary resource location
   subscription_id                     = local.factory.subscription
   location                            = local.factory.location
   temp_resource_group_name            = "PKR-${local.image.name}-${local.image.version}"
