@@ -79,22 +79,19 @@ build {
   }
 
   # =============================================================================================
-  # PRE Package Section 
+  # Upload Artifacts
   # =============================================================================================
 
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.default.environmentVariables
-    scripts = setunion(
-      ["${path.root}/../_scripts/core/NOOP.ps1"],
-      local.prePackageScripts
-    )
+    environment_vars  = local.default.environmentVariables
+    inline            = [ "New-Item -ItemType Directory -Force -Path '${local.path.devboxHome}/Artifacts' | Out-Null" ]
   }
 
-  provisioner "windows-restart" {
-    check_registry = true
-    restart_timeout = "30m"
+  provisioner "file" {
+    source = "${path.root}/../_artifacts/"
+    destination = "${local.path.devboxHome}/Artifacts/"
   }
 
   # =============================================================================================
@@ -109,6 +106,25 @@ build {
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       fileset("${path.root}", "../_scripts/pkgs/*.ps1")
     ) 
+  }
+
+  provisioner "windows-restart" {
+    check_registry = true
+    restart_timeout = "30m"
+  }
+  
+  # =============================================================================================
+  # PRE Package Section 
+  # =============================================================================================
+
+  provisioner "powershell" {
+    elevated_user     = build.User
+    elevated_password = build.Password
+    environment_vars = local.default.environmentVariables
+    scripts = setunion(
+      ["${path.root}/../_scripts/core/NOOP.ps1"],
+      local.prePackageScripts
+    )
   }
 
   provisioner "windows-restart" {
@@ -191,31 +207,31 @@ build {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.default.environmentVariables
-    inline            = [ "New-Item -ItemType Directory -Force -Path '${ local.activeSetup.directory }' | Out-Null" ]
+    inline            = [ "New-Item -ItemType Directory -Force -Path '${local.path.devboxHome}/ActiveSetup' | Out-Null" ]
   }
 
   provisioner "file" {
     sources = fileset("${path.root}", "../_scripts/pkgs/*.ps1")
-    destination = local.activeSetup.directory
+    destination = "${local.path.devboxHome}/ActiveSetup/"
   }
 
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.default.environmentVariables
-    inline            = [ templatefile("${path.root}/../_templates/RegisterScripts.pkrtpl.hcl", { prefix = "", scripts = [ for f in fileset("${path.root}", "../_scripts/pkgs/*.ps1"): "${local.activeSetup.directory}${basename(f)}" ] }) ]
+    inline            = [ templatefile("${path.root}/../_templates/RegisterScripts.pkrtpl.hcl", { prefix = "", scripts = [ for f in fileset("${path.root}", "../_scripts/pkgs/*.ps1"): "${local.path.devboxHome}/ActiveSetup/${basename(f)}" ] }) ]
   }
 
   provisioner "file" {
     content = templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in local.packages: p if try(p.scope == "user", false) ] }) 
-    destination = "${ local.activeSetup.directory }/Install-Packages.ps1"
+    destination = "${local.path.devboxHome}/ActiveSetup/Install-Packages.ps1"
   }
 
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.default.environmentVariables
-    inline            = [ templatefile("${path.root}/../_templates/RegisterScripts.pkrtpl.hcl", { prefix = ">", scripts = [ "${local.activeSetup.directory}Install-Packages.ps1" ] }) ]
+    inline            = [ templatefile("${path.root}/../_templates/RegisterScripts.pkrtpl.hcl", { prefix = ">", scripts = [ "${local.path.devboxHome}/ActiveSetup/Install-Packages.ps1" ] }) ]
   }
 
   # =============================================================================================
