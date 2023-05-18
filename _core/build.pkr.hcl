@@ -15,10 +15,6 @@ packer {
   }
 }
 
-locals {
-  defaultEnvironmentVariables = [ "PACKER=true" ]
-}
-
 source "azure-arm" "vm" {
 
   # general settings
@@ -47,15 +43,15 @@ source "azure-arm" "vm" {
   # temporary resource location
   subscription_id                     = local.factory.subscription
   location                            = local.factory.location
-  temp_resource_group_name            = "PKR-${local.image.name}-${local.image.version}"
+  temp_resource_group_name            = "PKR-${upper(local.variables.imageName)}-${upper(local.variables.imageVersion)}"
 
   # publish image to gallery
   shared_image_gallery_destination {
     subscription                      = local.gallery.subscription
     gallery_name                      = local.gallery.name
     resource_group                    = local.gallery.resourceGroup
-    image_name                        = local.image.name
-    image_version                     = local.image.version
+    image_name                        = local.variables.imageName
+    image_version                     = local.variables.imageVersion
     replication_regions               = local.image.regions
     storage_account_type              = "Premium_LRS" # default is Standard_LRS
   }
@@ -66,19 +62,11 @@ build {
   sources = ["source.azure-arm.vm"]
 
   # =============================================================================================
-  # Ensure Gallery Image Definition  
-  # =============================================================================================
-
-  provisioner "shell-local" {
-    command = "az sig image-definition create --subscription ${local.gallery.subscription} --resource-group ${local.gallery.resourceGroup} --gallery-name ${local.gallery.name} --gallery-image-definition ${local.image.name} --publisher ${local.image.publisher} --offer ${local.image.offer} --sku ${local.image.sku} --os-type Windows --os-state Generalized --hyper-v-generation V2 --features 'SecurityType=TrustedLaunch' --only-show-errors; exit 0"
-  }
-
-  # =============================================================================================
   # Initialize VM 
   # =============================================================================================
 
   provisioner "powershell" {
-    environment_vars = setunion(local.defaultEnvironmentVariables, [
+    environment_vars = setunion(local.default.environmentVariables, [
       "ADMIN_USERNAME=${build.User}",
       "ADMIN_PASSWORD=${build.Password}"
     ])
@@ -97,7 +85,7 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.defaultEnvironmentVariables
+    environment_vars = local.default.environmentVariables
     scripts = setunion(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       local.prePackageScripts
@@ -116,7 +104,7 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.defaultEnvironmentVariables
+    environment_vars = local.default.environmentVariables
     scripts = setunion(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       fileset("${path.root}", "../_scripts/pkgs/*.ps1")
@@ -135,7 +123,7 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.defaultEnvironmentVariables
+    environment_vars = local.default.environmentVariables
     inline = [templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in local.packages: p if try(p.scope == "machine", false) ] })]
   }
 
@@ -151,7 +139,7 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.defaultEnvironmentVariables
+    environment_vars = local.default.environmentVariables
     scripts = concat(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       local.postPackageScripts
@@ -170,7 +158,7 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.defaultEnvironmentVariables
+    environment_vars = local.default.environmentVariables
     scripts = setunion(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       fileset("${path.root}", "../_scripts/patch/*.ps1")
@@ -202,7 +190,7 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars  = local.defaultEnvironmentVariables
+    environment_vars  = local.default.environmentVariables
     inline            = [ "New-Item -ItemType Directory -Force -Path '${ local.activeSetup.directory }' | Out-Null" ]
   }
 
@@ -214,7 +202,7 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars  = local.defaultEnvironmentVariables
+    environment_vars  = local.default.environmentVariables
     inline            = [ templatefile("${path.root}/../_templates/RegisterScripts.pkrtpl.hcl", { prefix = "", scripts = [ for f in fileset("${path.root}", "../_scripts/pkgs/*.ps1"): "${local.activeSetup.directory}${basename(f)}" ] }) ]
   }
 
@@ -226,7 +214,7 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars  = local.defaultEnvironmentVariables
+    environment_vars  = local.default.environmentVariables
     inline            = [ templatefile("${path.root}/../_templates/RegisterScripts.pkrtpl.hcl", { prefix = ">", scripts = [ "${local.activeSetup.directory}Install-Packages.ps1" ] }) ]
   }
 
@@ -237,7 +225,7 @@ build {
   provisioner "powershell" {
 	  elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.defaultEnvironmentVariables
+    environment_vars = local.default.environmentVariables
     timeout = "1h"
     script  = "${path.root}/../_scripts/core/Generalize-VM.ps1"
   }
@@ -249,7 +237,7 @@ build {
   error-cleanup-provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.defaultEnvironmentVariables
+    environment_vars = local.default.environmentVariables
     scripts = setunion(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       fileset("${path.root}", "../_scripts/error/*.ps1")

@@ -3,13 +3,10 @@ locals {
 
     image = {
 
-	  	name = "${var.imageName}"
-  		version = "${var.imageVersion}"
-		regions = [ "West Europe" ]
-
 		publisher = "CarmadaRnD"
 		offer = "CarmadaDev"
 		sku = "win11-datascience-devbox"
+		regions = [ "West Europe" ]
 
 		base = {
 
