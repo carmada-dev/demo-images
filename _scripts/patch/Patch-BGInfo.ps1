@@ -43,6 +43,12 @@ if (Test-Path -Path $bgInfoArtifact -PathType Leaf) {
 	Write-Host ">>> Installing BGInfo Config ..."
 	Move-item -Path $bgInfoArtifact -Destination (Join-Path -Path $bgInfoHome -ChildPath (Split-Path $bgInfoArtifact -Leaf)) -Force | Out-Null
 
+	Write-Host ">>> Updating BGInfo ACLs ..."
+	$bgInfoACR = New-Object System.Security.AccessControl.FileSystemAccessRule("everyone", "FullControl", "Allow")
+	$bgInfoACL = Get-Acl -Path $bgInfoHome
+	$bgInfoACL.SetAccessRule($bgInfoACR)
+	$bgInfoACL | Set-Acl -Path $bgInfoHome
+
 	$bgInfoTool = Join-Path -Path $bgInfoHome -ChildPath 'Bginfo64.exe'
 	$bgInfoConfig = Join-Path -Path $bgInfoHome -ChildPath (Split-Path $bgInfoArtifact -Leaf) 
 	$bgInfoCommand = "`"$bgInfoTool`" `"$bgInfoConfig`" /SILENT /NOLICPROMPT /TASKBAR /TIMER:5"
