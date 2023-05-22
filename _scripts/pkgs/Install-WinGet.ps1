@@ -34,7 +34,6 @@ function Get-LatestLink($match) {
 }
 
 function Invoke-FileDownload() {
-
 	param(
 		[Parameter(Mandatory=$true)][string] $url,
 		[Parameter(Mandatory=$false)][string] $name,
@@ -48,11 +47,14 @@ function Invoke-FileDownload() {
 	Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
 	
 	if ($expand) {
-		$arch = Join-Path -path $env:temp -ChildPath ([System.IO.Path]::GetFileNameWithoutExtension($name))
+		$arch = Join-Path -path $env:temp -ChildPath ([System.IO.Path]::GetFileNameWithoutExtension($path))
+
+        Write-Host ">>> Expanding $path > $arch"
 		Expand-Archive -Path $path -DestinationPath $arch -Force
+
 		return $arch
 	}
-
+	
 	return $path
 }
 
