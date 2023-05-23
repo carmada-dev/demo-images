@@ -44,12 +44,35 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Convert Image HCL to JSON
+      - name: Resolve Gallery Image Information
+        id: image
         run: |
           JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
           wget -qc $JSON2HCL_URL -O - | tar -xz -C $RUNNER_TEMP && chmod 755 $RUNNER_TEMP/json2hcl
-          $RUNNER_TEMP/json2hcl -reverse < ./image.pkr.hcl | jq . > $RUNNER_TEMP/image.json
-          cat $RUNNER_TEMP/image.json
+          JSON2HCL_OUTPUT=$($RUNNER_TEMP/json2hcl -reverse < ./image.pkr.hcl)
+          echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
+          echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
+          echo "image_sku=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].sku')" >> $GITHUB_OUTPUT
+          echo "gallery_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].subscription')" >> $GITHUB_OUTPUT
+          echo "gallery_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].resourceGroup')" >> $GITHUB_OUTPUT
+          echo "gallery_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].name')" >> $GITHUB_OUTPUT
+      
+      - name: Ensure Gallery Image Definition
+        run: 	|
+          az sig image-definition create \
+            --subscription ${{ steps.image.outputs.gallery_subscription }} \
+            --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
+            --gallery-name ${{ steps.image.outputs.gallery_name }} \
+            --gallery-image-definition "$(basename "$(dirname "$1")")" \
+            --publisher ${{ steps.image.outputs.image_publisher }} \
+            --offer ${{ steps.image.outputs.image_offer }} \
+            --sku ${{ steps.image.outputs.image_sku }} \
+            --os-type Windows \
+            --os-state Generalized \
+            --hyper-v-generation V2 \
+            --features 'SecurityType=TrustedLaunch' \
+            --only-show-errors 2>&1
+            exit 0
 
       - name: Prepare Image Definition
         run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
