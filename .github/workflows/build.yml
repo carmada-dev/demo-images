@@ -79,7 +79,6 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript:	|
-            az config set extension.use_dynamic_install=yes_without_prompt
             az sig image-definition create \
               --subscription ${{ steps.image.outputs.gallery_subscription }} \
               --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
@@ -118,7 +117,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript:	|
-            az config set extension.use_dynamic_install=yes_without_prompt
+            az extension add --name devcenter --upgrade --yes
             az devcenter admin devbox-definition create \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
