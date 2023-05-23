@@ -24,6 +24,16 @@ locals {
 		name = "CarmadaRnD"
 	}
 
+	devCenter = {
+
+		subscription = "f9fcf631-fa8d-4ea2-8298-61b43220a3d1"
+		resourceGroup = "ORG-CarmadaRnD"
+		name = "CarmadaRnD"
+
+		storage = "ssd_1024gb"
+		compute = "general_a_8c32gb_v1"
+	}
+
     prePackageScripts = [
     ]
 

@@ -8,6 +8,10 @@ on:
 
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+      
 jobs:
   build-matrix:
     runs-on: ubuntu-latest
@@ -57,6 +61,11 @@ jobs:
           echo "gallery_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].subscription')" >> $GITHUB_OUTPUT
           echo "gallery_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].resourceGroup')" >> $GITHUB_OUTPUT
           echo "gallery_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].name')" >> $GITHUB_OUTPUT
+          echo "devcenter_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].subscription')" >> $GITHUB_OUTPUT
+          echo "devcenter_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].resourceGroup')" >> $GITHUB_OUTPUT
+          echo "devcenter_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].name')" >> $GITHUB_OUTPUT          
+          echo "devcenter_storage=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].storage')" >> $GITHUB_OUTPUT          
+          echo "devcenter_compute=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].compute')" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT
       
       - name: Ensure Gallery Image Definition
@@ -90,3 +99,24 @@ jobs:
 
       - name: Build Image
         run: packer build -force -color=false -on-error=abort -timestamp-ui .
+
+      - name: Resolve Gallery Image Version ResourceId
+        id: imageversion
+        run: |
+          echo "image_resourceid=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
+      - name: Create or Update DevBox Definition
+        uses: azure/CLI@v1
+        with:
+          inlineScript:	|
+            az devcenter admin devbox-definition create \
+              --subscription ${{ steps.image.outputs.devcenter_subscription }} \
+              --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
+              --dev-center ${{ steps.image.outputs.devcenter_name }} \
+              --image-reference ${{ steps.imageversion.outputs.image_resourceid }} \
+              --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
+              --sku ${{ steps.image.outputs.devcenter_compute }} \
+              --no-wait \
+              --hibernate-support Enabled \
+              --only-show-errors 2>&1      
