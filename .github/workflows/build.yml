@@ -1,6 +1,5 @@
-# This is a basic workflow to help you get started with Actions
 
-name: CI
+name: FACTORY
 
 on:
   push:
@@ -105,7 +104,7 @@ jobs:
         run: packer init .
 
       - name: Build Image
-        run: packer build -force -color=false -on-error=abort -timestamp-ui .
+        run: packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" . | tee ./image.pkr.log
 
       - name: Resolve Gallery Image Version ResourceId
         id: imageversion
@@ -122,7 +121,7 @@ jobs:
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
-              --image-reference ${{ steps.imageversion.outputs.image_resourceid }} \
+              --image-reference id="${{ steps.imageversion.outputs.image_resourceid }}" \
               --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
               --sku ${{ steps.image.outputs.devcenter_compute }} \
               --no-wait \

@@ -83,7 +83,7 @@ buildImage() {
 		-force \
 		-color=false \
 		-timestamp-ui \
-		-var "imageName=$(basename "$(dirname "$1")")-$(whoami)" \
+		-var "imageSuffix=$(whoami)" \
 		. 2>&1 | tee -a ./image.pkr.log
 
 	popd > /dev/null

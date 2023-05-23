@@ -3,6 +3,11 @@ variable "imageName" {
 	default = ""
 }
 
+variable "imageSuffix" {
+	type =  string
+	default = ""
+}
+
 variable "imageVersion" {
 	type =  string
 	default = ""
@@ -12,6 +17,7 @@ locals {
 
 	variables = {
 		imageName = "${length(trimspace(var.imageName)) == 0 ? basename(abspath(path.root)) : var.imageName}"
+		imageSuffix = "${length(trimspace(var.imageSuffix)) == 0 ? '' : '-${var.imageName}'}"
 		imageVersion = "${length(trimspace(var.imageVersion)) == 0 ? formatdate("YYYY.MMDD.hhmm", timestamp()) : var.imageVersion}"
 	}
 

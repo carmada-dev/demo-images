@@ -43,7 +43,7 @@ source "azure-arm" "vm" {
   # temporary resource location
   subscription_id                     = local.factory.subscription
   location                            = local.factory.location
-  temp_resource_group_name            = "PKR-${upper(local.variables.imageName)}-${upper(local.variables.imageVersion)}"
+  temp_resource_group_name            = "PKR-${upper(local.variables.imageName)}-${upper(local.variables.imageVersion)}${upper(local.variables.imageSuffix)}"
 
   # publish image to gallery
   shared_image_gallery_destination {
