@@ -62,9 +62,7 @@ jobs:
       - name: Ensure Gallery Image Definition
         uses: azure/CLI@v1
         with:
-          inlineScript:	|
-            az upgrade --all --yes
-            az sig image-definition create --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ steps.image.outputs.image_definition }} --publisher ${{ steps.image.outputs.image_publisher }} --offer ${{ steps.image.outputs.image_offer }} --sku ${{ steps.image.outputs.image_sku }} --os-type Windows --os-state Generalized --hyper-v-generation V2 --features 'SecurityType=TrustedLaunch' --only-show-errors 2>&1
+          inlineScript:	az sig image-definition create --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ steps.image.outputs.image_definition }} --publisher ${{ steps.image.outputs.image_publisher }} --offer ${{ steps.image.outputs.image_offer }} --sku ${{ steps.image.outputs.image_sku }} --os-type Windows --os-state Generalized --hyper-v-generation V2 --features 'SecurityType=TrustedLaunch' --only-show-errors 2>&1
 
       - name: Prepare Image Definition
         run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
