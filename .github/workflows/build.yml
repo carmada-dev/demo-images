@@ -123,7 +123,7 @@ jobs:
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
               --image-reference id="${{ steps.imageversion.outputs.image_resourceid }}" \
               --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
-              --sku ${{ steps.image.outputs.devcenter_compute }} \
+              --sku name="${{ steps.image.outputs.devcenter_compute }}" \
               --no-wait \
               --hibernate-support Enabled \
               --only-show-errors 2>&1      
