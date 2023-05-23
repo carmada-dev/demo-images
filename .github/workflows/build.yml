@@ -25,7 +25,7 @@ jobs:
         id: set-matrix
         run: echo "matrix=$(find . -type f -name 'image.pkr.hcl' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
-  build:
+  build-image:
     needs: build-matrix
     runs-on: ubuntu-latest
 
@@ -137,7 +137,8 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.devcenter_subscription }} | jq --raw-output ".[] | select((.name | startswith(\"PKR-\")) and (.name | endswith(\"-$GITHUB_WORKFLOW\"))) | .name"); do
+            RGNAME_PREFIX=$(echo "PKR-${{ steps.image.outputs.image_definition }}" | tr [:lower:] [:upper:])
+            RGNAME_SUFFIX=$(echo "-$GITHUB_WORKFLOW" | tr [:lower:] [:upper:])
+            for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.devcenter_subscription }} | jq --raw-output ".[] | select((.name | ascii_upcase | startswith(\"$RGNAME_PREFIX\")) and (.name | ascii_upcase | endswith(\"$RGNAME_SUFFIX\"))) | .name"); do
               az group delete --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --no-wait --yes
             done
-        
