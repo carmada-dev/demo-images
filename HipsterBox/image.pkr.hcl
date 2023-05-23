@@ -48,59 +48,59 @@ locals {
 		# 	override = []
 		# }
 
-		{
-			name = "Microsoft.PowerShell"
-			scope = "machine"
-		},
+		# {
+		# 	name = "Microsoft.PowerShell"
+		# 	scope = "machine"
+		# },
 
-		{
-			name = "Microsoft.VisualStudioCode"
-			scope = "machine"
-			override = [
-				"/VERYSILENT",
-				"/NORESTART",
-				"/MERGETASKS=desktopicon,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath,!runcode"
-			]
-		},
+		# {
+		# 	name = "Microsoft.VisualStudioCode"
+		# 	scope = "machine"
+		# 	override = [
+		# 		"/VERYSILENT",
+		# 		"/NORESTART",
+		# 		"/MERGETASKS=desktopicon,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath,!runcode"
+		# 	]
+		# },
 
-		{
-			name = "Git.Git"
-			scope = "machine"
-			override = [
-				"/VERYSILENT",
-				"/SUPPRESSMSGBOXES",
-				"/NORESTART",
-				"/NOCANCEL",
-				"/SP-",
-				"/WindowsTerminal",
-				"/WindowsTerminalProfile",
-				"/DefaultBranchName:main",
-				"/Editor:VisualStudioCode"
-			]
-		},
-		{
-			name = "GitHub.cli"
-			scope = "machine"
-		},
-		{
-			name = "GitHub.GitHubDesktop"
-			scope = "machine"
-		},
+		# {
+		# 	name = "Git.Git"
+		# 	scope = "machine"
+		# 	override = [
+		# 		"/VERYSILENT",
+		# 		"/SUPPRESSMSGBOXES",
+		# 		"/NORESTART",
+		# 		"/NOCANCEL",
+		# 		"/SP-",
+		# 		"/WindowsTerminal",
+		# 		"/WindowsTerminalProfile",
+		# 		"/DefaultBranchName:main",
+		# 		"/Editor:VisualStudioCode"
+		# 	]
+		# },
+		# {
+		# 	name = "GitHub.cli"
+		# 	scope = "machine"
+		# },
+		# {
+		# 	name = "GitHub.GitHubDesktop"
+		# 	scope = "machine"
+		# },
 		
-		{
-			name = "Docker.DockerDesktop"
-			scope = "machine"
-			override = [
-				"install",
-				"--quiet",
-				"--accept-license"
-			]
-		},
+		# {
+		# 	name = "Docker.DockerDesktop"
+		# 	scope = "machine"
+		# 	override = [
+		# 		"install",
+		# 		"--quiet",
+		# 		"--accept-license"
+		# 	]
+		# },
 
-		{
-			name = "Microsoft.AzureCLI"
-			scope = "machine"
-		},
+		# {
+		# 	name = "Microsoft.AzureCLI"
+		# 	scope = "machine"
+		# },
 
 		{
 			name = "Postman.Postman"

@@ -118,6 +118,7 @@ jobs:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
             az devcenter admin devbox-definition create \
+              --dev-box-definition-name ${{ steps.image.outputs.image_definition }} \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
