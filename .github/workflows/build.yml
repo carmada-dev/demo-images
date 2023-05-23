@@ -48,11 +48,17 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Install JSON2HCL
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 3
+          command: |
+            JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
+            wget -qc $JSON2HCL_URL -O - | tar -xz -C $RUNNER_TEMP && chmod 755 $RUNNER_TEMP/json2hcl
+
       - name: Resolve Gallery Image Information
         id: image
         run: |
-          JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
-          wget -qc $JSON2HCL_URL -O - | tar -xz -C $RUNNER_TEMP && chmod 755 $RUNNER_TEMP/json2hcl
           JSON2HCL_OUTPUT=$($RUNNER_TEMP/json2hcl -reverse < ./image.pkr.hcl)
           echo "image_definition=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
