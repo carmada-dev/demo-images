@@ -117,12 +117,16 @@ jobs:
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
+            COMPUTEGALLERY_RESOURCEID=$(echo "${{ steps.imageversion.outputs.image_resourceid }}" | cut -d '/' -f -9)
+            IMAGEGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
+            IMAGE_PATH=$(echo "${{ steps.imageversion.outputs.image_resourceid }}" | cut -d '/' -f 10-)
+            IMAGE_RESOURCEID=$(echo "$IMAGEGALLERY_RESOURCEID/$IMAGE_PATH")
             az devcenter admin devbox-definition create \
               --dev-box-definition-name ${{ steps.image.outputs.image_definition }} \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
-              --image-reference id="${{ steps.imageversion.outputs.image_resourceid }}" \
+              --image-reference id="$IMAGE_RESOURCEID" \
               --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
               --sku name="${{ steps.image.outputs.devcenter_compute }}" \
               --no-wait \
