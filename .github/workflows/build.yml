@@ -56,6 +56,7 @@ jobs:
           echo "gallery_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].subscription')" >> $GITHUB_OUTPUT
           echo "gallery_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].resourceGroup')" >> $GITHUB_OUTPUT
           echo "gallery_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].name')" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
       
       - name: Ensure Gallery Image Definition
         run: 	|
@@ -72,7 +73,6 @@ jobs:
             --hyper-v-generation V2 \
             --features 'SecurityType=TrustedLaunch' \
             --only-show-errors 2>&1
-            exit 0
 
       - name: Prepare Image Definition
         run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
