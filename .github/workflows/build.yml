@@ -118,9 +118,9 @@ jobs:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
             COMPUTEGALLERY_RESOURCEID=$(echo "${{ steps.imageversion.outputs.image_resourceid }}" | cut -d '/' -f -9)
-            IMAGEGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
+            DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
             IMAGE_PATH=$(echo "${{ steps.imageversion.outputs.image_resourceid }}" | cut -d '/' -f 10-)
-            IMAGE_RESOURCEID=$(echo "$IMAGEGALLERY_RESOURCEID/$IMAGE_PATH")
+            IMAGE_RESOURCEID=$(echo "$DEVCENTERGALLERY_RESOURCEID/$IMAGE_PATH")
             az devcenter admin devbox-definition create \
               --dev-box-definition-name ${{ steps.image.outputs.image_definition }} \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
@@ -131,4 +131,13 @@ jobs:
               --sku name="${{ steps.image.outputs.devcenter_compute }}" \
               --no-wait \
               --hibernate-support Enabled \
-              --only-show-errors 2>&1      
+              --only-show-errors 2>&1
+
+      - name: Cleanup Build Artifacts        
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.devcenter_subscription }} | jq --raw-output ".[] | select((.name | startswith(\"PKR-\")) and (.name | endswith(\"-$GITHUB_WORKFLOW\"))) | .name"); do
+              az group delete --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --no-wait --yes
+            done
+        
