@@ -50,6 +50,7 @@ jobs:
           JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
           wget -qc $JSON2HCL_URL -O - | tar -xz -C $RUNNER_TEMP && chmod 755 $RUNNER_TEMP/json2hcl
           JSON2HCL_OUTPUT=$($RUNNER_TEMP/json2hcl -reverse < ./image.pkr.hcl)
+          echo "image_definition=$(basename "$(dirname "$1")")" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
           echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
           echo "image_sku=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].sku')" >> $GITHUB_OUTPUT
@@ -66,7 +67,7 @@ jobs:
               --subscription ${{ steps.image.outputs.gallery_subscription }} \
               --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
               --gallery-name ${{ steps.image.outputs.gallery_name }} \
-              --gallery-image-definition "$(basename "$(dirname "$1")")" \
+              --gallery-image-definition ${{ steps.image.outputs.image_definition }} \
               --publisher ${{ steps.image.outputs.image_publisher }} \
               --offer ${{ steps.image.outputs.image_offer }} \
               --sku ${{ steps.image.outputs.image_sku }} \
