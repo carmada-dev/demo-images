@@ -17,7 +17,7 @@ locals {
 
 	variables = {
 		imageName = "${length(trimspace(var.imageName)) == 0 ? basename(abspath(path.root)) : var.imageName}"
-		imageSuffix = "${length(trimspace(var.imageSuffix)) == 0 ? '' : "-${var.imageName}"}"
+		imageSuffix = "${length(trimspace(var.imageSuffix)) == 0 ? "" : "-${var.imageSuffix}"}"
 		imageVersion = "${length(trimspace(var.imageVersion)) == 0 ? formatdate("YYYY.MMDD.hhmm", timestamp()) : var.imageVersion}"
 	}
 
