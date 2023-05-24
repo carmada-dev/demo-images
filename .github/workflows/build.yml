@@ -26,7 +26,8 @@ jobs:
         id: set-matrix
         run: |
           echo "matrix=$(find . -type f -name 'image.pkr.hcl' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
-          echo "version=$(date +'%Y.%m%d.%H%M')"
+          echo "version=$(date +'%Y.%m%d.%H%M')" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
 
   build-image:
     needs: build-matrix
