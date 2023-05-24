@@ -38,6 +38,9 @@ jobs:
       matrix:
         image: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
 
+    env:
+      IMAGE_VERSION: "${{ needs.build-matrix.outputs.version }}"
+      
     defaults:
       run:
         shell: bash
@@ -108,7 +111,7 @@ jobs:
         run: packer init .
 
       - name: Build Image
-        run: packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-matrix.outputs.version }}" . | tee ./image.pkr.log
+        run: packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=$IMAGE_VERSION" . | tee ./image.pkr.log
 
       - name: Create or Update DevBox Definition
         uses: azure/CLI@v1
