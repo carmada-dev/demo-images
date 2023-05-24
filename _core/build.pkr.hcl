@@ -140,7 +140,7 @@ build {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars = local.default.environmentVariables
-    inline = [templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in local.packages: p if try(p.scope == "machine", false) ] })]
+    inline = [templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in concat(local.default.packages, local.packages): p if try(p.scope == "machine", false) ] })]
   }
 
   provisioner "windows-restart" {
@@ -223,7 +223,7 @@ build {
   }
 
   provisioner "file" {
-    content = templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in local.packages: p if try(p.scope == "user", false) ] }) 
+    content = templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in concat(local.default.packages, local.packages): p if try(p.scope == "user", false) ] }) 
     destination = "${local.path.devboxHome}/ActiveSetup/Install-Packages.ps1"
   }
 

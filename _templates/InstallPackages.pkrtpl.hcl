@@ -4,8 +4,7 @@ function Get-IsAdmin() {
 }
 
 function Get-IsPacker() {
-	try 	{ return [System.Convert]::ToBoolean($Env:PACKER) }
-	catch 	{ return $false }
+	return ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
 }
 
 function Write-Header() {
@@ -79,6 +78,35 @@ function Get-Property() {
 	return $value
 }
 
+function Install-WinGetPackage() {
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)] 
+		[object] $package
+    )
+
+	$arguments = ("install", ("--id {0}" -f $package.name),	"--exact")
+
+	if ($package | Has-Property -Name "version") { 	
+		$arguments += "--version {0}" -f $package.version
+	}
+	
+	$arguments += "--source {0}" -f ($package | Get-Property -Name "source" -DefaultValue "winget")
+
+	if ($package | Has-Property -Name "override") { 
+		$arguments += "--override `"{0}`"" -f ($package | Get-Property -Name "override") 
+	} else { 
+		$arguments += "--silent" 
+	} 
+
+	$arguments += "--accept-package-agreements"
+	$arguments += "--accept-source-agreements"
+	$arguments += "--verbose-logs"
+
+	$process = Start-Process -FilePath "winget.exe" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+	return $process.ExitCode
+}
+
 if (-not (Get-IsPacker)) {
 	Write-Host ">>> Starting transcript ..."
 	Start-Transcript -Path ([System.IO.Path]::ChangeExtension($MyInvocation.MyCommand.Path, 'log')) -Append | Out-Null
@@ -95,27 +123,21 @@ foreach ($package in $packages) {
 
 	try
 	{
-		$arguments = ("install", ("--id {0}" -f $package.name),	"--exact")
+		[string] $source = $package | Get-Property -Name "source" -DefaultValue "winget"
+		[int] $exitCode = 0
 
-		if ($package | Has-Property -Name "version") { 	
-			$arguments += "--version {0}" -f $package.version
+		switch -exact ($source.ToLowerInvariant()) {
+
+			'winget' {
+				$exitCode = $package | Install-WinGetPackage
+			}
+
+			'msstore' {
+				$exitCode = $package | Install-WinGetPackage
+			}
 		}
 		
-		$arguments += "--source {0}" -f ($package | Get-Property -Name "source" -DefaultValue "winget")
-
-		if ($package | Has-Property -Name "override") { 
-			$arguments += "--override `"{0}`"" -f ($package | Get-Property -Name "override") 
-		} else { 
-			$arguments += "--silent" 
-		} 
-
-		$arguments += "--accept-package-agreements"
-		$arguments += "--accept-source-agreements"
-		$arguments += "--verbose-logs"
-
-		$process = Start-Process -FilePath "winget.exe" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
-		
-		if ($process.ExitCode -ne 0) { exit $process.ExitCode }
+		if ($exitCode -ne 0) { exit $process.ExitCode }
 	}
 	finally
 	{

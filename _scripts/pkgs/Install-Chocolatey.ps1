@@ -2,8 +2,7 @@
 # Licensed under the MIT License.
 
 function Get-IsPacker() {
-	try 	{ return [System.Convert]::ToBoolean($Env:PACKER) }
-	catch 	{ return $false }
+	return ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
 }
 
 function Invoke-FileDownload() {

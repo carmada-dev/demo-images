@@ -26,11 +26,29 @@ locals {
 	}
 
   	default = {	
+		
 		environmentVariables = [ 
-			"PACKER=true",
 			"DEVBOX_HOME=${local.path.devboxHome}",
 			"DEVBOX_IMAGENAME=${local.variables.imageName}",
 			"DEVBOX_IMAGEVERSION=${local.variables.imageVersion}"
+		]
+
+		packages = [
+
+			# {
+			# 	name = ""					< MANDATORY
+			#  	scope = "[machine|user]" 	< MANDATORY
+			# 	version = ""				< DFAULT: latest
+			# 	source = ""					< DFAULT: winget
+			# 	override = []
+			# }
+
+			{
+				#https://apps.microsoft.com/store/detail/dev-home-preview/9N8MHTPHNGVV
+				name = "9N8MHTPHNGVV"		
+			 	scope = "user"
+				source = "msstore"
+			}
 		]
 	}
 

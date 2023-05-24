@@ -10,7 +10,10 @@ on:
 concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
-      
+
+env:
+  IMAGE_VERSION: "$(date +'%Y.%m%d.%H%M')"
+
 jobs:
   build-matrix:
     runs-on: ubuntu-latest
@@ -56,7 +59,7 @@ jobs:
             JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
             wget -qc $JSON2HCL_URL -O - | tar -xz -C $RUNNER_TEMP && chmod 755 $RUNNER_TEMP/json2hcl
 
-      - name: Resolve Gallery Image Information
+      - name: Resolve Image Information
         id: image
         run: |
           JSON2HCL_OUTPUT=$($RUNNER_TEMP/json2hcl -reverse < ./image.pkr.hcl)
@@ -74,7 +77,7 @@ jobs:
           echo "devcenter_compute=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].compute')" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT
       
-      - name: Ensure Gallery Image Definition
+      - name: Ensure Image Definition
         uses: azure/CLI@v1
         with:
           inlineScript:	|
@@ -104,33 +107,26 @@ jobs:
         run: packer init .
 
       - name: Build Image
-        run: packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" . | tee ./image.pkr.log
-
-      - name: Resolve Gallery Image Version ResourceId
-        id: imageversion
-        run: |
-          echo "image_resourceid=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT
-          cat $GITHUB_OUTPUT
+        run: packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=$IMAGE_VERSION" . | tee ./image.pkr.log
 
       - name: Create or Update DevBox Definition
         uses: azure/CLI@v1
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
-            COMPUTEGALLERY_RESOURCEID=$(echo "${{ steps.imageversion.outputs.image_resourceid }}" | cut -d '/' -f -9)
+            COMPUTEGALLERY_IMAGEID=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)
+            COMPUTEGALLERY_RESOURCEID=$(echo $COMPUTEGALLERY_IMAGEID | cut -d '/' -f -9)
             DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
-            IMAGE_PATH=$(echo "${{ steps.imageversion.outputs.image_resourceid }}" | cut -d '/' -f 10-)
-            IMAGE_RESOURCEID=$(echo "$DEVCENTERGALLERY_RESOURCEID/$IMAGE_PATH")
+            DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo "echo $COMPUTEGALLERY_IMAGEID" | cut -d '/' -f 10-)"
             az devcenter admin devbox-definition create \
               --dev-box-definition-name ${{ steps.image.outputs.image_definition }} \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
-              --image-reference id="$IMAGE_RESOURCEID" \
+              --image-reference id="$DEVCENTERGALLERY_IMAGEID" \
               --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
               --sku name="${{ steps.image.outputs.devcenter_compute }}" \
               --no-wait \
-              --hibernate-support Enabled \
               --only-show-errors 2>&1
 
       - name: Cleanup Build Artifacts        

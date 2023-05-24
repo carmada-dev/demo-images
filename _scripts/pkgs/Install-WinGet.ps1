@@ -17,8 +17,7 @@ $adminWinGetConfig = @"
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType] 'Ssl3 , Tls12'
 
 function Get-IsPacker() {
-	try 	{ return [System.Convert]::ToBoolean($Env:PACKER) }
-	catch 	{ return $false }
+	return ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
 }
 
 function Get-IsAdmin() {
