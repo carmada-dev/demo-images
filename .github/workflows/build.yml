@@ -12,35 +12,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-matrix:
+  build-jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-      version: ${{ steps.set-matrix.outcome.version }}
+      imageMatrix: ${{ steps.set-imageMatrix.outputs.matrix }}
+      imageVersion: ${{ steps.set-imageVersion.outputs.version }}
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Generate Image Matrix
-        id: set-matrix
+        id: set-imageMatrix
         run: |
-          echo "matrix=$(find . -type f -name 'image.pkr.hcl' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          echo "matrix=$(find . -type f -name 'image.pkr.hcl' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT      
+          cat $GITHUB_OUTPUT
+
+      - name: Generate Image Version
+        id: set-imageVersion
+        run: |
           echo "version=$(date +'%Y.%m%d.%H%M')" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
   build-image:
-    needs: build-matrix
+    needs: build-jobs
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
+        image: ${{ fromJson(needs.build-jobs.outputs.imageMatrix) }}
 
-    env:
-      IMAGE_VERSION: "${{ needs.build-matrix.outputs.version }}"
-      
     defaults:
       run:
         shell: bash
@@ -111,7 +113,7 @@ jobs:
         run: packer init .
 
       - name: Build Image
-        run: packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=$IMAGE_VERSION" . | tee ./image.pkr.log
+        run: packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-jobs.outputs.imageVersion }}" . | tee ./image.pkr.log
 
       - name: Create or Update DevBox Definition
         uses: azure/CLI@v1
