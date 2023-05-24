@@ -11,22 +11,22 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  IMAGE_VERSION: "$(date +'%Y.%m%d.%H%M')"
-
 jobs:
   build-matrix:
     runs-on: ubuntu-latest
 
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      version: ${{ steps.set-matrix.outcome.version }}
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Generate Image Matrix
         id: set-matrix
-        run: echo "matrix=$(find . -type f -name 'image.pkr.hcl' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+        run: |
+          echo "matrix=$(find . -type f -name 'image.pkr.hcl' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          echo "version=$(date +'%Y.%m%d.%H%M')"
 
   build-image:
     needs: build-matrix
@@ -107,7 +107,7 @@ jobs:
         run: packer init .
 
       - name: Build Image
-        run: packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=$IMAGE_VERSION" . | tee ./image.pkr.log
+        run: packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-matrix.outputs.version }}" . | tee ./image.pkr.log
 
       - name: Create or Update DevBox Definition
         uses: azure/CLI@v1
