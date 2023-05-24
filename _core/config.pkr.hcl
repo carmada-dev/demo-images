@@ -48,6 +48,11 @@ locals {
 				name = "9N8MHTPHNGVV"		
 			 	scope = "user"
 				source = "msstore"
+			},
+			{
+				#https://www.marticliment.com/wingetui/
+				name = "SomePythonThings.WingetUIStore"		
+			 	scope = "machine"
 			}
 		]
 	}
