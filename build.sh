@@ -95,23 +95,28 @@ buildImage() {
 		-var "imageSuffix=$IMAGESUFFIX" \
 		. 2>&1 | tee -a ./image.pkr.log
 
-	COMPUTEGALLERY_IMAGEID=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)
-	COMPUTEGALLERY_RESOURCEID=$(echo $COMPUTEGALLERY_IMAGEID | cut -d '/' -f -9)
-	DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription $(echo $DEVCENTERJSON | jq --raw-output '.subscription') --resource-group $(echo $DEVCENTERJSON | jq --raw-output '.resourceGroup') --dev-center $(echo $DEVCENTERJSON | jq --raw-output '.name') | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
-	DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo "echo $COMPUTEGALLERY_IMAGEID" | cut -d '/' -f 10-)"
+	IMAGEID=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)
 
-	displayHeader "Updating DevBox Definition ($1)" | tee -a ./image.pkr.log
+	if [ ! -z "$IMAGEID" ]; then
 
-	az devcenter admin devbox-definition create \
-		--dev-box-definition-name $IMAGENAME \
-		--subscription $(echo $DEVCENTERJSON | jq --raw-output '.subscription') \
-		--resource-group $(echo $DEVCENTERJSON | jq --raw-output '.resourceGroup') \
-		--dev-center $(echo $DEVCENTERJSON | jq --raw-output '.name') \
-		--image-reference id="$DEVCENTERGALLERY_IMAGEID" \
-		--os-storage-type $(echo $DEVCENTERJSON | jq --raw-output '.storage') \
-		--sku name="$(echo $DEVCENTERJSON | jq --raw-output '.compute')" \
-		--no-wait \
-		--only-show-errors 2>&1 | tee -a ./image.pkr.log
+		COMPUTEGALLERY_RESOURCEID=$(echo $IMAGEID | cut -d '/' -f -9)
+		DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription $(echo $DEVCENTERJSON | jq --raw-output '.subscription') --resource-group $(echo $DEVCENTERJSON | jq --raw-output '.resourceGroup') --dev-center $(echo $DEVCENTERJSON | jq --raw-output '.name') | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
+		DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo "echo $IMAGEID" | cut -d '/' -f 10-)"
+
+		displayHeader "Updating DevBox Definition ($1)" | tee -a ./image.pkr.log
+
+		az devcenter admin devbox-definition create \
+			--dev-box-definition-name $IMAGENAME \
+			--subscription $(echo $DEVCENTERJSON | jq --raw-output '.subscription') \
+			--resource-group $(echo $DEVCENTERJSON | jq --raw-output '.resourceGroup') \
+			--dev-center $(echo $DEVCENTERJSON | jq --raw-output '.name') \
+			--image-reference id="$DEVCENTERGALLERY_IMAGEID" \
+			--os-storage-type $(echo $DEVCENTERJSON | jq --raw-output '.storage') \
+			--sku name="$(echo $DEVCENTERJSON | jq --raw-output '.compute')" \
+			--no-wait \
+			--only-show-errors 2>&1 | tee -a ./image.pkr.log
+
+	fi
 
 	popd > /dev/null
 }

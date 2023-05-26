@@ -38,9 +38,10 @@ locals {
 			# {
 			# 	name = ""					< MANDATORY
 			#  	scope = "[machine|user]" 	< MANDATORY
-			# 	version = ""				< DFAULT: latest
-			# 	source = ""					< DFAULT: winget
-			# 	override = []
+			# 	version = ""				< DEFAULT: latest
+			# 	source = ""					< DEFAULT: winget
+			# 	override = []				< DEFAULT: [] >> array of strings 
+			#	exitCodes = []				< DEFAULT: [] >> array of numbers
 			# }
 
 			{
@@ -53,6 +54,7 @@ locals {
 				#https://www.marticliment.com/wingetui/
 				name = "SomePythonThings.WingetUIStore"		
 			 	scope = "machine"
+				exitCodes = [ 1 ]
 			}
 		]
 	}

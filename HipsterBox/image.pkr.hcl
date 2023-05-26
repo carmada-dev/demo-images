@@ -117,6 +117,8 @@ locals {
     ]
 
     postPackageScripts = [
+		"${path.root}/../_scripts/Install-WuTCOMRedirector.ps1",
+		"${path.root}/../_scripts/Install-WuTUSBRedirector.ps1"
     ]
 
 }

@@ -1,3 +1,4 @@
+
 function Get-IsAdmin() {
 	$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 	return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -10,15 +11,23 @@ function Get-IsPacker() {
 function Write-Header() {
 
 	param (
-		[string] $Package,
-		[string] $Version,
-		[string] $Source,
-		[string] $Arguments
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object] $InputObject
+
 	)
 
-	if ([string]::IsNullOrEmpty($Version)) 		{ $Version = "latest" }
-	if ([string]::IsNullOrEmpty($Source)) 		{ $Source = "winget" }
-	if ([string]::IsNullOrEmpty($Arguments)) 	{ $Arguments = "none" }
+	$override = ($InputObject | Get-PropertyArray -Name 'override') -join ' '
+
+	if ([string]::IsNullOrEmpty($overrides)) {
+		$override = 'none'
+	}
+
+	$arguments = @(
+		($InputObject.name),
+		($InputObject | Get-PropertyValue -Name 'version' -DefaultValue 'latest'),
+		($InputObject | Get-PropertyValue -Name 'source' -DefaultValue 'winget'),
+		$override
+	)
 
 @"
 ==========================================================================================================
@@ -29,21 +38,26 @@ Version:   {1}
 Source:    {2}
 Arguments: {3}
 ----------------------------------------------------------------------------------------------------------
-"@ -f ($Package, $Version, $Source, $Arguments) | Write-Host
+"@ -f $arguments | Write-Host
 
 }
 
 function Write-Footer() {
 
 	param (
-		[string] $Package
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object] $InputObject
+	)
+
+	$arguments = @(
+		($InputObject.name)
 	)
 
 @"
 ----------------------------------------------------------------------------------------------------------
 Finished installing {0} 
 ==========================================================================================================
-"@ -f ($Package) | Write-Host
+"@ -f $arguments | Write-Host
 
 }
 
@@ -58,7 +72,7 @@ function Has-Property() {
     return ($null -ne ($InputObject | Select -ExpandProperty $Name -ErrorAction SilentlyContinue))
 }
 
-function Get-Property() {
+function Get-PropertyValue() {
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object] $InputObject,
@@ -78,22 +92,46 @@ function Get-Property() {
 	return $value
 }
 
+function Get-PropertyArray() {
+    param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object] $InputObject,
+        [Parameter(Mandatory = $true)]
+        [string] $Name
+    )
+
+    $value = ($InputObject | Select -ExpandProperty $Name -ErrorAction SilentlyContinue)
+
+    if ($value) {
+        
+        if ($value -is [array]) {
+            Write-Output -NoEnumerate $value
+        } else {
+            Write-Output -NoEnumerate @($value)
+        }
+    
+    } else {
+
+        Write-Output -NoEnumerate @()    
+    }
+}
+
 function Install-WinGetPackage() {
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)] 
-		[object] $package
+		[object] $Package
     )
 
-	$arguments = ("install", ("--id {0}" -f $package.name),	"--exact")
+	$arguments = ("install", ("--id {0}" -f $Package.name),	"--exact")
 
-	if ($package | Has-Property -Name "version") { 	
-		$arguments += "--version {0}" -f $package.version
+	if ($Package | Has-Property -Name "version") { 	
+		$arguments += "--version {0}" -f $Package.version
 	}
 	
-	$arguments += "--source {0}" -f ($package | Get-Property -Name "source" -DefaultValue "winget")
+	$arguments += "--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")
 
-	if ($package | Has-Property -Name "override") { 
-		$arguments += "--override `"{0}`"" -f ($package | Get-Property -Name "override") 
+	if ($Package | Has-Property -Name "override") { 
+		$arguments += "--override `"{0}`"" -f (($Package | Get-PropertyArray -Name "override") -join ' ' )
 	} else { 
 		$arguments += "--silent" 
 	} 
@@ -103,7 +141,6 @@ function Install-WinGetPackage() {
 	$arguments += "--verbose-logs"
 
 	$process = Start-Process -FilePath "winget.exe" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
-
 	return $process.ExitCode
 }
 
@@ -114,33 +151,40 @@ if (-not (Get-IsPacker)) {
 
 [array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json
 
-Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'reset', '--force') -NoNewWindow -Wait -ErrorAction SilentlyContinue
-Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'update', '--name', 'winget') -NoNewWindow -Wait -ErrorAction SilentlyContinue
-
 foreach ($package in $packages) {
 
-	Write-Header -Package $package.name -Version $package.version -Source $package.source -Arguments ($package.override -join " ").Trim()
+	$package | Write-Header
 
 	try
 	{
-		[string] $source = $package | Get-Property -Name "source" -DefaultValue "winget"
-		[int] $exitCode = 0
+		$successExitCodes = @(0) + ($package | Get-PropertyArray -Name 'exitCodes')
+		$successExitCodes_winget = @(1)
+
+		$source = $package | Get-PropertyValue -Name "source" -DefaultValue "winget"
+		$exitCode = 0
 
 		switch -exact ($source.ToLowerInvariant()) {
 
 			'winget' {
-				$exitCode = $package | Install-WinGetPackage
+				$successExitCodes = $successExitCodes + $successExitCodes_winget |  Select-Object -Unique | Sort-Object
+				$exitCode = ($package | Install-WinGetPackage)
+				Break
 			}
 
 			'msstore' {
-				$exitCode = $package | Install-WinGetPackage
+				$successExitCodes = $successExitCodes + $successExitCodes_winget | Select-Object -Unique | Sort-Object
+				$exitCode = ($package | Install-WinGetPackage)
+				Break
 			}
 		}
-		
-		if ($exitCode -ne 0) { exit $process.ExitCode }
+
+		if ($successExitCodes -notcontains $exitCode) {
+			Write-Warning "Installing $($package.name) failed with exit code '$exitCode' [$($successExitCodes -join ', ')]" 
+			Exit $exitCode
+		}
 	}
 	finally
 	{
-		Write-Footer -Package $package.name 
+		$package | Write-Footer
 	}
 }
