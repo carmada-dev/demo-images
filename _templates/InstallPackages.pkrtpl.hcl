@@ -151,6 +151,12 @@ if (-not (Get-IsPacker)) {
 
 [array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json
 
+@"
+==========================================================================================================
+Packages: {0} 
+==========================================================================================================
+"@ -f ($packages | ConvertTo-Json -Compress) | Write-Host
+
 foreach ($package in $packages) {
 
 	$package | Write-Header

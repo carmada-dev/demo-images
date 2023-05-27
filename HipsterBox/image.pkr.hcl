@@ -40,13 +40,9 @@ locals {
 
     packages = [
 
-		# {
-		# 	name = ""					< MANDATORY
-		#  	scope = "[machine|user]" 	< MANDATORY
-		# 	version = ""				< DFAULT: latest
-		# 	source = ""					< DFAULT: winget
-		# 	override = []
-		# }
+		# Please check out the package definition described
+		# in the config.pkr.hcl file if you want to add new
+		# packages to the image definition.
 
 		{
 			name = "Microsoft.PowerShell"
@@ -54,30 +50,15 @@ locals {
 		},
 
 		{
-			name = "Microsoft.VisualStudioCode"
-			scope = "machine"
-			override = [
-				"/VERYSILENT",
-				"/NORESTART",
-				"/MERGETASKS=desktopicon,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath,!runcode"
-			]
+			name = "vscode"
+			source = "alias"
 		},
 
 		{
-			name = "Git.Git"
-			scope = "machine"
-			override = [
-				"/VERYSILENT",
-				"/SUPPRESSMSGBOXES",
-				"/NORESTART",
-				"/NOCANCEL",
-				"/SP-",
-				"/WindowsTerminal",
-				"/WindowsTerminalProfile",
-				"/DefaultBranchName:main",
-				"/Editor:VisualStudioCode"
-			]
+			name = "git"
+			source = "alias"
 		},
+
 		{
 			name = "GitHub.cli"
 			scope = "machine"
@@ -88,13 +69,8 @@ locals {
 		},
 		
 		{
-			name = "Docker.DockerDesktop"
-			scope = "machine"
-			override = [
-				"install",
-				"--quiet",
-				"--accept-license"
-			]
+			name = "dockerDesktop"
+			source = "alias"
 		},
 
 		{
