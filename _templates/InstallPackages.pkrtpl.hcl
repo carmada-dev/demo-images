@@ -164,7 +164,10 @@ foreach ($package in $packages) {
 	try
 	{
 		$successExitCodes = @(0) + ($package | Get-PropertyArray -Name 'exitCodes')
-		$successExitCodes_winget = @(1)
+
+		$successExitCodes_winget = @(
+			-1978335189, # APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE  
+		)
 
 		$source = $package | Get-PropertyValue -Name "source" -DefaultValue "winget"
 		$exitCode = 0
@@ -185,8 +188,10 @@ foreach ($package in $packages) {
 		}
 
 		if ($successExitCodes -notcontains $exitCode) {
-			Write-Warning "Installing $($package.name) failed with exit code '$exitCode' [$($successExitCodes -join ', ')]" 
+			Write-Warning "Installing $($package.name) failed with exit code '$exitCode'." 
 			Exit $exitCode
+		} elseif ($successExitCodes -notcontains $exitCode) {
+			Write-Warning "Installing $($package.name) failed with exit code '$exitCode', but was ignored (SUCCESS EXIT CODES: $($successExitCodes -join ', '))"
 		}
 	}
 	finally
