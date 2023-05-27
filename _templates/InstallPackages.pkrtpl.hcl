@@ -190,7 +190,7 @@ foreach ($package in $packages) {
 		if ($successExitCodes -notcontains $exitCode) {
 			Write-Warning "Installing $($package.name) failed with exit code '$exitCode'." 
 			Exit $exitCode
-		} elseif ($successExitCodes -notcontains $exitCode) {
+		} elseif ($exitCode -ne 0) {
 			Write-Warning "Installing $($package.name) failed with exit code '$exitCode', but was ignored (SUCCESS EXIT CODES: $($successExitCodes -join ', '))"
 		}
 	}
