@@ -63,9 +63,9 @@ locals {
 
 			{
 				#https://apps.microsoft.com/store/detail/dev-home-preview/9N8MHTPHNGVV
-				name = "9N8MHTPHNGVV"		
+				name = "Microsoft.DevHome"		
 			 	scope = "user"
-				source = "msstore"
+				source = "winget"
 			},
 
 			{
