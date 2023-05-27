@@ -163,7 +163,7 @@ foreach ($package in $packages) {
 
 	try
 	{
-		$successExitCodes = @(0) + ($package | Get-PropertyArray -Name 'exitCodes')
+		$successExitCodes = @(0,1) + ($package | Get-PropertyArray -Name 'exitCodes')
 
 		$successExitCodes_winget = @(
 			-1978335189 # APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE  
