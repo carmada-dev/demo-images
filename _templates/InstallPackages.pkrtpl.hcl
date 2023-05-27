@@ -166,7 +166,7 @@ foreach ($package in $packages) {
 		$successExitCodes = @(0) + ($package | Get-PropertyArray -Name 'exitCodes')
 
 		$successExitCodes_winget = @(
-			-1978335189, # APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE  
+			-1978335189 # APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE  
 		)
 
 		$source = $package | Get-PropertyValue -Name "source" -DefaultValue "winget"
