@@ -116,44 +116,48 @@ function Get-PropertyArray() {
     }
 }
 
+$initializedWinGet = $false
+
+function Initialize-WinGet() {
+
+	if (-not($global:initializedWinGet)) {
+
+		Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'reset', '--force') -NoNewWindow -Wait 
+		Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'update') -NoNewWindow -Wait 
+	}
+
+	$global:initializedWinGet = $true
+
+	return $global:initializedWinGet
+}
+
 function Install-WinGetPackage() {
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)] 
 		[object] $Package
     )
 
-	(1 .. 3) | ForEach-Object {
+	$arguments = ("install", ("--id {0}" -f $Package.name),	"--exact")
 
-		$arguments = ("install", ("--id {0}" -f $Package.name),	"--exact")
-
-		if ($Package | Has-Property -Name "version") { 	
-			$arguments += "--version {0}" -f $Package.version
-		}
-		
-		$arguments += "--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")
-
-		if ($Package | Has-Property -Name "override") { 
-			$arguments += "--override `"{0}`"" -f (($Package | Get-PropertyArray -Name "override") -join ' ' )
-		} else { 
-			$arguments += "--silent" 
-		} 
-
-		$arguments += "--accept-package-agreements"
-		$arguments += "--accept-source-agreements"
-		$arguments += "--verbose-logs"
-
-		$process = Start-Process -FilePath "winget.exe" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
-
-		if ($process.ExitCode -eq 1) {
-
-			Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'reset', '--force') -NoNewWindow -Wait | Out-Null
-			Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'update') -NoNewWindow -Wait | Out-Null
-
-		} else {
-
-			return $process.ExitCode
-		}
+	if ($Package | Has-Property -Name "version") { 	
+		$arguments += "--version {0}" -f $Package.version
 	}
+	
+	$arguments += "--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")
+
+	if ($Package | Has-Property -Name "override") { 
+		$arguments += "--override `"{0}`"" -f (($Package | Get-PropertyArray -Name "override") -join ' ' )
+	} else { 
+		$arguments += "--silent" 
+	} 
+
+	$arguments += "--accept-package-agreements"
+	$arguments += "--accept-source-agreements"
+	$arguments += "--verbose-logs"
+
+	$process = Start-Process -FilePath "winget.exe" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+	return $process.ExitCode
 }
 
 if (-not (Get-IsPacker)) {
@@ -187,12 +191,14 @@ foreach ($package in $packages) {
 		switch -exact ($source.ToLowerInvariant()) {
 
 			'winget' {
+				Initialize-WinGet
 				$successExitCodes = $successExitCodes + $successExitCodes_winget |  Select-Object -Unique | Sort-Object
 				$exitCode = ($package | Install-WinGetPackage)
 				Break
 			}
 
 			'msstore' {
+				Initialize-WinGet 
 				$successExitCodes = $successExitCodes + $successExitCodes_winget | Select-Object -Unique | Sort-Object
 				$exitCode = ($package | Install-WinGetPackage)
 				Break
