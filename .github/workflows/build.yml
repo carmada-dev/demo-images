@@ -65,7 +65,7 @@ jobs:
             JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
             echo "Downloading JSON2HCL from $JSON2HCL_URL"
             wget -qc $JSON2HCL_URL -O - | tar -xz -C $RUNNER_TEMP && chmod 755 $RUNNER_TEMP/json2hcl
-            echo "JSON2HCL is available at $RUNNER_TEMP/json2hcl"
+            [ -f "$RUNNER_TEMP/json2hcl" ] && echo "JSON2HCL is available at $RUNNER_TEMP/json2hcl" || exit 1
 
       - name: Resolve Image Information
         id: image
