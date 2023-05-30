@@ -133,7 +133,7 @@ jobs:
         run: |
           packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-jobs.outputs.imageVersion }}" . | tee ./image.pkr.log
           echo "ManagedImageSharedImageGalleryId=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
-          echo "ManagedImageSharedImageGalleryIdEncoded=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2- | base64)" >> $GITHUB_OUTPUT
+          echo "ManagedImageSharedImageGalleryIdEncoded=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2- | base64 -w 0)" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
       - name: Create or Update DevBox Definition
