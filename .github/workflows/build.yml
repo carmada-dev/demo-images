@@ -87,7 +87,17 @@ jobs:
           echo "devcenter_storage=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].storage')" >> $GITHUB_OUTPUT          
           echo "devcenter_compute=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].compute')" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT
-      
+          
+      - name: Cleanup Factory Subscription        
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            RGNAME_PREFIX=$(echo "PKR-${{ steps.image.outputs.image_definition }}" | tr [:lower:] [:upper:])
+            RGNAME_SUFFIX=$(echo "-$GITHUB_WORKFLOW" | tr [:lower:] [:upper:])
+            for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.devcenter_subscription }} | jq --raw-output ".[] | select((.name | ascii_upcase | startswith(\"$RGNAME_PREFIX\")) and (.name | ascii_upcase | endswith(\"$RGNAME_SUFFIX\"))) | .name"); do
+              az group delete --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --no-wait --yes
+            done
+
       - name: Ensure Image Definition
         uses: azure/CLI@v1
         with:
@@ -143,16 +153,6 @@ jobs:
               --sku name="${{ steps.image.outputs.devcenter_compute }}" \
               --no-wait \
               --only-show-errors 2>&1
-
-      - name: Cleanup Build Artifacts        
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            RGNAME_PREFIX=$(echo "PKR-${{ steps.image.outputs.image_definition }}" | tr [:lower:] [:upper:])
-            RGNAME_SUFFIX=$(echo "-$GITHUB_WORKFLOW" | tr [:lower:] [:upper:])
-            for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.devcenter_subscription }} | jq --raw-output ".[] | select((.name | ascii_upcase | startswith(\"$RGNAME_PREFIX\")) and (.name | ascii_upcase | endswith(\"$RGNAME_SUFFIX\"))) | .name"); do
-              az group delete --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --no-wait --yes
-            done
 
   promote-to-latest:
     needs: [build-jobs, build-image]
