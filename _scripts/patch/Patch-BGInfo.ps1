@@ -28,6 +28,17 @@ function Invoke-FileDownload() {
 	
 	return $path
 }
+function Set-Shortcut() {
+	param( 
+		[Parameter(Mandatory=$true)][string]$Path,
+		[Parameter(Mandatory=$true)][string]$TargetPath
+	)
+
+	$WshShell = New-Object -comObject WScript.Shell
+	$Shortcut = $WshShell.CreateShortcut($Path)
+	$Shortcut.TargetPath = $TargetPath
+	$Shortcut.Save()
+}
 
 $bgInfoArtifact = Join-Path -Path $env:DEVBOX_HOME -ChildPath 'Artifacts\Bginfo.bgi'
 if (Test-Path -Path $bgInfoArtifact -PathType Leaf) {
@@ -55,5 +66,6 @@ if (Test-Path -Path $bgInfoArtifact -PathType Leaf) {
 
 	Write-Host ">>> Register BGInfo ..."
 	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name BGInfo -Value $bgInfoCommand -type String	
+	Set-Shortcut -Path (Join-Path ([Environment]::GetFolderPath("CommonDesktopDirectory")) -ChildPath "BGInfo.lnk") -TargetPath $bgInfoCommand
 }
 
