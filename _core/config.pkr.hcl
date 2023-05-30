@@ -78,7 +78,12 @@ locals {
 			{
 				#https://www.marticliment.com/wingetui/
 				name = "SomePythonThings.WingetUIStore"		
-			 	scope = "machine"
+			 	scope = "user"
+			},
+
+			{
+				name = "Microsoft.PowerShell"
+				scope = "machine"
 			}
 		]
 

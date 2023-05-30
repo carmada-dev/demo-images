@@ -116,21 +116,6 @@ function Get-PropertyArray() {
     }
 }
 
-$initializedWinGet = $false
-
-function Initialize-WinGet() {
-
-	if (-not($global:initializedWinGet)) {
-
-		Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'reset', '--force') -NoNewWindow -Wait 
-		Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'update') -NoNewWindow -Wait 
-	}
-
-	$global:initializedWinGet = $true
-
-	return $global:initializedWinGet
-}
-
 function Install-WinGetPackage() {
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)] 
@@ -173,6 +158,9 @@ Packages: {0}
 ==========================================================================================================
 "@ -f ($packages | ConvertTo-Json -Compress) | Write-Host
 
+Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'reset', '--force') -NoNewWindow -Wait 
+Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'update') -NoNewWindow -Wait 
+
 foreach ($package in $packages) {
 
 	$package | Write-Header
@@ -191,14 +179,12 @@ foreach ($package in $packages) {
 		switch -exact ($source.ToLowerInvariant()) {
 
 			'winget' {
-				Initialize-WinGet
 				$successExitCodes = $successExitCodes + $successExitCodes_winget |  Select-Object -Unique | Sort-Object
 				$exitCode = ($package | Install-WinGetPackage)
 				Break
 			}
 
 			'msstore' {
-				Initialize-WinGet 
 				$successExitCodes = $successExitCodes + $successExitCodes_winget | Select-Object -Unique | Sort-Object
 				$exitCode = ($package | Install-WinGetPackage)
 				Break

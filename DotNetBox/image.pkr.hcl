@@ -45,11 +45,6 @@ locals {
 		# packages to the image definition.
 
 		{
-			name = "Microsoft.PowerShell"
-			scope = "machine"
-		},
-
-		{
 			name = "Microsoft.DotNet.SDK.3_1"
 			scope = "machine"
 		},

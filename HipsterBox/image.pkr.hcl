@@ -45,11 +45,6 @@ locals {
 		# packages to the image definition.
 
 		{
-			name = "Microsoft.PowerShell"
-			scope = "machine"
-		},
-
-		{
 			name = "vscode"
 			source = "alias"
 		},
