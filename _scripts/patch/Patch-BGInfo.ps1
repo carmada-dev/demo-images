@@ -51,7 +51,7 @@ if (Test-Path -Path $bgInfoArtifact -PathType Leaf) {
 
 	$bgInfoTool = Join-Path -Path $bgInfoHome -ChildPath 'Bginfo64.exe'
 	$bgInfoConfig = Join-Path -Path $bgInfoHome -ChildPath (Split-Path $bgInfoArtifact -Leaf) 
-	$bgInfoCommand = "`"$bgInfoTool`" `"$bgInfoConfig`" /SILENT /NOLICPROMPT /TASKBAR /TIMER:5"
+	$bgInfoCommand = "`"$bgInfoTool`" `"$bgInfoConfig`" /SILENT /NOLICPROMPT /TIMER:0"
 
 	Write-Host ">>> Register BGInfo ..."
 	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name BGInfo -Value $bgInfoCommand -type String	
