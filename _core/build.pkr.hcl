@@ -53,6 +53,7 @@ source "azure-arm" "vm" {
     image_name                        = local.variables.imageName
     image_version                     = local.variables.imageVersion
     replication_regions               = local.image.regions
+    exclude_from_latest               = true
     storage_account_type              = "Premium_LRS" # default is Standard_LRS
   }
 }
