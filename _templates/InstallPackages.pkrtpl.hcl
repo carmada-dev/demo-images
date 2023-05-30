@@ -122,26 +122,38 @@ function Install-WinGetPackage() {
 		[object] $Package
     )
 
-	$arguments = ("install", ("--id {0}" -f $Package.name),	"--exact")
+	(1 .. 3) | ForEach-Object {
 
-	if ($Package | Has-Property -Name "version") { 	
-		$arguments += "--version {0}" -f $Package.version
+		$arguments = ("install", ("--id {0}" -f $Package.name),	"--exact")
+
+		if ($Package | Has-Property -Name "version") { 	
+			$arguments += "--version {0}" -f $Package.version
+		}
+		
+		$arguments += "--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")
+
+		if ($Package | Has-Property -Name "override") { 
+			$arguments += "--override `"{0}`"" -f (($Package | Get-PropertyArray -Name "override") -join ' ' )
+		} else { 
+			$arguments += "--silent" 
+		} 
+
+		$arguments += "--accept-package-agreements"
+		$arguments += "--accept-source-agreements"
+		$arguments += "--verbose-logs"
+
+		$process = Start-Process -FilePath "winget.exe" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+
+		if ($process.ExitCode -eq 1) {
+
+			Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'reset', '--force') -NoNewWindow -Wait | Out-Null
+			Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'update') -NoNewWindow -Wait | Out-Null
+
+		} else {
+
+			return $process.ExitCode
+		}
 	}
-	
-	$arguments += "--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")
-
-	if ($Package | Has-Property -Name "override") { 
-		$arguments += "--override `"{0}`"" -f (($Package | Get-PropertyArray -Name "override") -join ' ' )
-	} else { 
-		$arguments += "--silent" 
-	} 
-
-	$arguments += "--accept-package-agreements"
-	$arguments += "--accept-source-agreements"
-	$arguments += "--verbose-logs"
-
-	$process = Start-Process -FilePath "winget.exe" -ArgumentList $arguments -NoNewWindow -Wait -PassThru
-	return $process.ExitCode
 }
 
 if (-not (Get-IsPacker)) {
@@ -163,7 +175,7 @@ foreach ($package in $packages) {
 
 	try
 	{
-		$successExitCodes = @(0,1) + ($package | Get-PropertyArray -Name 'exitCodes')
+		$successExitCodes = @(0) + ($package | Get-PropertyArray -Name 'exitCodes')
 
 		$successExitCodes_winget = @(
 			-1978335189 # APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE  
