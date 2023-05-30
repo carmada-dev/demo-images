@@ -53,9 +53,11 @@ source "azure-arm" "vm" {
     image_name                        = local.variables.imageName
     image_version                     = local.variables.imageVersion
     replication_regions               = local.image.regions
-    exclude_from_latest               = true
     storage_account_type              = "Premium_LRS" # default is Standard_LRS
   }
+
+  # new image version are excluded from latest to support staging
+  shared_gallery_image_version_exclude_from_latest = true
 }
 
 build {
