@@ -48,6 +48,9 @@ jobs:
         shell: bash
         working-directory: ${{ matrix.image }}
 
+    outputs:
+      managedImageSharedImageGalleryId: ${{ steps.packer.outputs.ManagedImageSharedImageGalleryId }}
+
     steps:
 
       - uses: actions/checkout@v3
@@ -149,3 +152,19 @@ jobs:
             for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.devcenter_subscription }} | jq --raw-output ".[] | select((.name | ascii_upcase | startswith(\"$RGNAME_PREFIX\")) and (.name | ascii_upcase | endswith(\"$RGNAME_SUFFIX\"))) | .name"); do
               az group delete --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --no-wait --yes
             done
+
+  promote-to-latest:
+    needs: [build-jobs, build-image]
+    environment: promoted
+    runs-on: ubuntu-latest
+    
+    steps:
+
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Promote Image as Latest
+        run: echo "${{ needs.build-image.outputs.managedImageSharedImageGalleryId }}"
+
+      
