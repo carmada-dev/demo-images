@@ -10,16 +10,20 @@ Write-Host ">>> Setting DevBox environment variables ..."
 [Environment]::SetEnvironmentVariable("DEVBOX_HOME", $devboxHome, [System.EnvironmentVariableTarget]::Machine)
 Get-ChildItem -Path Env:DEVBOX_* | ForEach-Object { [Environment]::SetEnvironmentVariable($_.Name, $_.Value, [System.EnvironmentVariableTarget]::Machine) }
 
-Write-Host ">>> Enable AutoLogon for elevated task processing ..."
+Write-Host ">>> Enabling AutoLogon for elevated task processing ..."
 Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name AutoAdminLogon -Value 1 -type String
 Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name DefaultUsername -Value "$Env:ADMIN_USERNAME" -type String
 Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name DefaultPassword -Value "$Env:ADMIN_PASSWORD" -type String
 
-Write-Host ">>> Disable User Access Control ..."
+Write-Host ">>> Disabling User Access Control ..."
 Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name EnableLUA -Value 0 -type DWord
 
-Write-Host ">>> Remove existing SysPrep logs ..."
+Write-Host ">>> Removing existing SysPrep logs ..."
 Remove-Item -Path $env:SystemRoot\Panther -Recurse -Force | Out-Null
 Remove-Item -Path $env:SystemRoot\System32\Sysprep\Panther -Recurse -Force | Out-Null
 Remove-Item -Path $Env:SystemRoot\System32\Sysprep\unattend.xml -Force | Out-Null
 
+Write-Host ">>> Enabling Windows Developer Mode ..."
+$DevModeRegKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
+if (-not(Test-Path -Path $DevModeRegKeyPath)) { New-Item -Path $RegistryKeyPath -ItemType Directory -Force }
+New-ItemProperty -Path $DevModeRegKeyPath -Name AllowDevelopmentWithoutDevLicense -PropertyType DWORD -Value 1

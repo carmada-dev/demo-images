@@ -6,13 +6,14 @@ on:
     branches: [ "main" ]
 
   workflow_dispatch:
-
+  
 concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-jobs:
+    if: ${{ !endsWith(github.event.head_commit.message, 'NO-CI') }}
     runs-on: ubuntu-latest
 
     outputs:
@@ -48,9 +49,6 @@ jobs:
         shell: bash
         working-directory: ${{ matrix.image }}
 
-    outputs:
-      managedImageSharedImageGalleryIdEncoded: ${{ steps.packer.outputs.ManagedImageSharedImageGalleryIdEncoded }}
-
     steps:
 
       - uses: actions/checkout@v3
@@ -67,13 +65,13 @@ jobs:
           command: |
             JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
             echo "Downloading JSON2HCL from $JSON2HCL_URL"
-            wget -qc $JSON2HCL_URL -O - | tar -xz -C $RUNNER_TEMP && chmod 755 $RUNNER_TEMP/json2hcl
-            [ -f "$RUNNER_TEMP/json2hcl" ] && echo "JSON2HCL is available at $RUNNER_TEMP/json2hcl" || exit 1
+            wget -qc $JSON2HCL_URL -O - | tar -xz -C ${{ runner.temp }} && chmod 755 ${{ runner.temp }}/json2hcl
+            [ -f "${{ runner.temp }}/json2hcl" ] && echo "JSON2HCL is available at ${{ runner.temp }}/json2hcl" || exit 1
 
       - name: Resolve Image Information
         id: image
         run: |
-          JSON2HCL_OUTPUT=$($RUNNER_TEMP/json2hcl -reverse < ./image.pkr.hcl)
+          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl)
           echo "image_definition=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
           echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
@@ -133,7 +131,6 @@ jobs:
         run: |
           packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-jobs.outputs.imageVersion }}" . | tee ./image.pkr.log
           echo "ManagedImageSharedImageGalleryId=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
-          echo "ManagedImageSharedImageGalleryIdEncoded=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2- | base64)" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
       - name: Create or Update DevBox Definition
@@ -155,18 +152,49 @@ jobs:
               --no-wait \
               --only-show-errors 2>&1
 
-  promote-to-latest:
-    needs: [build-jobs, build-image]
+      - name: Create Image Promotion Reference
+        run: echo "${{ steps.packer.outputs.ManagedImageSharedImageGalleryId }}" > ${{ runner.temp }}/${{ steps.image.outputs.image_definition }}
+
+      - name: Upload Image Promotion Reference
+        uses: actions/upload-artifact@v3
+        with:
+          name: promote
+          path: ${{ runner.temp }}/${{ steps.image.outputs.image_definition }}
+          if-no-files-found: warn    
+
+  promote-jobs:
+    needs: build-image
+    runs-on: ubuntu-latest
+
+    outputs:
+      promotionMatrix: ${{ steps.set-promotionMatrix.outputs.matrix }}
+      
+    steps:
+
+      - uses: actions/download-artifact@v3
+
+      - name: Generate Image Matrix
+        id: set-promotionMatrix
+        run: |
+          echo "matrix=$(cat */promote | jq -c --slurp .)" >> $GITHUB_OUTPUT      
+          cat $GITHUB_OUTPUT
+      
+  promote-image:
+    needs: promote-jobs
     environment: promoted
     runs-on: ubuntu-latest
-    
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.promote-jobs.outputs.promotionMatrix) }}
+
     steps:
 
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Promote Image as Latest
-        run: echo "$( echo '${{ needs.build-image.outputs.managedImageSharedImageGalleryIdEncoded }}' | base64 --decode)"
-
+      - name: Generate Image Matrix
+        run: echo "Promoting image '${{ matrix.image }}'"
       
