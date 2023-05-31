@@ -130,6 +130,7 @@ jobs:
         id: packer
         run: |
           packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-jobs.outputs.imageVersion }}" . | tee ./image.pkr.log
+          echo "$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" > ${{ runner.temp }}/promote
           echo "ManagedImageSharedImageGalleryId=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT
 
@@ -152,15 +153,11 @@ jobs:
               --no-wait \
               --only-show-errors 2>&1
 
-      - name: Create Image Promotion Reference
-        run: echo "${{ steps.packer.outputs.ManagedImageSharedImageGalleryId }}" > ${{ runner.temp }}/${{ steps.image.outputs.image_definition }}
-
       - name: Upload Image Promotion Reference
         uses: actions/upload-artifact@v3
         with:
-          name: promote
-          path: ${{ runner.temp }}/${{ steps.image.outputs.image_definition }}
-          if-no-files-found: warn    
+          name: ${{ steps.image.outputs.image_definition }}
+          path: ${{ runner.temp }}/promote
 
   promote-jobs:
     needs: build-image
@@ -171,9 +168,10 @@ jobs:
       
     steps:
 
-      - uses: actions/download-artifact@v3
+      - name: Download Image Promotion References
+        uses: actions/download-artifact@v3
 
-      - name: Generate Image Matrix
+      - name: Generate Image Promotion Matrix
         id: set-promotionMatrix
         run: |
           echo "matrix=$(cat */promote | jq -c --slurp .)" >> $GITHUB_OUTPUT      
