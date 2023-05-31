@@ -127,7 +127,7 @@ jobs:
               --gallery-image-version '${{ needs.build-jobs.outputs.imageVersion }}' \
               --only-show-errors 2>&1
 
-      - name: Prepare Image Definition
+      - name: Prepare Image
         run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
 
       - name: Setup Packer
@@ -142,7 +142,7 @@ jobs:
         id: packer
         run: |
           packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-jobs.outputs.imageVersion }}" . | tee ./image.pkr.log
-          echo "$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" > ${{ runner.temp }}/promote
+          echo "$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" > ./image.id
           echo "ManagedImageSharedImageGalleryId=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT
 
@@ -165,11 +165,11 @@ jobs:
               --no-wait \
               --only-show-errors 2>&1
 
-      - name: Upload Image Promotion Reference
+      - name: Upload Image Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.image.outputs.image_definition }}
-          path: ${{ runner.temp }}/promote
+          path: ./image.id
 
   promote-jobs:
     needs: build-image
@@ -180,13 +180,16 @@ jobs:
       
     steps:
 
-      - name: Download Image Promotion References
+      - name: Download Image Artifacts
         uses: actions/download-artifact@v3
+
+      - name: Show Image Artifacts Tree
+        uses: sudo apt install tree && tree .
 
       - name: Generate Image Promotion Matrix
         id: set-promotionMatrix
         run: |
-          echo "matrix=$(cat */promote | jq -c --slurp .)" >> $GITHUB_OUTPUT      
+          echo "matrix=$(cat */image.id | jq -c --slurp .)" >> $GITHUB_OUTPUT      
           cat $GITHUB_OUTPUT
       
   promote-image:
