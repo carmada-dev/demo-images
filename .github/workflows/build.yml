@@ -60,11 +60,11 @@ jobs:
       - name: Install JSON2HCL
         uses: nick-fields/retry@v2
         with:
-          max_attempts: 3
-          timeout_minutes: 1
+          max_attempts: 5
+          timeout_minutes: 2
           command: |
             JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
-            echo "Downloading JSON2HCL from $JSON2HCL_URL"
+            [ ! -z "$JSON2HCL_URL" ] && echo "Downloading JSON2HCL from $JSON2HCL_URL" || sleep 10s
             wget -qc $JSON2HCL_URL -O - | tar -xz -C ${{ runner.temp }} && chmod 755 ${{ runner.temp }}/json2hcl
             [ -f "${{ runner.temp }}/json2hcl" ] && echo "JSON2HCL is available at ${{ runner.temp }}/json2hcl" || exit 1
 
