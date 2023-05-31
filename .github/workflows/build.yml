@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.build-jobs.outputs.imageMatrix) }}
+        image: ${{ fromJson(needs.build-jobs.outputs.imageMatrix) }} 
 
     defaults:
       run:
