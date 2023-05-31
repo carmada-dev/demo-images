@@ -184,7 +184,7 @@ jobs:
         uses: actions/download-artifact@v3
 
       - name: Show Image Artifacts Tree
-        uses: sudo apt install tree && tree .
+        run: sudo apt install tree && tree .
 
       - name: Generate Image Promotion Matrix
         id: set-promotionMatrix
