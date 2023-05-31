@@ -115,6 +115,18 @@ jobs:
               --features 'SecurityType=TrustedLaunch' \
               --only-show-errors 2>&1
 
+      - name: Cleanup Image Version
+        uses: azure/CLI@v1
+        with:
+          inlineScript:	|
+            az sig image-version delete \
+              --subscription ${{ steps.image.outputs.gallery_subscription }} \
+              --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
+              --gallery-name ${{ steps.image.outputs.gallery_name }} \
+              --gallery-image-definition ${{ steps.image.outputs.image_definition }} \
+              --gallery-image-version '${{ needs.build-jobs.outputs.imageVersion }}' \
+              --only-show-errors 2>&1
+
       - name: Prepare Image Definition
         run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
 
