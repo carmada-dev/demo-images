@@ -179,6 +179,11 @@ jobs:
     runs-on: ubuntu-latest    
     environment: promoted
 
+    steps:
+
+      - name: Promotion approved
+        run: echo 'done'
+  
   promote-image:
     needs: [build, promote]
     runs-on: ubuntu-latest
