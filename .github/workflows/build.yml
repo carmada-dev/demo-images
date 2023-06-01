@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: ${{ !contains(github.event.head_commit.message, '#NOCI') }}
 
 jobs:
-  build-matrix:
+  build:
     if: ${{ !contains(github.event.head_commit.message, '#NOCI') }}
     runs-on: ubuntu-latest
 
@@ -32,17 +32,17 @@ jobs:
       - name: Generate Image Version
         id: set-imageVersion
         run: |
-          echo "version=$(date +'%Y.%m%d.%H%M')" >> $GITHUB_OUTPUT
+          echo "version=$(date -u +'%Y.%m%d.%H%M')" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
   build-image:
-    needs: build-matrix
+    needs: build
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.build-matrix.outputs.imageMatrix) }} 
+        image: ${{ fromJson(needs.build.outputs.imageMatrix) }} 
 
     defaults:
       run:
@@ -124,7 +124,7 @@ jobs:
               --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
               --gallery-name ${{ steps.image.outputs.gallery_name }} \
               --gallery-image-definition ${{ steps.image.outputs.image_definition }} \
-              --gallery-image-version '${{ needs.build-matrix.outputs.imageVersion }}' \
+              --gallery-image-version '${{ needs.build.outputs.imageVersion }}' \
               --only-show-errors 2>&1
 
       - name: Prepare Image
@@ -141,7 +141,7 @@ jobs:
       - name: Build Image
         id: packer
         run: |
-          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-matrix.outputs.imageVersion }}" . | tee ./image.pkr.log
+          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build.outputs.imageVersion }}" . | tee ./image.pkr.log
           echo "$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" > ./image.id
           echo "ManagedImageSharedImageGalleryId=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT
@@ -173,16 +173,20 @@ jobs:
         with:
           name: ${{ steps.image.outputs.image_definition }}
           path: ${{ runner.temp }}/artifacts/
-    
-  promote-image:
-    needs: [build-matrix, build-image]
+   
+  promote:
+    needs: build-image
+    runs-on: ubuntu-latest    
     environment: promoted
+
+  promote-image:
+    needs: [build, promote]
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.build-matrix.outputs.imageMatrix) }}
+        image: ${{ fromJson(needs.build.outputs.imageMatrix) }}
 
     defaults:
       run:
@@ -227,7 +231,7 @@ jobs:
               --gallery-name $(echo '${{ steps.image.outputs.image_id}}' | cut -d '/' -f9) \
               --gallery-image-definition $(echo '${{ steps.image.outputs.image_id }}' | cut -d '/' -f11) \
               --gallery-image-version $(echo '${{ steps.image.outputs.image_id }}' | cut -d '/' -f13) \
-              --set publishingProfile.excludeFromLatest=false
+              --set publishingProfile.excludeFromLatest=false \
               --only-show-errors 2>&1
 
       - name: Create or Update DevBox Definition
