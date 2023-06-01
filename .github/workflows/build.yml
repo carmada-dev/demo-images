@@ -9,7 +9,7 @@ on:
   
 concurrency:
   group: ${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !contains(github.event.head_commit.message, '#NOCI') }}
 
 jobs:
   build-jobs:
