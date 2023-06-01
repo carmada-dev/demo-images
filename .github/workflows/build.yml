@@ -165,14 +165,14 @@ jobs:
               --no-wait \
               --only-show-errors 2>&1
 
-      - name: Show Image Artifacts Tree
-        run: tree .
+      - name: Collect Image Artifacts
+        run: mkdir -p '${{ runner.temp }}/artifacts' && cp ./image.* '${{ runner.temp }}/artifacts/'
       
       - name: Upload Image Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.image.outputs.image_definition }}
-          path: /
+          path: ${{ runner.temp }}/artifacts/
 
   promote-jobs:
     needs: build-image
