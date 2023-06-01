@@ -71,7 +71,7 @@ jobs:
       - name: Resolve Image Information
         id: image
         run: |
-          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl)
+          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl | tee ./image.json)
           echo "image_definition=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
           echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
@@ -165,11 +165,16 @@ jobs:
               --no-wait \
               --only-show-errors 2>&1
 
+      - name: Show Image Artifacts Tree
+        run: tree .
+      
       - name: Upload Image Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.image.outputs.image_definition }}
-          path: ./image.id
+          path: |
+            image.*
+            image.pkr.*
 
   promote-jobs:
     needs: build-image
@@ -184,7 +189,7 @@ jobs:
         uses: actions/download-artifact@v3
 
       - name: Show Image Artifacts Tree
-        run: sudo apt install tree && tree .
+        run: tree .
 
       - name: Generate Image Promotion Matrix
         id: set-promotionMatrix
