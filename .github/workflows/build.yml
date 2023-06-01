@@ -172,9 +172,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.image.outputs.image_definition }}
-          path: |
-            image.*
-            image.pkr.*
+          path: /
 
   promote-jobs:
     needs: build-image
