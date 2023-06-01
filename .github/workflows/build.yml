@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: ${{ !contains(github.event.head_commit.message, '#NOCI') }}
 
 jobs:
-  build-jobs:
+  build-matrix:
     if: ${{ !contains(github.event.head_commit.message, '#NOCI') }}
     runs-on: ubuntu-latest
 
@@ -36,13 +36,13 @@ jobs:
           cat $GITHUB_OUTPUT
 
   build-image:
-    needs: build-jobs
+    needs: build-matrix
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.build-jobs.outputs.imageMatrix) }} 
+        image: ${{ fromJson(needs.build-matrix.outputs.imageMatrix) }} 
 
     defaults:
       run:
@@ -124,7 +124,7 @@ jobs:
               --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
               --gallery-name ${{ steps.image.outputs.gallery_name }} \
               --gallery-image-definition ${{ steps.image.outputs.image_definition }} \
-              --gallery-image-version '${{ needs.build-jobs.outputs.imageVersion }}' \
+              --gallery-image-version '${{ needs.build-matrix.outputs.imageVersion }}' \
               --only-show-errors 2>&1
 
       - name: Prepare Image
@@ -141,7 +141,7 @@ jobs:
       - name: Build Image
         id: packer
         run: |
-          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-jobs.outputs.imageVersion }}" . | tee ./image.pkr.log
+          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ needs.build-matrix.outputs.imageVersion }}" . | tee ./image.pkr.log
           echo "$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" > ./image.id
           echo "ManagedImageSharedImageGalleryId=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT
@@ -173,47 +173,31 @@ jobs:
         with:
           name: ${{ steps.image.outputs.image_definition }}
           path: ${{ runner.temp }}/artifacts/
-
-  promote-jobs:
-    needs: build-image
-    runs-on: ubuntu-latest
-
-    outputs:
-      promotionMatrix: ${{ steps.set-promotionMatrix.outputs.matrix }}
-      
-    steps:
-
-      - name: Download Image Artifacts
-        uses: actions/download-artifact@v3
-
-      - name: Show Image Artifacts Tree
-        run: tree .
-
-      - name: Generate Image Promotion Matrix
-        id: set-promotionMatrix
-        run: |
-          echo "matrix=$(cat ./*/image.id | jq -c --slurp .)" >> $GITHUB_OUTPUT      
-          cat $GITHUB_OUTPUT
-      
+    
   promote-image:
-    needs: [build-jobs, promote-jobs]
+    needs: [build-matrix, build-image]
     environment: promoted
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        image: ${{ fromJson(needs.promote-jobs.outputs.promotionMatrix) }}
+        image: ${{ fromJson(needs.build-matrix.outputs.imageMatrix) }}
 
     steps:
 
-      - name: Generate Image Matrix
-        run: echo "Promoting image '${{ matrix.image }}'"
+      - name: Download Image Artifacts
+        uses: actions/download-artifact@v3
+
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Resolve Image Information
         id: image
         run: |
-          JSON2HCL_OUTPUT=$(cat ./${{ matrix.image }}/image.json)
+          JSON2HCL_OUTPUT=$(cat ./image.json)
+          echo "image_id=$(cat ./image.id)" >> $GITHUB_OUTPUT
           echo "image_definition=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
           echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
@@ -228,20 +212,16 @@ jobs:
           echo "devcenter_compute=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].compute')" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT
 
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Promote Image to Latest
         uses: azure/CLI@v1
         with:
           inlineScript:	|
             az sig image-version update \
-              --subscription ${{ steps.image.outputs.gallery_subscription }} \
-              --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
-              --gallery-name ${{ steps.image.outputs.gallery_name }} \
-              --gallery-image-definition ${{ steps.image.outputs.image_definition }} \
-              --gallery-image-version '${{ needs.build-jobs.outputs.imageVersion }}' \
+              --subscription $(echo '${{ steps.image.outputs.image_id }}' | cut -d '/' -f3) \
+              --resource-group $(echo '${{ steps.image.outputs.image_id }}' | cut -d '/' -f5) \
+              --gallery-name $(echo '${{ steps.image.outputs.image_id}}' | cut -d '/' -f9) \
+              --gallery-image-definition $(echo '${{ steps.image.outputs.image_id }}' | cut -d '/' -f11) \
+              --gallery-image-version $(echo '${{ steps.image.outputs.image_id }}' | cut -d '/' -f13) \
               --set publishingProfile.excludeFromLatest=false
               --only-show-errors 2>&1
 
@@ -250,9 +230,9 @@ jobs:
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
-            COMPUTEGALLERY_RESOURCEID=$(cat ./${{ matrix.image }}/image.id | cut -d '/' -f -9)
+            COMPUTEGALLERY_RESOURCEID=$(echo '${{ steps.image.outputs.image_id }}' | cut -d '/' -f -9)
             DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
-            DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(cat ./${{ matrix.image }}/image.id | cut -d '/' -f 10-)"
+            DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.image.outputs.image_id }}' | cut -d '/' -f 10-)"
             az devcenter admin devbox-definition create \
               --dev-box-definition-name "${{ steps.image.outputs.image_definition }}" \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
