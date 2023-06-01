@@ -155,7 +155,7 @@ jobs:
             DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
             DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.packer.outputs.ManagedImageSharedImageGalleryId }}' | cut -d '/' -f 10-)"
             az devcenter admin devbox-definition create \
-              --dev-box-definition-name ${{ steps.image.outputs.image_definition }} \
+              --dev-box-definition-name "${{ steps.image.outputs.image_definition }}-PRE" \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
@@ -194,11 +194,11 @@ jobs:
       - name: Generate Image Promotion Matrix
         id: set-promotionMatrix
         run: |
-          echo "matrix=$(cat */image.id | jq -c --slurp .)" >> $GITHUB_OUTPUT      
+          echo "matrix=$(cat ./*/image.id | jq -c --slurp .)" >> $GITHUB_OUTPUT      
           cat $GITHUB_OUTPUT
       
   promote-image:
-    needs: promote-jobs
+    needs: [build-jobs, promote-jobs]
     environment: promoted
     runs-on: ubuntu-latest
 
@@ -209,10 +209,59 @@ jobs:
 
     steps:
 
+      - name: Generate Image Matrix
+        run: echo "Promoting image '${{ matrix.image }}'"
+
+      - name: Resolve Image Information
+        id: image
+        run: |
+          JSON2HCL_OUTPUT=$(cat ./${{ matrix.image }}/image.json)
+          echo "image_definition=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
+          echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
+          echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
+          echo "image_sku=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].sku')" >> $GITHUB_OUTPUT
+          echo "gallery_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].subscription')" >> $GITHUB_OUTPUT
+          echo "gallery_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].resourceGroup')" >> $GITHUB_OUTPUT
+          echo "gallery_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].name')" >> $GITHUB_OUTPUT
+          echo "devcenter_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].subscription')" >> $GITHUB_OUTPUT
+          echo "devcenter_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].resourceGroup')" >> $GITHUB_OUTPUT
+          echo "devcenter_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].name')" >> $GITHUB_OUTPUT          
+          echo "devcenter_storage=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].storage')" >> $GITHUB_OUTPUT          
+          echo "devcenter_compute=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].compute')" >> $GITHUB_OUTPUT          
+          cat $GITHUB_OUTPUT
+
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Generate Image Matrix
-        run: echo "Promoting image '${{ matrix.image }}'"
-      
+      - name: Promote Image to Latest
+        uses: azure/CLI@v1
+        with:
+          inlineScript:	|
+            az sig image-version update \
+              --subscription ${{ steps.image.outputs.gallery_subscription }} \
+              --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
+              --gallery-name ${{ steps.image.outputs.gallery_name }} \
+              --gallery-image-definition ${{ steps.image.outputs.image_definition }} \
+              --gallery-image-version '${{ needs.build-jobs.outputs.imageVersion }}' \
+              --set publishingProfile.excludeFromLatest=false
+              --only-show-errors 2>&1
+
+      - name: Create or Update DevBox Definition
+        uses: azure/CLI@v1
+        with:
+          inlineScript:	|
+            az extension add --name devcenter --upgrade --yes
+            COMPUTEGALLERY_RESOURCEID=$(cat ./${{ matrix.image }}/image.id | cut -d '/' -f -9)
+            DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
+            DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(cat ./${{ matrix.image }}/image.id | cut -d '/' -f 10-)"
+            az devcenter admin devbox-definition create \
+              --dev-box-definition-name "${{ steps.image.outputs.image_definition }}" \
+              --subscription ${{ steps.image.outputs.devcenter_subscription }} \
+              --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
+              --dev-center ${{ steps.image.outputs.devcenter_name }} \
+              --image-reference id="$DEVCENTERGALLERY_IMAGEID" \
+              --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
+              --sku name="${{ steps.image.outputs.devcenter_compute }}" \
+              --no-wait \
+              --only-show-errors 2>&1              
