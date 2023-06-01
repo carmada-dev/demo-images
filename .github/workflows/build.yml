@@ -184,6 +184,11 @@ jobs:
       matrix:
         image: ${{ fromJson(needs.build-matrix.outputs.imageMatrix) }}
 
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.image }}
+    
     steps:
 
       - name: Download Image Artifacts
