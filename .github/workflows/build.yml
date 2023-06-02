@@ -57,6 +57,7 @@ jobs:
       - name: Trigger Image Build
         uses: actions/github-script@v6
         with:
+          debug: true
           script: |
             github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
