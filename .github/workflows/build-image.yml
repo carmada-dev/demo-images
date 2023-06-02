@@ -60,7 +60,7 @@ jobs:
           echo "devcenter_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].name')" >> $GITHUB_OUTPUT          
           echo "devcenter_storage=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].storage')" >> $GITHUB_OUTPUT          
           echo "devcenter_compute=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].compute')" >> $GITHUB_OUTPUT          
-          cat $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
       - name: Cleanup Factory Subscription        
         uses: azure/CLI@v1
@@ -117,18 +117,24 @@ jobs:
       - name: Build Image
         id: packer
         run: |
-          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$GITHUB_WORKFLOW" -var "imageVersion=${{ inputs.imageVersion }}" . | tee ./image.pkr.log
-          echo "ManagedImageSharedImageGalleryId=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
-          cat $GITHUB_OUTPUT
+          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=${{ github.workflow.name }}" -var "imageVersion=${{ inputs.imageVersion }}" . | tee ./image.pkr.log
+          echo "gallery_subscription=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
+          cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
+
+      - name: Upload Image Info
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.imageName }}
+          path: ${{ runner.temp }}/image.info
 
       - name: Create or Update DevBox Definition
         uses: azure/CLI@v1
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
-            COMPUTEGALLERY_RESOURCEID=$(echo '${{ steps.packer.outputs.ManagedImageSharedImageGalleryId }}' | cut -d '/' -f -9)
+            COMPUTEGALLERY_RESOURCEID=$(echo '${{ steps.packer.outputs.gallery_subscription }}' | cut -d '/' -f -9)
             DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
-            DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.packer.outputs.ManagedImageSharedImageGalleryId }}' | cut -d '/' -f 10-)"
+            DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.packer.outputs.gallery_subscription }}' | cut -d '/' -f 10-)"
             az devcenter admin devbox-definition create \
               --dev-box-definition-name "${{ inputs.imageName }}-PRE" \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
@@ -139,7 +145,7 @@ jobs:
               --sku name="${{ steps.image.outputs.devcenter_compute }}" \
               --no-wait \
               --only-show-errors 2>&1
-   
+     
   release:
     needs: build
     runs-on: ubuntu-latest    
@@ -152,39 +158,16 @@ jobs:
     
     steps:
 
-      - uses: actions/checkout@v3
+      - name: Download Image Info
+        uses: actions/download-artifact@v3
+
+      - name: Load Image Info
+        id: image
+        run: cat ./image.info >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
 
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Install JSON2HCL
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 5
-          timeout_minutes: 2
-          command: |
-            JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
-            [ ! -z "$JSON2HCL_URL" ] && echo "Downloading JSON2HCL from $JSON2HCL_URL" || sleep 10s
-            wget -qc $JSON2HCL_URL -O - | tar -xz -C ${{ runner.temp }} && chmod 755 ${{ runner.temp }}/json2hcl
-            [ -f "${{ runner.temp }}/json2hcl" ] && echo "JSON2HCL is available at ${{ runner.temp }}/json2hcl" || exit 1
-        
-      - name: Resolve Image Information
-        id: image
-        run: |
-          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl)
-          echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
-          echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
-          echo "image_sku=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].sku')" >> $GITHUB_OUTPUT
-          echo "gallery_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].subscription')" >> $GITHUB_OUTPUT
-          echo "gallery_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].resourceGroup')" >> $GITHUB_OUTPUT
-          echo "gallery_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].name')" >> $GITHUB_OUTPUT
-          echo "devcenter_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].subscription')" >> $GITHUB_OUTPUT
-          echo "devcenter_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].resourceGroup')" >> $GITHUB_OUTPUT
-          echo "devcenter_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].name')" >> $GITHUB_OUTPUT          
-          echo "devcenter_storage=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].storage')" >> $GITHUB_OUTPUT          
-          echo "devcenter_compute=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].compute')" >> $GITHUB_OUTPUT          
-          cat $GITHUB_OUTPUT
   
       - name: Promote Image to Latest
         uses: azure/CLI@v1
