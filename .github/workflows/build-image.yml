@@ -162,7 +162,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ${{ format('/{}', inputs.imageName) }}
+        working-directory: ${{ format('./{0}', inputs.imageName) }}
     
     steps:
 
