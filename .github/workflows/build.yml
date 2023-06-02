@@ -65,7 +65,7 @@ jobs:
               workflow_id: 'build-image.yml',
               ref: 'main',
               inputs: {
-                imageName: '${{ steps.image.outputs.imageName }}'
+                imageName: '${{ steps.image.outputs.imageName }}',
                 imageVersion: '${{ needs.prepare.outputs.imageVersion }}'
               },
             })
