@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ (github.event.sender.type == 'Bot') }}
     runs-on: ubuntu-latest
 
     defaults:
@@ -27,9 +28,6 @@ jobs:
         working-directory: ${{ format('./{0}', inputs.imageName) }}
 
     steps:
-
-      - name: Workflow Initiator
-        run: echo '${{ toJson(github.event.sender) }}'
 
       - name: Download Source
         uses: actions/checkout@v3
