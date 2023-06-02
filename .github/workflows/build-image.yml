@@ -48,7 +48,7 @@ jobs:
       - name: Resolve Image Information
         id: image
         run: |
-          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl)
+          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl | tee ${{ runner.temp }}/image.json)
           echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
           echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
           echo "image_sku=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].sku')" >> $GITHUB_OUTPUT
@@ -125,7 +125,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.imageName }}
-          path: ${{ runner.temp }}/image.info
+          path: |
+            ${{ runner.temp }}/image.info
+            ${{ runner.temp }}/image.json
 
       - name: Create or Update DevBox Definition
         uses: azure/CLI@v1
