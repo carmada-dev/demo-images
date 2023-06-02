@@ -17,7 +17,7 @@ jobs:
     steps:
 
       - name: Workflow Initiator
-        run: echo '${{ github.event.sender }}'
+        run: echo '${{ toJson(github.event.sender) }}'
 
       - name: Download Source
         uses: actions/checkout@v3
