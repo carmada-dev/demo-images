@@ -26,20 +26,6 @@ jobs:
         shell: bash
         working-directory: ${{ format('./{0}', inputs.imageName) }}
 
-    outputs:
-      image_publisher: ${{ steps.image.outputs.image_publisher }}
-      image_offer: ${{ steps.image.outputs.image_offer }}
-      image_sku: ${{ steps.image.outputs.image_sku }}
-      gallery_subscription: ${{ steps.image.outputs.gallery_subscription }}
-      gallery_resourcegroup: ${{ steps.image.outputs.gallery_resourcegroup }}
-      gallery_name: ${{ steps.image.outputs.gallery_name }}
-      gallery_imageid: ${{ steps.packer.outputs.ManagedImageSharedImageGalleryId }}
-      devcenter_subscription: ${{ steps.image.outputs.devcenter_subscription }}
-      devcenter_resourcegroup: ${{ steps.image.outputs.devcenter_resourcegroup }}
-      devcenter_name: ${{ steps.image.outputs.devcenter_name }}
-      devcenter_storage: ${{ steps.image.outputs.devcenter_storage }}
-      devcenter_compute: ${{ steps.image.outputs.devcenter_compute }}
-
     steps:
 
       - uses: actions/checkout@v3
@@ -62,7 +48,7 @@ jobs:
       - name: Resolve Image Information
         id: image
         run: |
-          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl | tee ./image.json)
+          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl)
           echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
           echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
           echo "image_sku=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].sku')" >> $GITHUB_OUTPUT
@@ -166,18 +152,48 @@ jobs:
     
     steps:
 
+      - uses: actions/checkout@v3
+
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Install JSON2HCL
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 5
+          timeout_minutes: 2
+          command: |
+            JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
+            [ ! -z "$JSON2HCL_URL" ] && echo "Downloading JSON2HCL from $JSON2HCL_URL" || sleep 10s
+            wget -qc $JSON2HCL_URL -O - | tar -xz -C ${{ runner.temp }} && chmod 755 ${{ runner.temp }}/json2hcl
+            [ -f "${{ runner.temp }}/json2hcl" ] && echo "JSON2HCL is available at ${{ runner.temp }}/json2hcl" || exit 1
+        
+      - name: Resolve Image Information
+        id: image
+        run: |
+          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl)
+          echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
+          echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
+          echo "image_sku=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].sku')" >> $GITHUB_OUTPUT
+          echo "gallery_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].subscription')" >> $GITHUB_OUTPUT
+          echo "gallery_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].resourceGroup')" >> $GITHUB_OUTPUT
+          echo "gallery_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].name')" >> $GITHUB_OUTPUT
+          echo "devcenter_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].subscription')" >> $GITHUB_OUTPUT
+          echo "devcenter_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].resourceGroup')" >> $GITHUB_OUTPUT
+          echo "devcenter_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].name')" >> $GITHUB_OUTPUT          
+          echo "devcenter_storage=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].storage')" >> $GITHUB_OUTPUT          
+          echo "devcenter_compute=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].compute')" >> $GITHUB_OUTPUT          
+          cat $GITHUB_OUTPUT
+  
       - name: Promote Image to Latest
         uses: azure/CLI@v1
         with:
           inlineScript:	|
             az sig image-version update \
-              --subscription ${{ needs.build.outputs.gallery_subscription }} \
-              --resource-group ${{ needs.build.outputs.gallery_resourcegroup }} \
-              --gallery-name ${{ needs.build.outputs.gallery_name }} \
+              --subscription ${{ steps.image.outputs.gallery_subscription }} \
+              --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
+              --gallery-name ${{ steps.image.outputs.gallery_name }} \
               --gallery-image-definition ${{ inputs.imageName }} \
               --gallery-image-version ${{ inputs.imageVersion }} \
               --set publishingProfile.excludeFromLatest=false \
@@ -188,16 +204,16 @@ jobs:
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
-            COMPUTEGALLERY_RESOURCEID=$(echo '${{ needs.build.outputs.gallery_imageid }}' | cut -d '/' -f -9)
-            DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ needs.build.outputs.devcenter_subscription }} --resource-group ${{ needs.build.outputs.devcenter_resourcegroup }} --dev-center ${{ needs.build.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
-            DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ needs.build.outputs.gallery_imageid }}' | cut -d '/' -f 10- | cut -d '/' -f -2)"
+            COMPUTEGALLERY_RESOURCEID=$(echo '${{ steps.image.outputs.gallery_imageid }}' | cut -d '/' -f -9)
+            DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
+            DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.image.outputs.gallery_imageid }}' | cut -d '/' -f 10- | cut -d '/' -f -2)"
             az devcenter admin devbox-definition create \
               --dev-box-definition-name "${{ inputs.imageName }}" \
-              --subscription ${{ needs.build.outputs.devcenter_subscription }} \
-              --resource-group ${{ needs.build.outputs.devcenter_resourcegroup }} \
-              --dev-center ${{ needs.build.outputs.devcenter_name }} \
+              --subscription ${{ steps.image.outputs.devcenter_subscription }} \
+              --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
+              --dev-center ${{ steps.image.outputs.devcenter_name }} \
               --image-reference id="$DEVCENTERGALLERY_IMAGEID" \
-              --os-storage-type ${{ needs.build.outputs.devcenter_storage }} \
-              --sku name="${{ needs.build.outputs.devcenter_compute }}" \
+              --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
+              --sku name="${{ steps.image.outputs.devcenter_compute }}" \
               --no-wait \
               --only-show-errors 2>&1              
