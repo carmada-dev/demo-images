@@ -32,7 +32,8 @@ jobs:
   dispatch:
     needs: prepare
     runs-on: ubuntu-latest
-
+    permissions: read-all
+    
     strategy:
       fail-fast: false
       matrix:
