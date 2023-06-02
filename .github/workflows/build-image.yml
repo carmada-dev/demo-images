@@ -1,6 +1,8 @@
 
 name: FACTORY
 
+run-name: 'Building ${{ inputs.imageName }} (${{ inputs.imageVersion}})'
+
 on:
   workflow_dispatch:
     inputs:
@@ -22,7 +24,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ${{ format('/{0}', inputs.imageName) }}
+        working-directory: ${{ format('./{0}', inputs.imageName) }}
 
     outputs:
       image_publisher: ${{ steps.image.outputs.image_publisher }}
