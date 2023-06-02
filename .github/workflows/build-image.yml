@@ -14,7 +14,7 @@ on:
         required: true
 
 concurrency:
-  group: '${{ github.ref }}-${{ inputs.imageName }}'
+  group: '${{ github.ref }}-${{ github.event.inputs.imageName }}'
   cancel-in-progress: true
 
 jobs:
