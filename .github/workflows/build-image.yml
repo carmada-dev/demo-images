@@ -186,20 +186,53 @@ jobs:
               --set publishingProfile.excludeFromLatest=false \
               --only-show-errors 2>&1
 
-      - name: Create or Update DevBox Definition
+      - name: Determine Image Reference ID & Type
+        id: reference
         uses: azure/CLI@v1
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
             COMPUTEGALLERY_RESOURCEID=$(echo '${{ steps.image.outputs.gallery_imageid }}' | cut -d '/' -f -9)
             DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
-            DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.image.outputs.gallery_imageid }}' | cut -d '/' -f 10- | cut -d '/' -f -2)"
+            echo "referenceId_version=$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.image.outputs.gallery_imageid }}' | cut -d '/' -f 10-)" >> $GITHUB_OUTPUT
+            echo "referenceId_latest=$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.image.outputs.gallery_imageid }}' | cut -d '/' -f 10- | cut -d '/' -f -2)" >> $GITHUB_OUTPUT
+            echo "referenceType=$(az devcenter admin devbox-definition show \          
+              --dev-box-definition-name "${{ inputs.imageName }}" \
+              --subscription ${{ steps.image.outputs.devcenter_subscription }} \
+              --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
+              --dev-center ${{ steps.image.outputs.devcenter_name }} \
+              --query 'imageReference.id' -o tsv 2> /dev/null | cut -d '/' -f 14 | tr '[:lower:]' '[:upper:]')" >> $GITHUB_OUTPUT
+            cat $GITHUB_OUTPUT
+
+      - name: Create or Update DevBox Definition (EXPLICIT VERSION)
+        if: ${{ (steps.reference.outputs.referenceType == 'VERSION') }}
+        uses: azure/CLI@v1
+        with:
+          inlineScript:	|
+            az extension add --name devcenter --upgrade --yes
             az devcenter admin devbox-definition create \
               --dev-box-definition-name "${{ inputs.imageName }}" \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
-              --image-reference id="$DEVCENTERGALLERY_IMAGEID" \
+              --image-reference id="${{ steps.reference.outputs.referenceId_version }}" \
+              --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
+              --sku name="${{ steps.image.outputs.devcenter_compute }}" \
+              --no-wait \
+              --only-show-errors 2>&1              
+
+      - name: Create or Update DevBox Definition (LATEST VERSION)
+        if: ${{ (steps.reference.outputs.referenceType != 'VERSION') }}
+        uses: azure/CLI@v1
+        with:
+          inlineScript:	|
+            az extension add --name devcenter --upgrade --yes
+            az devcenter admin devbox-definition create \
+              --dev-box-definition-name "${{ inputs.imageName }}" \
+              --subscription ${{ steps.image.outputs.devcenter_subscription }} \
+              --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
+              --dev-center ${{ steps.image.outputs.devcenter_name }} \
+              --image-reference id="${{ steps.reference.outputs.referenceId_latest }}" \
               --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
               --sku name="${{ steps.image.outputs.devcenter_compute }}" \
               --no-wait \
