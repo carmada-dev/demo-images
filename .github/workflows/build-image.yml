@@ -196,16 +196,16 @@ jobs:
             DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
             echo "referenceId_version=$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.image.outputs.gallery_imageid }}' | cut -d '/' -f 10-)" >> $GITHUB_OUTPUT
             echo "referenceId_latest=$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.image.outputs.gallery_imageid }}' | cut -d '/' -f 10- | cut -d '/' -f -2)" >> $GITHUB_OUTPUT
-            echo "referenceType=$(az devcenter admin devbox-definition show \          
+            echo "referenceVersion=$(az devcenter admin devbox-definition show \          
               --dev-box-definition-name "${{ inputs.imageName }}" \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
-              --query 'imageReference.id' -o tsv 2> /dev/null | cut -d '/' -f 14 | tr '[:lower:]' '[:upper:]')" >> $GITHUB_OUTPUT
+              --query "contains(imageReference.id, '/versions/')" 2> /dev/null || echo 'false')" >> $GITHUB_OUTPUT
             cat $GITHUB_OUTPUT
 
       - name: Create or Update DevBox Definition (EXPLICIT VERSION)
-        if: ${{ (steps.reference.outputs.referenceType == 'VERSION') }}
+        if: ${{ (steps.reference.outputs.referenceVersion == 'true') }}
         uses: azure/CLI@v1
         with:
           inlineScript:	|
@@ -222,7 +222,7 @@ jobs:
               --only-show-errors 2>&1              
 
       - name: Create or Update DevBox Definition (LATEST VERSION)
-        if: ${{ (steps.reference.outputs.referenceType != 'VERSION') }}
+        if: ${{ (steps.reference.outputs.referenceVersion == 'false') }}
         uses: azure/CLI@v1
         with:
           inlineScript:	|
