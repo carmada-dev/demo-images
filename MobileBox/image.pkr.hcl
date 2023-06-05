@@ -105,10 +105,6 @@ locals {
 		{
 			name = "Google.Chrome"
 			scope = "machine"
-
-			# to avoid broken build because of unanounced installer updates by Google
-			# we suppress the exit code -1978335215 indicating a install hash mismatch
-			exitCodes = [ -1978335215 ] 
 		},
 		{
 			name = "Mozilla.Firefox"
