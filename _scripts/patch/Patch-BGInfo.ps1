@@ -28,6 +28,7 @@ function Invoke-FileDownload() {
 	
 	return $path
 }
+
 function Set-Shortcut() {
 	param( 
 		[Parameter(Mandatory=$true)][string]$Path,

@@ -238,6 +238,17 @@ build {
   }
 
   # =============================================================================================
+  # Publish Image Capabilities 
+  # =============================================================================================
+
+  provisioner "powershell" {
+    elevated_user     = build.User
+    elevated_password = build.Password
+    environment_vars = local.default.environmentVariables
+    inline = [templatefile("${path.root}/../_templates/CapabilitiesDocument.pkrtpl.hcl", { packages = local.resolved.packages })]
+  }
+
+  # =============================================================================================
   # Finalize Image by generalizing VM
   # =============================================================================================
 
