@@ -131,7 +131,7 @@ function Parse-WinGetPackage() {
 		Version 	= $output | Extract-OutputValue -Header 'Version:'
 		Publisher   = $output | Extract-OutputValue -Header 'Publisher:'
 		Description = $output | Extract-OutputValue -Header 'Description:'
-		Homepage	= $output | Extract-OotputValue -Header 'Homepage:'
+		Homepage	= $output | Extract-OutputValue -Header 'Homepage:'
 	}
 }
 
