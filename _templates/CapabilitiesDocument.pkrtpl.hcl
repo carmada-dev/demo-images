@@ -86,16 +86,17 @@ function Convert-CapabilitiesMD2HTML() {
     $pandocCss = Invoke-FileDownload -url 'https://raw.githubusercontent.com/SepCode/vscode-markdown-style/master/preview/github.css' -name 'pandoc.css'
 
     $pandocArgs = (
-       $MarkdownFile,
-       '--standalone',
-       ('-c {0}' -f $pandocCss),
-       ('-o {0}' -f $HtmlFile)
+		"`"$MarkdownFile`"",
+		"--standalone",
+		"-c `"$pandocCss`"",
+		"-o `"$HtmlFile`"",
+		"--metadata title=`"DevBox Capabilities`""
     )
 
 	$process = Start-Process $pandocExe -ArgumentList $pandocArgs -NoNewWindow -Wait -PassThru
 	if ($process.ExitCode -ne 0) { Write-Warning "Pandoc exited with code $($process.ExitCode) !!!" }
 
-	$HtmlFile | Write-Output
+	return $HtmlFile
 }
 
 function Extract-OutputValue() {
