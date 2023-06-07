@@ -92,7 +92,7 @@ function Convert-CapabilitiesMD2HTML() {
        ('-o {0}' -f $HtmlFile)
     )
 
-	Start-Process $pandocExe -ArgumentList $pandocArgs -NoNewWindow -Wait
+	Start-Process $pandocExe -ArgumentList $pandocArgs -NoNewWindow -Wait -ErrorAction SilentlyContinue | Out-Null
 
 	$HtmlFile | Write-Output
 }
