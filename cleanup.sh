@@ -1,3 +1,5 @@
+#!/bin/bash
+
 while getopts 's:' OPT; do
     case "$OPT" in
 		s)
