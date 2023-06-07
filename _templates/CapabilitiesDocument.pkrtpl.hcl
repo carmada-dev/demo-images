@@ -96,7 +96,7 @@ function Convert-CapabilitiesMD2HTML() {
 	$process = Start-Process $pandocExe -ArgumentList $pandocArgs -NoNewWindow -Wait -PassThru
 	if ($process.ExitCode -ne 0) { Write-Warning "Pandoc exited with code $($process.ExitCode) !!!" }
 
-	return $HtmlFile
+	$HtmlFile | Write-Output
 }
 
 function Extract-OutputValue() {
@@ -192,3 +192,5 @@ $capabilitiesHTMLURI = ([System.Uri]($capabilitiesMarkdown | Convert-Capabilitie
 $capabilitiesHTMLLNK = (Join-Path ([Environment]::GetFolderPath("CommonDesktopDirectory")) -ChildPath "DevBox Capabilities.lnk")
 
 Set-Shortcut -Path $capabilitiesHTMLLNK -TargetPath $capabilitiesHTMLURI
+
+exit 0
