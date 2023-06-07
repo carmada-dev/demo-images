@@ -69,7 +69,7 @@ jobs:
         with:
           inlineScript: |
             RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
-            RGNAME_SUFFIX=$(echo "-$GITHUB_WORKFLOW" | tr [:lower:] [:upper:])
+            RGNAME_SUFFIX=$(echo "-${{ github.workflow }}" | tr [:lower:] [:upper:])
             for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.devcenter_subscription }} | jq --raw-output ".[] | select((.name | ascii_upcase | startswith(\"$RGNAME_PREFIX\")) and (.name | ascii_upcase | endswith(\"$RGNAME_SUFFIX\"))) | .name"); do
               echo "Deleting resource group '$RESOURCEGROUP' in subscription '${{ steps.image.outputs.devcenter_subscription }}' ..."
               az group delete --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --no-wait --yes
@@ -119,7 +119,7 @@ jobs:
       - name: Build Image
         id: packer
         run: |
-          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=${{ github.workflow.name }}" -var "imageVersion=${{ inputs.imageVersion }}" . | tee ./image.pkr.log
+          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=${{ github.workflow }}" -var "imageVersion=${{ inputs.imageVersion }}" . | tee ./image.pkr.log
           echo "gallery_imageid=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
