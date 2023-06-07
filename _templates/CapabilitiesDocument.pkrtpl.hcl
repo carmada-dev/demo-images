@@ -34,7 +34,7 @@ function Set-Shortcut() {
 	param( 
 		[Parameter(Mandatory=$true)][string]$Path,
 		[Parameter(Mandatory=$true)][string]$TargetPath,
-		[Parameter(Mandatory=$false)][string]$TargetArguments
+		[Parameter(Mandatory=$false)][string]$TargetArguments = ""
 	)
 
 	$Shell = New-Object -ComObject ("WScript.Shell")
