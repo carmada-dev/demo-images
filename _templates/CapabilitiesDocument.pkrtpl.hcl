@@ -92,7 +92,8 @@ function Convert-CapabilitiesMD2HTML() {
        ('-o {0}' -f $HtmlFile)
     )
 
-	Start-Process $pandocExe -ArgumentList $pandocArgs -NoNewWindow -Wait -ErrorAction SilentlyContinue | Out-Null
+	$process = Start-Process $pandocExe -ArgumentList $pandocArgs -NoNewWindow -Wait -PassThru
+	if ($process.ExitCode -ne 0) { Write-Warning "Pandoc exited with code $($process.ExitCode) !!!" }
 
 	$HtmlFile | Write-Output
 }
