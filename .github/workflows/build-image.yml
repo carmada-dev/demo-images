@@ -169,7 +169,7 @@ jobs:
             for KEYVAULT in $(az keyvault list-deleted --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
               echo "Purging deleted key vault '$KEYVAULT' ..." 
               az keyvault purge --name $KEYVAULT -o none & 
-            done; wait          
+            done          
 
   release:
     needs: build
