@@ -10,6 +10,9 @@ $adminWinGetConfig = @"
 		"preferences": {
 			"scope": "machine"
 		}
+	},
+	"experimentalFeatures": {
+		"configuration": true
 	}
 }
 "@
