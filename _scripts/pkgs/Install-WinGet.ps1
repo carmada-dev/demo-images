@@ -97,8 +97,8 @@ Add-AppxPackage -Path $msixPath -ErrorAction Stop
 
 if (Get-IsPacker) {
 
-	$settingsInfo = @(winget --info) | Where-Object { $_.StartsWith('User Settings:') } | Select-Object -First 1
-	$settingsPath = $settingsInfo.Split(':') | Select-Object -Last 1 
+	$settingsInfo = @(winget --info) | Where-Object { $_.StartsWith('User Settings') } | Select-Object -First 1
+	$settingsPath = $settingsInfo.Split(' ') | Select-Object -Last 1 
 	$settingsPath = [Environment]::ExpandEnvironmentVariables($settingsPath.Trim())
 
 	Write-Host ">>> Patching WinGet Config ..."
