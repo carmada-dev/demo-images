@@ -31,7 +31,7 @@ locals {
 		name = "CarmadaRnD"
 
 		storage = "ssd_1024gb"
-		compute = "general_a_8c32gb_v1"
+		compute = "general_i_8c32gb1024ssd_v2"
 	}
 
     prePackageScripts = [
