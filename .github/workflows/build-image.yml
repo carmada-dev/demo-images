@@ -231,14 +231,15 @@ jobs:
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
-            az devcenter admin devbox-definition create \
-              --dev-box-definition-name "${{ inputs.imageName }}" \
-              --subscription ${{ steps.image.outputs.devcenter_subscription }} \
-              --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
-              --dev-center ${{ steps.image.outputs.devcenter_name }} \
-              --image-reference id="${{ steps.reference.outputs.referenceVersion == 'true' && steps.reference.outputs.referenceId_version || steps.reference.outputs.referenceId_latest }}" \
-              --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
-              --sku name="${{ steps.image.outputs.devcenter_compute }}" \
-              --no-wait \
-              --only-show-errors 2>&1   
-            while [ $? -ne 0 ]; do sleep 60; eval $(history -p !!); done           
+            while true; do
+              az devcenter admin devbox-definition create \
+                --dev-box-definition-name "${{ inputs.imageName }}" \
+                --subscription ${{ steps.image.outputs.devcenter_subscription }} \
+                --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
+                --dev-center ${{ steps.image.outputs.devcenter_name }} \
+                --image-reference id="${{ steps.reference.outputs.referenceVersion == 'true' && steps.reference.outputs.referenceId_version || steps.reference.outputs.referenceId_latest }}" \
+                --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
+                --sku name="${{ steps.image.outputs.devcenter_compute }}" \
+                --no-wait \
+                --only-show-errors && break || sleep 30
+            done           
