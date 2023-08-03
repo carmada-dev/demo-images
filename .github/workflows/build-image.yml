@@ -90,7 +90,7 @@ jobs:
               --os-type Windows \
               --os-state Generalized \
               --hyper-v-generation V2 \
-              --features 'SecurityType=TrustedLaunch' \
+              --features 'IsHibernateSupported=true SecurityType=TrustedLaunch' \
               --only-show-errors 2>&1
 
       - name: Cleanup Image Version
