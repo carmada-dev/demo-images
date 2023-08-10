@@ -233,7 +233,7 @@ jobs:
             az extension add --name devcenter --upgrade --yes
             while true; do
               az devcenter admin devbox-definition create \
-                --dev-box-definition-name "${{ inputs.imageName }}" \
+                --devbox-definition-name "${{ inputs.imageName }}" \
                 --subscription ${{ steps.image.outputs.devcenter_subscription }} \
                 --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
                 --dev-center ${{ steps.image.outputs.devcenter_name }} \
