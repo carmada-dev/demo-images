@@ -140,7 +140,7 @@ jobs:
             DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
             DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.packer.outputs.gallery_imageid }}' | cut -d '/' -f 10-)"
             az devcenter admin devbox-definition create \
-              --dev-box-definition-name "${{ inputs.imageName }}-PRE" \
+              --devbox-definition-name "${{ inputs.imageName }}-PRE" \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
@@ -233,7 +233,7 @@ jobs:
             az extension add --name devcenter --upgrade --yes
             while true; do
               az devcenter admin devbox-definition create \
-                --dev-box-definition-name "${{ inputs.imageName }}" \
+                --devbox-definition-name "${{ inputs.imageName }}" \
                 --subscription ${{ steps.image.outputs.devcenter_subscription }} \
                 --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
                 --dev-center ${{ steps.image.outputs.devcenter_name }} \
