@@ -102,12 +102,15 @@ locals {
 		{
 			name = "Mozilla.Firefox"
 			scope = "machine"
+		},
+
+		{
+			name = "Wiesemann-Theis.USB-Redirector"
+			scope = "machine"
 		}
     ]
 
     postPackageScripts = [
-		"${path.root}/../_scripts/Install-WuTCOMRedirector.ps1",
-		"${path.root}/../_scripts/Install-WuTUSBRedirector.ps1",
 		"${path.root}/../_scripts/Install-FabulaTechUSBServer.ps1"
     ]
 
