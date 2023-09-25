@@ -57,6 +57,9 @@ jobs:
           echo "gallery_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].subscription')" >> $GITHUB_OUTPUT
           echo "gallery_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].resourceGroup')" >> $GITHUB_OUTPUT
           echo "gallery_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].name')" >> $GITHUB_OUTPUT
+          echo "archive_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].archive[0].subscription')" >> $GITHUB_OUTPUT
+          echo "archive_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].archive[0].resourceGroup')" >> $GITHUB_OUTPUT
+          echo "archive_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].archive[0].name')" >> $GITHUB_OUTPUT
           echo "devcenter_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].subscription')" >> $GITHUB_OUTPUT
           echo "devcenter_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].resourceGroup')" >> $GITHUB_OUTPUT
           echo "devcenter_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].name')" >> $GITHUB_OUTPUT          
@@ -150,7 +153,7 @@ jobs:
               --no-wait \
               --only-show-errors 2>&1
 
-  cleanup:
+  cleanup-keyvaults:
     needs: build
     runs-on: ubuntu-latest    
     if: ${{ !cancelled() }}
@@ -181,6 +184,9 @@ jobs:
         shell: bash
         working-directory: ${{ format('./{0}', inputs.imageName) }}
     
+    outputs:
+      archive: ${{ steps.image.outputs.archive_subscription != '' && steps.image.outputs.archive_resourcegroup != '' }}
+
     steps:
 
       - name: Download Image Info
@@ -242,4 +248,113 @@ jobs:
                 --sku name="${{ steps.image.outputs.devcenter_compute }}" \
                 --no-wait \
                 --only-show-errors && break || sleep 30
-            done           
+            done 
+
+  cleanup-images:
+    needs: release
+    runs-on: ubuntu-latest    
+
+    steps:
+
+      - name: Download Image Info
+        uses: actions/download-artifact@v3
+
+      - name: Load Image Info
+        id: image
+        run: cat ./image.info >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
+
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Delete pre-release Images (excluded from latest)
+        continue-on-error: true
+        uses: azure/CLI@v1
+        with:
+          inlineScript:	| 
+            for IMAGEVERSION in $(az sig image-version list --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ inputs.imageName }} --query [?publishingProfile.excludeFromLatest].id --output tsv 2>/dev/null); do
+              echo "Deleting image version '$IMAGEVERSION' ..." 
+              az sig image-version delete --ids $IMAGEVERSION --no-wait --output none 
+            done   
+
+  archive:
+    needs: release
+    runs-on: ubuntu-latest    
+    if: ${{ needs.release.outputs.archive }}
+
+    steps:
+
+      - name: Download Image Info
+        uses: actions/download-artifact@v3
+
+      - name: Load Image Info
+        id: image
+        run: cat ./image.info >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
+
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+                    
+      - name: Create Archive Disk
+        id: archiveDisk
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            DISK_NAME=$(uuidgen --md5 --namespace $(az account show --query tenantId --output tsv) --name ${{ steps.image.outputs.gallery_imageid }})
+            DISK_LOCATION=$(az sig show --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --query location --output tsv)
+            echo "resourceId=$(az disk create \
+              --subscription ${{ steps.image.outputs.gallery_subscription }} \
+              --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
+              --location $DISK_LOCATION \
+              --name $DISK_NAME \
+              --gallery-image-reference ${{ steps.image.outputs.gallery_imageid }} \
+              --security-type TrustedLaunch \
+              --hyper-v-generation v2 \
+              --query id \
+              --output tsv)" >> $GITHUB_OUTPUT
+            echo "resourceUrl=$(az disk grant-access \
+              --subscription ${{ steps.image.outputs.gallery_subscription }} \
+              --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
+              --name $DISK_NAME \
+              --duration-in-seconds 3600 \
+              --access-level read \
+              --query accessSas \
+              --output tsv)" >> $GITHUB_OUTPUT
+            cat $GITHUB_OUTPUT
+
+      - name: Upload Archive Disk
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            GALLERY_ID=$(az sig show --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --query id --output tsv)
+            ARCHIVE_NAME=$([ -z "${{ steps.image.outputs.archive_name }}" ] && (echo "archive$(uuidgen --md5 --namespace $(az account show --query tenantId --output tsv) --name $GALLERY_ID | tr -d '-')" | cut -c -24) || echo "${{ steps.image.outputs.archive_name }}" )
+            ARCHIVE_LOCATION=$(az sig show --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --query location --output tsv)
+            if [ -z "$(az storage account show --subscription ${{ steps.image.outputs.archive_subscription }} --resource-group ${{ steps.image.outputs.archive_resourcegroup }} --name $ARCHIVE_NAME --query id --output tsv 2> /dev/null)" ]; then
+              # create storage account
+              az storage account create \
+                --subscription ${{ steps.image.outputs.archive_subscription }} \
+                --resource-group ${{ steps.image.outputs.archive_resourcegroup }} \
+                --name $ARCHIVE_NAME \
+                --location $ARCHIVE_LOCATION \
+                --kind StorageV2 \
+                --sku Standard_LRS
+            fi
+            CONTAINER_NAME=$(echo "${{ inputs.imageName }}" | tr '[:upper:]' '[:lower:]')
+            if [ "$(az storage container exists --subscription ${{ steps.image.outputs.archive_subscription }} --account-name $ARCHIVE_NAME --name $CONTAINER_NAME --auth-mode login --query exists --output tsv)" == "false" ]; then
+              # create storage container
+              az storage container create \
+                --subscription ${{ steps.image.outputs.archive_subscription }} \
+                --account-name $ARCHIVE_NAME \
+                --name $CONTAINER_NAME \
+                --auth-mode login \
+                --output none
+            fi
+            CONTAINER_SAS=$(az storage container generate-sas --subscription ${{ steps.image.outputs.archive_subscription }} --account-name $ARCHIVE_NAME --name $CONTAINER_NAME --as-user --auth-mode login --permissions acw --expiry $(date -d '+1 hour' +"%Y-%m-%dT%H:%MZ") --output tsv)
+            CONTAINER_URL="$(az storage account show --subscription ${{ steps.image.outputs.archive_subscription }} --resource-group ${{ steps.image.outputs.archive_resourcegroup }} --name $ARCHIVE_NAME --query id --output tsv)$CONTAINER_NAME/${{ inputs.imageName }}-${{ inputs.imageVersion }}.vhd?$CONTAINER_SAS"
+            azcopy copy "${{ steps.archiveDisk.outputs.resourceUrl }}" "$CONTAINER_URL" --blob-type PageBlob
+
+      - name: Delete Archive Disk
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az disk delete --ids ${{ steps.archiveDisk.outputs.resourceId }} --no-wait --yes
