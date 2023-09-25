@@ -84,6 +84,11 @@ locals {
 			{
 				name = "Microsoft.PowerShell"
 				scope = "machine"
+			},
+
+			{
+				name = "Microsoft.VisualStudio.Locator"
+				scope = "machine"
 			}
 		]
 
