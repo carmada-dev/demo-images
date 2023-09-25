@@ -254,6 +254,11 @@ jobs:
     needs: release
     runs-on: ubuntu-latest    
 
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ format('./{0}', inputs.imageName) }}
+
     steps:
 
       - name: Download Image Info
@@ -281,6 +286,11 @@ jobs:
     needs: release
     runs-on: ubuntu-latest    
     if: ${{ needs.release.outputs.archive }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ format('./{0}', inputs.imageName) }}
 
     steps:
 
