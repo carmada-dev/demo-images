@@ -75,8 +75,8 @@ jobs:
             RGNAME_SUFFIX=$(echo "-${{ github.workflow }}" | tr [:lower:] [:upper:])
             for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.devcenter_subscription }} | jq --raw-output ".[] | select((.name | ascii_upcase | startswith(\"$RGNAME_PREFIX\")) and (.name | ascii_upcase | endswith(\"$RGNAME_SUFFIX\"))) | .name"); do
               echo "Deleting resource group '$RESOURCEGROUP' in subscription '${{ steps.image.outputs.devcenter_subscription }}' ..."
-              az group delete --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --no-wait --yes
-            done
+              az group delete --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --yes &
+            done; wait
   
       - name: Ensure Image Definition
         uses: azure/CLI@v1
