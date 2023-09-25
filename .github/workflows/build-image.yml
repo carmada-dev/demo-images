@@ -139,11 +139,18 @@ jobs:
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
+            
             COMPUTEGALLERY_RESOURCEID=$(echo '${{ steps.packer.outputs.gallery_imageid }}' | cut -d '/' -f -9)
             DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
             DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo '${{ steps.packer.outputs.gallery_imageid }}' | cut -d '/' -f 10-)"
+            DEVCENTERGALLERY_IMAGENAME="${{ inputs.imageName }}-PRE"
+            
+            while [ "Accepted" == "$(az devcenter admin devbox-definition show --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} --devbox-definition-name "$DEVCENTERGALLERY_IMAGENAME" --query provisioningState --output tsv 2> /dev/null)" ]; do
+              echo "DevBox definition '$DEVCENTERGALLERY_IMAGENAME' is in a pending state and can't be created or updated - retyr in 60 sec"; sleep 60 
+            done 
+
             az devcenter admin devbox-definition create \
-              --devbox-definition-name "${{ inputs.imageName }}-PRE" \
+              --devbox-definition-name "$DEVCENTERGALLERY_IMAGENAME" \
               --subscription ${{ steps.image.outputs.devcenter_subscription }} \
               --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
               --dev-center ${{ steps.image.outputs.devcenter_name }} \
@@ -236,6 +243,11 @@ jobs:
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
+
+            while [ "Accepted" == "$(az devcenter admin devbox-definition show --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} --devbox-definition-name "${{ inputs.imageName }}" --query provisioningState --output tsv 2> /dev/null)" ]; do
+              echo "DevBox definition '${{ inputs.imageName }}' is in a pending state and can't be created or updated - retry in 60 sec"; sleep 60 
+            done 
+
             while true; do
               az devcenter admin devbox-definition create \
                 --devbox-definition-name "${{ inputs.imageName }}" \
@@ -245,7 +257,7 @@ jobs:
                 --image-reference id="${{ steps.reference.outputs.referenceVersion == 'true' && steps.reference.outputs.referenceId_version || steps.reference.outputs.referenceId_latest }}" \
                 --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
                 --sku name="${{ steps.image.outputs.devcenter_compute }}" \
-                --only-show-errors && break || sleep 30
+                --only-show-errors && break || (echo "DevBox definition '${{ inputs.imageName }}' can't be created or updated because of a pending gallery update - retry in 30 sec"; sleep 30)
             done 
 
   cleanup-images:
