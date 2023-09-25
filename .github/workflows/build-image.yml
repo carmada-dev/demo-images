@@ -150,7 +150,6 @@ jobs:
               --image-reference id="$DEVCENTERGALLERY_IMAGEID" \
               --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
               --sku name="${{ steps.image.outputs.devcenter_compute }}" \
-              --no-wait \
               --only-show-errors 2>&1
 
   cleanup-keyvaults:
@@ -246,7 +245,6 @@ jobs:
                 --image-reference id="${{ steps.reference.outputs.referenceVersion == 'true' && steps.reference.outputs.referenceId_version || steps.reference.outputs.referenceId_latest }}" \
                 --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
                 --sku name="${{ steps.image.outputs.devcenter_compute }}" \
-                --no-wait \
                 --only-show-errors && break || sleep 30
             done 
 
