@@ -146,7 +146,7 @@ jobs:
             DEVCENTERGALLERY_IMAGENAME="${{ inputs.imageName }}-PRE"
             
             while [ "Accepted" == "$(az devcenter admin devbox-definition show --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} --dev-center ${{ steps.image.outputs.devcenter_name }} --devbox-definition-name "$DEVCENTERGALLERY_IMAGENAME" --query provisioningState --output tsv 2> /dev/null)" ]; do
-              echo "DevBox definition '$DEVCENTERGALLERY_IMAGENAME' is in a pending state and can't be created or updated - retyr in 60 sec"; sleep 60 
+              echo "DevBox definition '$DEVCENTERGALLERY_IMAGENAME' is in a pending state and can't be created or updated - retry in 60 sec"; sleep 60 
             done 
 
             az devcenter admin devbox-definition create \
@@ -249,7 +249,7 @@ jobs:
             done 
 
             while true; do
-              az devcenter admin devbox-definition create \
+              sleep 60 && az devcenter admin devbox-definition create \
                 --devbox-definition-name "${{ inputs.imageName }}" \
                 --subscription ${{ steps.image.outputs.devcenter_subscription }} \
                 --resource-group ${{ steps.image.outputs.devcenter_resourcegroup }} \
@@ -257,7 +257,7 @@ jobs:
                 --image-reference id="${{ steps.reference.outputs.referenceVersion == 'true' && steps.reference.outputs.referenceId_version || steps.reference.outputs.referenceId_latest }}" \
                 --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
                 --sku name="${{ steps.image.outputs.devcenter_compute }}" \
-                --only-show-errors && break || (echo "DevBox definition '${{ inputs.imageName }}' can't be created or updated because of a pending gallery update - retry in 30 sec"; sleep 30)
+                --only-show-errors && break || echo "DevBox definition '${{ inputs.imageName }}' can't be created or updated because of a pending gallery update - retry in 60 sec"
             done 
 
   cleanup-images:
@@ -322,6 +322,7 @@ jobs:
           inlineScript: |
             DISK_NAME=$(uuidgen --md5 --namespace $(az account show --query tenantId --output tsv) --name ${{ steps.image.outputs.gallery_imageid }})
             DISK_LOCATION=$(az sig show --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --query location --output tsv)
+            
             echo "resourceId=$(az disk create \
               --subscription ${{ steps.image.outputs.gallery_subscription }} \
               --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
@@ -332,7 +333,8 @@ jobs:
               --hyper-v-generation v2 \
               --query id \
               --output tsv)" >> $GITHUB_OUTPUT
-            echo "resourceUrl=$(az disk grant-access \
+            
+              echo "resourceUrl=$(az disk grant-access \
               --subscription ${{ steps.image.outputs.gallery_subscription }} \
               --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
               --name $DISK_NAME \
@@ -340,7 +342,8 @@ jobs:
               --access-level read \
               --query accessSas \
               --output tsv)" >> $GITHUB_OUTPUT
-            cat $GITHUB_OUTPUT
+            
+              cat $GITHUB_OUTPUT
 
       - name: Upload Archive Disk
         uses: azure/CLI@v1
@@ -349,8 +352,8 @@ jobs:
             GALLERY_ID=$(az sig show --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --query id --output tsv)
             ARCHIVE_NAME=$([ -z "${{ steps.image.outputs.archive_name }}" ] && (echo "archive$(uuidgen --md5 --namespace $(az account show --query tenantId --output tsv) --name $GALLERY_ID | tr -d '-')" | cut -c -24) || echo "${{ steps.image.outputs.archive_name }}" )
             ARCHIVE_LOCATION=$(az sig show --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --query location --output tsv)
+            
             if [ -z "$(az storage account show --subscription ${{ steps.image.outputs.archive_subscription }} --resource-group ${{ steps.image.outputs.archive_resourcegroup }} --name $ARCHIVE_NAME --query id --output tsv 2> /dev/null)" ]; then
-              # create storage account
               az storage account create \
                 --subscription ${{ steps.image.outputs.archive_subscription }} \
                 --resource-group ${{ steps.image.outputs.archive_resourcegroup }} \
@@ -359,9 +362,10 @@ jobs:
                 --kind StorageV2 \
                 --sku Standard_LRS
             fi
+            
             CONTAINER_NAME=$(echo "${{ inputs.imageName }}" | tr '[:upper:]' '[:lower:]')
+            
             if [ "$(az storage container exists --subscription ${{ steps.image.outputs.archive_subscription }} --account-name $ARCHIVE_NAME --name $CONTAINER_NAME --auth-mode login --query exists --output tsv)" == "false" ]; then
-              # create storage container
               az storage container create \
                 --subscription ${{ steps.image.outputs.archive_subscription }} \
                 --account-name $ARCHIVE_NAME \
@@ -369,8 +373,10 @@ jobs:
                 --auth-mode login \
                 --output none
             fi
+            
             CONTAINER_SAS=$(az storage container generate-sas --subscription ${{ steps.image.outputs.archive_subscription }} --account-name $ARCHIVE_NAME --name $CONTAINER_NAME --as-user --auth-mode login --permissions acw --expiry $(date -d '+1 hour' +"%Y-%m-%dT%H:%MZ") --output tsv)
             CONTAINER_URL="$(az storage account show --subscription ${{ steps.image.outputs.archive_subscription }} --resource-group ${{ steps.image.outputs.archive_resourcegroup }} --name $ARCHIVE_NAME --query id --output tsv)$CONTAINER_NAME/${{ inputs.imageName }}-${{ inputs.imageVersion }}.vhd?$CONTAINER_SAS"
+            
             azcopy copy "${{ steps.archiveDisk.outputs.resourceUrl }}" "$CONTAINER_URL" --blob-type PageBlob
 
       - name: Delete Archive Disk
