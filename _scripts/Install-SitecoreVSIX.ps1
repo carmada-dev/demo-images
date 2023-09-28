@@ -31,11 +31,15 @@ function Invoke-FileDownload() {
 function Invoke-VSIXInstaller() {
 
 	$ErrorActionPreference = 'Stop'
+	$vsixInstaller = vswhere -latest -prerelease -products * -property enginePath | Join-Path -ChildPath 'VSIXInstaller.exe'
   
-	$path = vswhere -latest -prerelease -products * -property enginePath | Join-Path -ChildPath 'VSIXInstaller.exe'
-  
-	if (Test-Path $path) {
-	  & $path $args
+	if (Test-Path $vsixInstaller) {
+
+		Write-Host ">>> Executing VSIX Installer"
+		Write-Host "${vsixInstaller} ${args}"
+
+	    $process = Start-Process $vsixInstaller -ArgumentList $args -RedirectStandardOutput "NUL" -NoNewWindow -Wait -PassThru
+	    if ($process.ExitCode -ne 0) { exit $process.ExitCode }
 	}
   }
 
@@ -43,4 +47,4 @@ function Invoke-VSIXInstaller() {
 $visx = Invoke-FileDownload -url "https://sitecoredev.azureedge.net/~/media/4615380121F643B5AE60B648FD829603.ashx?date=20230619T124351" -name "Sitecore.vsix"
 
 # Install VisualStudio Extension
-Invoke-VSIXInstaller /q "$visx"
+Invoke-VSIXInstaller /a /q "$visx"

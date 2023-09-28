@@ -5,7 +5,7 @@ locals {
 
 		publisher = "CarmadaRnD"
 		offer = "CarmadaDev"
-		sku = "win11-sitecore-devbox"
+		sku = "win11-sitecore-9-3-devbox"
 		regions = [ "West Europe" ]
 
 		base = {

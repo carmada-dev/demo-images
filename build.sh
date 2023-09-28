@@ -7,6 +7,8 @@ usage() {
 	echo "Usage: $0"
 	echo "======================================================================================"
 	echo " -i [OPTIONAL] 	The name of the image to build"
+	echo " -p [OPTIONAL]	The name of the project to create a DevBox based on the new image"
+	echo " -u [OPTIONAL]	The user principal name of the DevBox owner"
 	exit 1; 
 }
 
@@ -16,10 +18,18 @@ displayHeader() {
 	echo -e "======================================================================================\n"
 }
 
-while getopts 'i:' OPT; do
+IMAGEVERSION="$(date '+%Y.%m%d.%H%M')"
+PROJECT=""
+USER="me"
+
+while getopts 'i:p:u:' OPT; do
     case "$OPT" in
 		i)
 			IMAGE="${OPTARG}" ;;
+		p)
+			PROJECT="${OPTARG}" ;;
+		u)
+			USER="$(az ad user show --id ${OPTARG} --query id -o tsv | dos2unix)" ;;
 		*) 
 			usage ;;
     esac
@@ -54,8 +64,8 @@ getDevCenterConfiguration() {
 
 buildImage() {
 
-	IMAGESUFFIX="$(whoami | tr '[:lower:]' '[:upper:]')"
-	IMAGENAME="$(basename "$(dirname "$1")")-$IMAGESUFFIX"
+	IMAGESUFFIX="$(uname -n | tr '[:lower:]' '[:upper:]')"
+	IMAGENAME="$(basename "$(dirname "$1")")-$(whoami | tr '[:lower:]' '[:upper:]')"
 
 	GALLERYJSON=$(getGalleryConfiguration "$1")
 	IMAGEJSON=$(getImageConfiguration "$1")
@@ -78,7 +88,7 @@ buildImage() {
 		--os-type Windows \
 		--os-state Generalized \
 		--hyper-v-generation V2 \
-		--features 'SecurityType=TrustedLaunch' \
+		--features 'IsHibernateSupported=true SecurityType=TrustedLaunch' \
 		--only-show-errors | tee -a ./image.pkr.log
 
 	displayHeader "Initializing Image ($1)" | tee -a ./image.pkr.log
@@ -92,7 +102,9 @@ buildImage() {
 		-force \
 		-color=false \
 		-timestamp-ui \
+		-var "imageName=$IMAGENAME" \
 		-var "imageSuffix=$IMAGESUFFIX" \
+		-var "imageVersion=$IMAGEVERSION" \
 		. 2>&1 | tee -a ./image.pkr.log
 
 	IMAGEID=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)
@@ -105,8 +117,8 @@ buildImage() {
 
 		displayHeader "Updating DevBox Definition ($1)" | tee -a ./image.pkr.log
 
-		az devcenter admin devbox-definition create \
-			--dev-box-definition-name $IMAGENAME \
+		DEFINITIONJSON=$(az devcenter admin devbox-definition create \
+			--devbox-definition-name $IMAGENAME \
 			--subscription $(echo $DEVCENTERJSON | jq --raw-output '.subscription') \
 			--resource-group $(echo $DEVCENTERJSON | jq --raw-output '.resourceGroup') \
 			--dev-center $(echo $DEVCENTERJSON | jq --raw-output '.name') \
@@ -114,8 +126,57 @@ buildImage() {
 			--os-storage-type $(echo $DEVCENTERJSON | jq --raw-output '.storage') \
 			--sku name="$(echo $DEVCENTERJSON | jq --raw-output '.compute')" \
 			--no-wait \
-			--only-show-errors 2>&1 | tee -a ./image.pkr.log
+			--only-show-errors | tee -a ./image.pkr.log)
 
+		if [ -n "$PROJECT" ]; then
+
+			displayHeader "Creation DevBox Instance ($1)" | tee -a ./image.pkr.log
+
+			PROJECTJSON=$(az devcenter admin project list \
+				--query "[?starts_with(devCenterId, '/subscriptions/$(echo $DEVCENTERJSON | jq --raw-output '.subscription')/') && ends_with(devCenterId, '/$(echo $DEVCENTERJSON | jq --raw-output '.name')') && name == '$PROJECT'] | [0]" 
+				--output tsv | dos2unix)
+
+			if [ -n "$PROJECTJSON" ]; then
+			
+				POOLJSON=$(az devcenter admin pool list \
+					--subscription $(echo $PROJECTJSON | jq --raw-output '.id | split("/")[2]') \
+					--resource-group $(echo $PROJECTJSON | jq --raw-output '.id | split("/")[4]') \
+					--project-name $PROJECT \
+					--query "[?name == '$IMAGENAME'] | [0]" \
+					--output tsv | dos2unix)
+
+				if [ -n "$POOLJSON" ]; then
+
+					POOLJSON=$(az devcenter admin pool create \
+						--subscription $(echo $PROJECTJSON | jq --raw-output '.id | split("/")[2]') \
+						--resource-group $(echo $PROJECTJSON | jq --raw-output '.id | split("/")[4]') \
+						--location $(echo $PROJECTJSON | jq --raw-output '.location') \
+						--pool-name $IMAGENAME \
+						--project-name $PROJECT \
+						--devbox-definition-name $IMAGENAME \
+						--network-connection-name $PROJECT \
+						--local-administrator "Enabled" \
+						--only-show-errors | tee -a ./image.pkr.log)
+				
+				fi
+
+				az devcenter admin devbox-definition wait \
+					--ids $(echo $DEFINITIONJSON | jq --raw-output '.id') \
+					--custom "imageValidationStatus!='Succeeded'" \
+					--only-show-errors \
+					--output none 
+
+				az devcenter dev dev-box create \
+					--subscription $(echo $PROJECTJSON | jq --raw-output '.id | split("/")[2]') \
+					--dev-center-name $(echo $DEVCENTERJSON | jq --raw-output '.name') \
+					--project-name $PROJECT \
+					--pool-name $(echo $POOLJSON | jq --raw-output '.name') \
+					--dev-box-name "$IMAGENAME-$(echo $IMAGEVERSION | tr "." "-")" \
+					--user-id $USER \
+					--no-wait
+
+			fi
+		fi
 	fi
 
 	popd > /dev/null
