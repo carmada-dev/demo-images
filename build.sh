@@ -39,16 +39,16 @@ clear
 
 buildImage() {
 
-	IMAGESUFFIX="$(uname -n | tr '[:lower:]' '[:upper:]')"
-	IMAGENAME="$(basename "$(dirname "$1")")-$(whoami | tr '[:lower:]' '[:upper:]')"
-	IMAGEJSON="$(echo "jsonencode(local)" | packer console image.pkr.hcl)"
-
 	pushd "$(dirname "$1")" > /dev/null
 
 	rm -f ./image.pkr.log
 
-	displayHeader "Ensure Image Definition ($1)" | tee -a ./image.pkr.log
+	displayHeader "Read Image Definition ($1)" | tee -a ./image.pkr.log
+	IMAGESUFFIX="$(uname -n | tr '[:lower:]' '[:upper:]')"
+	IMAGENAME="$(basename "$(dirname "$1")")-$(whoami | tr '[:lower:]' '[:upper:]')"
+	IMAGEJSON="$(echo "jsonencode(local)" | packer console ./image.pkr.hcl | jq | tee -a ./image.pkr.log)"
 
+	displayHeader "Ensure Image Definition ($1)" | tee -a ./image.pkr.log
 	az sig image-definition create \
 		--subscription $(echo "$IMAGEJSON" | jq --raw-output '.gallery.subscription') \
 		--resource-group $(echo "$IMAGEJSON" | jq --raw-output '.gallery.resourceGroup') \
@@ -64,12 +64,10 @@ buildImage() {
 		--only-show-errors | tee -a ./image.pkr.log
 
 	displayHeader "Initializing Image ($1)" | tee -a ./image.pkr.log
-
 	packer init \
 		. 2>&1 | tee -a ./image.pkr.log
 
 	displayHeader "Building Image ($1)" | tee -a ./image.pkr.log
-
 	packer build \
 		-force \
 		-color=false \
@@ -88,7 +86,6 @@ buildImage() {
 		DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo "echo $IMAGEID" | cut -d '/' -f 10-)"
 
 		displayHeader "Updating DevBox Definition ($1)" | tee -a ./image.pkr.log
-
 		DEFINITIONJSON=$(az devcenter admin devbox-definition create \
 			--devbox-definition-name $IMAGENAME \
 			--subscription $(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription') \
@@ -103,7 +100,6 @@ buildImage() {
 		if [ -n "$PROJECT" ]; then
 
 			displayHeader "Creation DevBox Instance ($1)" | tee -a ./image.pkr.log
-
 			PROJECTJSON=$(az devcenter admin project list \
 				--query "[?starts_with(devCenterId, '/subscriptions/$(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription')/') && ends_with(devCenterId, '/$(echo $IMAGEJSON | jq --raw-output '.devCenter.name')') && name == '$PROJECT'] | [0]" 
 				--output tsv | dos2unix)
