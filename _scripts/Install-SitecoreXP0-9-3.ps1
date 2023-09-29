@@ -3,6 +3,39 @@
 
 $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
+$WindowsFeatures = @('IIS-WebServerRole',
+              'IIS-WebServer',
+              'IIS-CommonHttpFeatures',
+              'IIS-HttpErrors',
+              'IIS-HttpRedirect',
+              'IIS-ApplicationDevelopment',
+              'IIS-NetFxExtensibility',
+              'IIS-NetFxExtensibility45',
+              'IIS-HealthAndDiagnostics',
+              'IIS-HttpLogging',
+              'IIS-LoggingLibraries',
+              'IIS-RequestMonitor',
+              'IIS-Security',
+              'IIS-RequestFiltering',
+              'IIS-HttpCompressionDynamic',
+              'IIS-Performance',
+              'IIS-WebServerManagementTools',
+              'IIS-ManagementScriptingTools',
+              'IIS-DefaultDocument',
+              'IIS-StaticContent',
+              'IIS-DirectoryBrowsing',
+              'IIS-WebSockets',
+              'IIS-ASPNET',
+              'IIS-ASPNET45',
+              'IIS-ISAPIExtensions',
+              'IIS-ISAPIFilter',
+              'IIS-BasicAuthentication',
+              'IIS-HttpCompressionStatic',
+              'IIS-ManagementConsole',
+              'IIS-ManagementService',
+              'NetFx4-AdvSrvs',
+              'NetFx4Extended-ASPNET45');
+
 function Invoke-FileDownload() {
 	param(
 		[Parameter(Mandatory=$true)][string] $url,
@@ -31,8 +64,11 @@ function Invoke-FileDownload() {
 # Enforce TLS 1.2
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+Write-Host ">>> Installing Windows Features"
+Enable-WindowsOptionalFeature –Online –FeatureName $WindowsFeatures -All -NoRestart
+
 Write-Host ">>> Installing NuGet as Package Provider"
-Install-PackageProvider -Name NuGet -Force
+Install-PackageProvider -Name NuGet -Force | Out-Null
 
 $sitecoreGallery = Get-PSRepository -Name SitecoreGallery -ErrorAction SilentlyContinue
 if ($null -eq $sitecoreGallery) { 
@@ -41,13 +77,13 @@ if ($null -eq $sitecoreGallery) {
 }
 
 Write-Host ">>> Installing Sitecore Installation Framework"
-Install-Module SitecoreInstallFramework
+Install-Module SitecoreInstallFramework -Force
 
 # Packages fro XPSingle (XP0): https://dev.sitecore.net/Downloads/Sitecore_Experience_Platform/93/Sitecore_Experience_Platform_93_Initial_Release.aspx
 $temp = Invoke-FileDownload -url "https://sitecoredev.azureedge.net/~/media/88666D3532F24973939C1CC140E12A27.ashx" -name "Sitecore.zip" -expand $true
 
 Write-Host ">>> Prepare Sitecore Installation Resources"
-$resources = "C:\resourcefiles"
+$resources = "C:\Sitecore"
 Remove-Item $resources -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -Path $resources -ItemType Directory -Force | Select-Object -ExpandProperty Fullname
 $sitecoreCfg = Get-ChildItem -Path $temp -Filter "XP0 Configuration files*.zip" | Select-Object -First 1 -ExpandProperty FullName

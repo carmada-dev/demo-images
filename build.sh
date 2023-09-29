@@ -37,39 +37,11 @@ done
 
 clear
 
-ensureJson2Hcl() {
-	pushd "/usr/local/bin" > /dev/null
-	if [ ! -f "/usr/local/bin/json2hcl" ]; then
-		VERSION=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq -r ".tag_name")
-		wget -c "https://github.com/kvz/json2hcl/releases/download/$VERSION/json2hcl_0.1.1_linux_amd64.tar.gz" -q -O - | sudo tar -xz json2hcl
-	fi
-	sudo chmod 755 ./json2hcl 
-	popd > /dev/null
-}
-
-getGalleryConfiguration() {
-	ensureJson2Hcl
-	echo "$(json2hcl -reverse < "$1" | jq --raw-output '[.. | ."gallery"? | select(. != null)][0][0]')"
-}
-
-getImageConfiguration() {
-	ensureJson2Hcl
-	echo "$(json2hcl -reverse < "$1" | jq --raw-output '[.. | ."image"? | select(. != null)][0][0]')"
-}
-
-getDevCenterConfiguration() {
-	ensureJson2Hcl
-	echo "$(json2hcl -reverse < "$1" | jq --raw-output '[.. | ."devCenter"? | select(. != null)][0][0]')"
-}
-
 buildImage() {
 
 	IMAGESUFFIX="$(uname -n | tr '[:lower:]' '[:upper:]')"
 	IMAGENAME="$(basename "$(dirname "$1")")-$(whoami | tr '[:lower:]' '[:upper:]')"
-
-	GALLERYJSON=$(getGalleryConfiguration "$1")
-	IMAGEJSON=$(getImageConfiguration "$1")
-	DEVCENTERJSON=$(getDevCenterConfiguration "$1")
+	IMAGEJSON="$(echo "jsonencode(local)" | packer console image.pkr.hcl)"
 
 	pushd "$(dirname "$1")" > /dev/null
 
@@ -78,13 +50,13 @@ buildImage() {
 	displayHeader "Ensure Image Definition ($1)" | tee -a ./image.pkr.log
 
 	az sig image-definition create \
-		--subscription $(echo "$GALLERYJSON" | jq --raw-output '.subscription') \
-		--resource-group $(echo "$GALLERYJSON" | jq --raw-output '.resourceGroup') \
-		--gallery-name $(echo "$GALLERYJSON" | jq --raw-output '.name') \
+		--subscription $(echo "$IMAGEJSON" | jq --raw-output '.gallery.subscription') \
+		--resource-group $(echo "$IMAGEJSON" | jq --raw-output '.gallery.resourceGroup') \
+		--gallery-name $(echo "$IMAGEJSON" | jq --raw-output '.gallery.name') \
 		--gallery-image-definition $IMAGENAME \
 		--publisher $(whoami) \
-		--offer $(echo "$IMAGEJSON" | jq --raw-output '.offer') \
-		--sku $(echo "$IMAGEJSON" | jq --raw-output '.sku') \
+		--offer $(echo "$IMAGEJSON" | jq --raw-output '.image.offer') \
+		--sku $(echo "$IMAGEJSON" | jq --raw-output '.image.sku') \
 		--os-type Windows \
 		--os-state Generalized \
 		--hyper-v-generation V2 \
@@ -112,19 +84,19 @@ buildImage() {
 	if [ ! -z "$IMAGEID" ]; then
 
 		COMPUTEGALLERY_RESOURCEID=$(echo $IMAGEID | cut -d '/' -f -9)
-		DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription $(echo $DEVCENTERJSON | jq --raw-output '.subscription') --resource-group $(echo $DEVCENTERJSON | jq --raw-output '.resourceGroup') --dev-center $(echo $DEVCENTERJSON | jq --raw-output '.name') | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
+		DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription $(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription') --resource-group $(echo $IMAGEJSON | jq --raw-output '.devCenter.resourceGroup') --dev-center $(echo $IMAGEJSON | jq --raw-output '.devCenter.name') | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
 		DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo "echo $IMAGEID" | cut -d '/' -f 10-)"
 
 		displayHeader "Updating DevBox Definition ($1)" | tee -a ./image.pkr.log
 
 		DEFINITIONJSON=$(az devcenter admin devbox-definition create \
 			--devbox-definition-name $IMAGENAME \
-			--subscription $(echo $DEVCENTERJSON | jq --raw-output '.subscription') \
-			--resource-group $(echo $DEVCENTERJSON | jq --raw-output '.resourceGroup') \
-			--dev-center $(echo $DEVCENTERJSON | jq --raw-output '.name') \
+			--subscription $(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription') \
+			--resource-group $(echo $IMAGEJSON | jq --raw-output '.devCenter.resourceGroup') \
+			--dev-center $(echo $IMAGEJSON | jq --raw-output '.devCenter.name') \
 			--image-reference id="$DEVCENTERGALLERY_IMAGEID" \
-			--os-storage-type $(echo $DEVCENTERJSON | jq --raw-output '.storage') \
-			--sku name="$(echo $DEVCENTERJSON | jq --raw-output '.compute')" \
+			--os-storage-type $(echo $IMAGEJSON | jq --raw-output '.devCenter.storage') \
+			--sku name="$(echo $IMAGEJSON | jq --raw-output '.devCenter.compute')" \
 			--no-wait \
 			--only-show-errors | tee -a ./image.pkr.log)
 
@@ -133,7 +105,7 @@ buildImage() {
 			displayHeader "Creation DevBox Instance ($1)" | tee -a ./image.pkr.log
 
 			PROJECTJSON=$(az devcenter admin project list \
-				--query "[?starts_with(devCenterId, '/subscriptions/$(echo $DEVCENTERJSON | jq --raw-output '.subscription')/') && ends_with(devCenterId, '/$(echo $DEVCENTERJSON | jq --raw-output '.name')') && name == '$PROJECT'] | [0]" 
+				--query "[?starts_with(devCenterId, '/subscriptions/$(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription')/') && ends_with(devCenterId, '/$(echo $IMAGEJSON | jq --raw-output '.devCenter.name')') && name == '$PROJECT'] | [0]" 
 				--output tsv | dos2unix)
 
 			if [ -n "$PROJECTJSON" ]; then
@@ -168,7 +140,7 @@ buildImage() {
 
 				az devcenter dev dev-box create \
 					--subscription $(echo $PROJECTJSON | jq --raw-output '.id | split("/")[2]') \
-					--dev-center-name $(echo $DEVCENTERJSON | jq --raw-output '.name') \
+					--dev-center-name $(echo $IMAGEJSON | jq --raw-output '.devCenter.name') \
 					--project-name $PROJECT \
 					--pool-name $(echo $POOLJSON | jq --raw-output '.name') \
 					--dev-box-name "$IMAGENAME-$(echo $IMAGEVERSION | tr "." "-")" \

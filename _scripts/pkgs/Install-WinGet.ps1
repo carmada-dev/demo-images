@@ -39,15 +39,31 @@ function Invoke-FileDownload() {
 	param(
 		[Parameter(Mandatory=$true)][string] $url,
 		[Parameter(Mandatory=$false)][string] $name,
-		[Parameter(Mandatory=$false)][boolean] $expand		
+		[Parameter(Mandatory=$false)][boolean] $expand,
+		[Parameter(Mandatory=$false)][uint32] $retries = 0		
 	)
 
 	$path = Join-Path -path $env:temp -ChildPath (Split-Path $url -leaf)
 	if ($name) { $path = Join-Path -path $env:temp -ChildPath $name }
 	
-	Write-Host ">>> Downloading $url > $path"
-	Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
-	
+	[uint32] $retry = 0
+	while ($true) {
+		try {
+
+			Write-Host ">>> Downloading $url > $path"
+			Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
+
+			break
+		}
+		catch {
+
+			if (++$retry -gt $retries) { throw } 
+			
+			Write-Host "Failed - retry #$retry/$retries in 10 seconds"
+			Start-Sleep -Seconds 10
+		}
+	}
+
 	if ($expand) {
 		$arch = Join-Path -path $env:temp -ChildPath ([System.IO.Path]::GetFileNameWithoutExtension($path))
 
@@ -67,7 +83,7 @@ if (-not (Get-IsPacker)) {
 
 Write-Host ">>> Downloading WinGet Packages ..."
 $xamlPath = Invoke-FileDownload -url "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.7.1" -name 'Microsoft.UI.Xaml.nuget.zip' -expand $true
-$msixPath = Invoke-FileDownload -url "https://cdn.winget.microsoft.com/cache/source.msix"
+$msixPath = Invoke-FileDownload -url "https://cdn.winget.microsoft.com/cache/source.msix" -retries 5
 $wingetPath = Invoke-FileDownload -url (Get-LatestLink("msixbundle"))
 
 if ([Environment]::Is64BitOperatingSystem) {

@@ -36,35 +36,29 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Install JSON2HCL
-        uses: nick-fields/retry@v2
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
         with:
-          max_attempts: 5
-          timeout_minutes: 2
-          command: |
-            JSON2HCL_URL=$(curl --silent "https://api.github.com/repos/kvz/json2hcl/releases/latest" | jq --raw-output '.assets[].browser_download_url | select(contains("_linux_amd64.tar.gz"))')
-            [ ! -z "$JSON2HCL_URL" ] && echo "Downloading JSON2HCL from $JSON2HCL_URL" || sleep 10s
-            wget -qc $JSON2HCL_URL -O - | tar -xz -C ${{ runner.temp }} && chmod 755 ${{ runner.temp }}/json2hcl
-            [ -f "${{ runner.temp }}/json2hcl" ] && echo "JSON2HCL is available at ${{ runner.temp }}/json2hcl" || exit 1
-
+          version: "1.8.7"
+  
       - name: Resolve Image Information
         id: image
         run: |
-          JSON2HCL_OUTPUT=$(${{ runner.temp }}/json2hcl -reverse < ./image.pkr.hcl | tee ${{ runner.temp }}/image.json)
-          echo "image_publisher=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].publisher')" >> $GITHUB_OUTPUT
-          echo "image_offer=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].offer')" >> $GITHUB_OUTPUT
-          echo "image_sku=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].image[0].sku')" >> $GITHUB_OUTPUT
-          echo "gallery_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].subscription')" >> $GITHUB_OUTPUT
-          echo "gallery_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].resourceGroup')" >> $GITHUB_OUTPUT
-          echo "gallery_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].gallery[0].name')" >> $GITHUB_OUTPUT
-          echo "archive_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].archive[0].subscription')" >> $GITHUB_OUTPUT
-          echo "archive_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].archive[0].resourceGroup')" >> $GITHUB_OUTPUT
-          echo "archive_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].archive[0].name')" >> $GITHUB_OUTPUT
-          echo "devcenter_subscription=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].subscription')" >> $GITHUB_OUTPUT
-          echo "devcenter_resourcegroup=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].resourceGroup')" >> $GITHUB_OUTPUT
-          echo "devcenter_name=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].name')" >> $GITHUB_OUTPUT          
-          echo "devcenter_storage=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].storage')" >> $GITHUB_OUTPUT          
-          echo "devcenter_compute=$(echo $JSON2HCL_OUTPUT | jq --raw-output '.locals[0].devCenter[0].compute')" >> $GITHUB_OUTPUT          
+          IMAGEJSON="$(echo "jsonencode(local)" | packer console ./image.pkr.hcl)"
+          echo "image_publisher=$(echo $IMAGEJSON | jq --raw-output '.image.publisher')" >> $GITHUB_OUTPUT
+          echo "image_offer=$(echo $IMAGEJSON | jq --raw-output '.image.offer')" >> $GITHUB_OUTPUT
+          echo "image_sku=$(echo $IMAGEJSON | jq --raw-output '.image.sku')" >> $GITHUB_OUTPUT
+          echo "gallery_subscription=$(echo $IMAGEJSON | jq --raw-output '.gallery.subscription')" >> $GITHUB_OUTPUT
+          echo "gallery_resourcegroup=$(echo $IMAGEJSON | jq --raw-output '.gallery.resourceGroup')" >> $GITHUB_OUTPUT
+          echo "gallery_name=$(echo $IMAGEJSON | jq --raw-output '.gallery.name')" >> $GITHUB_OUTPUT
+          echo "archive_subscription=$(echo $IMAGEJSON | jq --raw-output '.archive.subscription')" >> $GITHUB_OUTPUT
+          echo "archive_resourcegroup=$(echo $IMAGEJSON | jq --raw-output '.archive.resourceGroup')" >> $GITHUB_OUTPUT
+          echo "archive_name=$(echo $IMAGEJSON | jq --raw-output '.archive.name')" >> $GITHUB_OUTPUT
+          echo "devcenter_subscription=$(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription')" >> $GITHUB_OUTPUT
+          echo "devcenter_resourcegroup=$(echo $IMAGEJSON | jq --raw-output '.devCenter.resourceGroup')" >> $GITHUB_OUTPUT
+          echo "devcenter_name=$(echo $IMAGEJSON | jq --raw-output '.devCenter.name')" >> $GITHUB_OUTPUT          
+          echo "devcenter_storage=$(echo $IMAGEJSON | jq --raw-output '.devCenter.storage')" >> $GITHUB_OUTPUT          
+          echo "devcenter_compute=$(echo $IMAGEJSON | jq --raw-output '.devCenter.compute')" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
       - name: Cleanup Factory Subscription        
@@ -110,11 +104,6 @@ jobs:
 
       - name: Prepare Image
         run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
-
-      - name: Setup Packer
-        uses: hashicorp/setup-packer@main
-        with:
-          version: "1.8.7"
 
       - name: Init Packer
         run: packer init .
@@ -239,7 +228,6 @@ jobs:
 
       - name: Create or Update DevBox Definition
         uses: azure/CLI@v1
-        timeout-minutes: 10
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
@@ -320,6 +308,8 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
+            sudo apt-get install uuid-runtime -y 
+
             DISK_NAME=$(uuidgen --md5 --namespace $(az account show --query tenantId --output tsv) --name ${{ steps.image.outputs.gallery_imageid }})
             DISK_LOCATION=$(az sig show --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --query location --output tsv)
             
