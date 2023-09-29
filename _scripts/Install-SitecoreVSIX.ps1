@@ -44,7 +44,7 @@ function Invoke-VSIXInstaller() {
   }
 
 # Sitecore for VisualStudio Download: https://dev.sitecore.net/Downloads/Sitecore_for_Visual_Studio/5x/Sitecore_for_Visual_Studio_52113.aspx
-$visx = Invoke-FileDownload -url "https://sitecoredev.azureedge.net/~/media/4615380121F643B5AE60B648FD829603.ashx?date=20230619T124351" -name "Sitecore.vsix"
+$visx = Invoke-FileDownload -url "https://sitecoredev.azureedge.net/~/media/4615380121F643B5AE60B648FD829603.ashx" -name "Sitecore.vsix"
 
 # Install VisualStudio Extension
 Invoke-VSIXInstaller /a /q "$visx"

@@ -3,38 +3,44 @@
 
 $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
-$WindowsFeatures = @('IIS-WebServerRole',
-              'IIS-WebServer',
-              'IIS-CommonHttpFeatures',
-              'IIS-HttpErrors',
-              'IIS-HttpRedirect',
-              'IIS-ApplicationDevelopment',
-              'IIS-NetFxExtensibility',
-              'IIS-NetFxExtensibility45',
-              'IIS-HealthAndDiagnostics',
-              'IIS-HttpLogging',
-              'IIS-LoggingLibraries',
-              'IIS-RequestMonitor',
-              'IIS-Security',
-              'IIS-RequestFiltering',
-              'IIS-HttpCompressionDynamic',
-              'IIS-Performance',
-              'IIS-WebServerManagementTools',
-              'IIS-ManagementScriptingTools',
-              'IIS-DefaultDocument',
-              'IIS-StaticContent',
-              'IIS-DirectoryBrowsing',
-              'IIS-WebSockets',
-              'IIS-ASPNET',
-              'IIS-ASPNET45',
-              'IIS-ISAPIExtensions',
-              'IIS-ISAPIFilter',
-              'IIS-BasicAuthentication',
-              'IIS-HttpCompressionStatic',
-              'IIS-ManagementConsole',
-              'IIS-ManagementService',
-              'NetFx4-AdvSrvs',
-              'NetFx4Extended-ASPNET45');
+$Features = @(
+    'IIS-WebServerRole',
+    'IIS-WebServer',
+    'IIS-CommonHttpFeatures',
+    'IIS-HttpErrors',
+    'IIS-HttpRedirect',
+    'IIS-ApplicationDevelopment',
+    'IIS-NetFxExtensibility',
+    'IIS-NetFxExtensibility45',
+    'IIS-HealthAndDiagnostics',
+    'IIS-HttpLogging',
+    'IIS-LoggingLibraries',
+    'IIS-RequestMonitor',
+    'IIS-Security',
+    'IIS-RequestFiltering',
+    'IIS-HttpCompressionDynamic',
+    'IIS-Performance',
+    'IIS-WebServerManagementTools',
+    'IIS-ManagementScriptingTools',
+    'IIS-DefaultDocument',
+    'IIS-StaticContent',
+    'IIS-DirectoryBrowsing',
+    'IIS-WebSockets',
+    'IIS-ASPNET',
+    'IIS-ASPNET45',
+    'IIS-ISAPIExtensions',
+    'IIS-ISAPIFilter',
+    'IIS-BasicAuthentication',
+    'IIS-HttpCompressionStatic',
+    'IIS-ManagementConsole',
+    'IIS-ManagementService',
+    'NetFx4-AdvSrvs',
+    'NetFx4Extended-ASPNET45');
+
+$Modules = @(
+    'WebAdministration',
+    'SqlServer'
+);
 
 function Invoke-FileDownload() {
 	param(
@@ -65,7 +71,7 @@ function Invoke-FileDownload() {
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 Write-Host ">>> Installing Windows Features"
-Enable-WindowsOptionalFeature –Online –FeatureName $WindowsFeatures -All -NoRestart
+$Features | ForEach-Object { Write-Host "- $_"; Enable-WindowsOptionalFeature -FeatureName $_ -Online -All -NoRestart | Out-null; }
 
 Write-Host ">>> Installing NuGet as Package Provider"
 Install-PackageProvider -Name NuGet -Force | Out-Null
@@ -78,6 +84,9 @@ if ($null -eq $sitecoreGallery) {
 
 Write-Host ">>> Installing Sitecore Installation Framework"
 Install-Module SitecoreInstallFramework -Force
+
+Write-Host ">>> Importing additional modules"
+$Modules | ForEach-Object { Write-Host "- $_"; Import-Module -Name $_ -Force | Out-Null; }
 
 # Packages fro XPSingle (XP0): https://dev.sitecore.net/Downloads/Sitecore_Experience_Platform/93/Sitecore_Experience_Platform_93_Initial_Release.aspx
 $temp = Invoke-FileDownload -url "https://sitecoredev.azureedge.net/~/media/88666D3532F24973939C1CC140E12A27.ashx" -name "Sitecore.zip" -expand $true
