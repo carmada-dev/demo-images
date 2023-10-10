@@ -25,11 +25,11 @@ Remove-Item -Path $Env:SystemRoot\System32\Sysprep\unattend.xml -Force | Out-Nul
 
 Write-Host ">>> Enabling Windows Developer Mode ..."
 $DevModeRegKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
-if (-not(Test-Path -Path $DevModeRegKeyPath)) { New-Item -Path $RegistryKeyPath -ItemType Directory -Force }
-New-ItemProperty -Path $DevModeRegKeyPath -Name AllowDevelopmentWithoutDevLicense -PropertyType DWORD -Value 1 -Force
+if (-not(Test-Path -Path $DevModeRegKeyPath)) { New-Item -Path $RegistryKeyPath -ItemType Directory -Force | Out-Null }
+New-ItemProperty -Path $DevModeRegKeyPath -Name AllowDevelopmentWithoutDevLicense -PropertyType DWORD -Value 1 -Force | Out-Null
 
 Write-Host ">>> Enabling DevBox Hibernate Support ..."
 Enable-WindowsOptionalFeature -FeatureName "VirtualMachinePlatform" -Online -All -NoRestart | Out-null
 $HypervisorEnforcedCodeIntegrityPath = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
-if (-not(Test-Path -Path $HypervisorEnforcedCodeIntegrityPath)) { New-Item -Path $HypervisorEnforcedCodeIntegrityPath -ItemType Directory -Force }
-New-ItemProperty -Path $HypervisorEnforcedCodeIntegrityPath -Name Enabled -PropertyType DWORD -Value 0 -Force
+if (-not(Test-Path -Path $HypervisorEnforcedCodeIntegrityPath)) { New-Item -Path $HypervisorEnforcedCodeIntegrityPath -ItemType Directory -Force | Out-Null }
+New-ItemProperty -Path $HypervisorEnforcedCodeIntegrityPath -Name Enabled -PropertyType DWORD -Value 0 -Force | Out-Null

@@ -29,6 +29,10 @@ locals {
 		subscription = "f9fcf631-fa8d-4ea2-8298-61b43220a3d1"
 		# The Azure region that should be used to create factory (temporary) resources.
 		location = "${try(local.image.regions[0], "West Europe")}"
+		# User definied managed identities that should be assigned to temp VMs (resource id)
+		identities = [
+			"/subscriptions/bffe1654-7f9a-4630-b7b9-d24759a76222/resourceGroups/BLD-Carmada/providers/Microsoft.ManagedIdentity/userAssignedIdentities/Carmada"
+		]
 	}
 
 	path = {
@@ -75,12 +79,6 @@ locals {
 				source = "winget"
 			},
 			
-			{
-				#https://www.marticliment.com/wingetui/
-				name = "SomePythonThings.WingetUIStore"		
-			 	scope = "user"
-			},
-
 			{
 				name = "Microsoft.PowerShell"
 				scope = "machine"
@@ -129,7 +127,8 @@ locals {
 				override = [
 					"install",
 					"--quiet",
-					"--accept-license"
+					"--accept-license",
+					"--always-run-service"
 				]
 			}
 

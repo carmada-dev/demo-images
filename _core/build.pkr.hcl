@@ -43,6 +43,7 @@ source "azure-arm" "vm" {
   # temporary resource location
   subscription_id                     = local.factory.subscription
   location                            = local.factory.location
+  user_assigned_managed_identities    = local.factory.identities
   temp_resource_group_name            = "PKR-${upper(local.variables.imageName)}-${upper(local.variables.imageVersion)}${upper(local.variables.imageSuffix)}"
 
   # publish image to gallery
@@ -73,12 +74,21 @@ build {
       "ADMIN_USERNAME=${build.User}",
       "ADMIN_PASSWORD=${build.Password}"
     ])
-    script = "${path.root}/../_scripts/core/Prepare-VM.ps1"
+    script            = "${path.root}/../_scripts/core/Prepare-VM.ps1"
   }
 
   provisioner "windows-restart" {
     # force restart 
-    restart_timeout = "30m"
+    restart_timeout   = "30m"
+  }
+
+  # =============================================================================================
+  # Installing Windows Updates (Post Initialization)
+  # =============================================================================================
+
+  provisioner "windows-update" {
+    # https://github.com/rgl/packer-plugin-windows-update
+    search_criteria = "IsInstalled=0"
   }
 
   # =============================================================================================
@@ -93,8 +103,20 @@ build {
   }
 
   provisioner "file" {
-    source = "${path.root}/../_artifacts/"
-    destination = "${local.path.devboxHome}/Artifacts/"
+    source            = "${path.root}/../_artifacts/"
+    destination       = "${local.path.devboxHome}/Artifacts/"
+  }
+
+  provisioner "file" {
+    source            = "${path.root}/artifacts/"
+    destination       = "${local.path.devboxHome}/Artifacts/"
+  }
+
+  provisioner "powershell" {
+    elevated_user     = build.User
+    elevated_password = build.Password
+    environment_vars  = local.default.environmentVariables
+    script            = "${path.root}/../_scripts/core/Resolve-Artifacts.ps1"
   }
 
   # =============================================================================================
@@ -104,16 +126,16 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.default.environmentVariables
-    scripts = setunion(
+    environment_vars  = local.default.environmentVariables
+    scripts           = setunion(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       fileset("${path.root}", "../_scripts/pkgs/*.ps1")
     ) 
   }
 
   provisioner "windows-restart" {
-    check_registry = true
-    restart_timeout = "30m"
+    check_registry    = true
+    restart_timeout   = "30m"
   }
   
   # =============================================================================================
@@ -123,16 +145,16 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.default.environmentVariables
-    scripts = setunion(
+    environment_vars  = local.default.environmentVariables
+    scripts           = setunion(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       local.prePackageScripts
     )
   }
 
   provisioner "windows-restart" {
-    check_registry = true
-    restart_timeout = "30m"
+    check_registry    = true
+    restart_timeout   = "30m"
   }
 
   # =============================================================================================
@@ -142,13 +164,13 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.default.environmentVariables
-    inline = [templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in local.resolved.packages: p if try(p.scope == "machine", false) ] })]
+    environment_vars  = local.default.environmentVariables
+    inline            = [templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in local.resolved.packages: p if try(p.scope == "machine", false) ] })]
   }
 
   provisioner "windows-restart" {
-    check_registry = true
-    restart_timeout = "30m"
+    check_registry    = true
+    restart_timeout   = "30m"
   }
 
   # =============================================================================================
@@ -158,16 +180,16 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.default.environmentVariables
-    scripts = concat(
+    environment_vars  = local.default.environmentVariables
+    scripts           = concat(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       local.postPackageScripts
     )
   }
 
   provisioner "windows-restart" {
-    check_registry = true
-    restart_timeout = "30m"
+    check_registry    = true
+    restart_timeout   = "30m"
   }
 
   # =============================================================================================
@@ -177,29 +199,25 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.default.environmentVariables
-    scripts = setunion(
+    environment_vars  = local.default.environmentVariables
+    scripts           = setunion(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       fileset("${path.root}", "../_scripts/patch/*.ps1")
     ) 
   }
 
   provisioner "windows-restart" {
-    check_registry = true
-    restart_timeout = "30m"
+    check_registry    = true
+    restart_timeout   = "30m"
   }
 
   # =============================================================================================
-  # Installing Windows Updates 
+  # Installing Windows Updates (Post Packages)
   # =============================================================================================
 
   provisioner "windows-update" {
     # https://github.com/rgl/packer-plugin-windows-update
-  }
-
-  provisioner "windows-restart" {
-    check_registry = true
-    restart_timeout = "30m"
+    search_criteria = "IsInstalled=0"
   }
 
   # =============================================================================================
@@ -214,8 +232,8 @@ build {
   }
 
   provisioner "file" {
-    sources = fileset("${path.root}", "../_scripts/pkgs/*.ps1")
-    destination = "${local.path.devboxHome}/ActiveSetup/"
+    sources           = fileset("${path.root}", "../_scripts/pkgs/*.ps1")
+    destination       = "${local.path.devboxHome}/ActiveSetup/"
   }
 
   provisioner "powershell" {
@@ -226,8 +244,8 @@ build {
   }
 
   provisioner "file" {
-    content = templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in local.resolved.packages: p if try(p.scope == "user", false) ] }) 
-    destination = "${local.path.devboxHome}/ActiveSetup/Install-Packages.ps1"
+    content           = templatefile("${path.root}/../_templates/InstallPackages.pkrtpl.hcl", { packages = [ for p in local.resolved.packages: p if try(p.scope == "user", false) ] }) 
+    destination       = "${local.path.devboxHome}/ActiveSetup/Install-Packages.ps1"
   }
 
   provisioner "powershell" {
@@ -244,8 +262,8 @@ build {
   provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.default.environmentVariables
-    inline = [templatefile("${path.root}/../_templates/CapabilitiesDocument.pkrtpl.hcl", { packages = local.resolved.packages })]
+    environment_vars  = local.default.environmentVariables
+    inline            = [templatefile("${path.root}/../_templates/CapabilitiesDocument.pkrtpl.hcl", { packages = local.resolved.packages })]
   }
 
   # =============================================================================================
@@ -255,9 +273,9 @@ build {
   provisioner "powershell" {
 	  elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.default.environmentVariables
-    timeout = "1h"
-    script  = "${path.root}/../_scripts/core/Generalize-VM.ps1"
+    environment_vars  = local.default.environmentVariables
+    timeout           = "1h"
+    script            = "${path.root}/../_scripts/core/Generalize-VM.ps1"
   }
 
   # =============================================================================================
@@ -267,8 +285,8 @@ build {
   error-cleanup-provisioner "powershell" {
     elevated_user     = build.User
     elevated_password = build.Password
-    environment_vars = local.default.environmentVariables
-    scripts = setunion(
+    environment_vars  = local.default.environmentVariables
+    scripts           = setunion(
       ["${path.root}/../_scripts/core/NOOP.ps1"],
       fileset("${path.root}", "../_scripts/error/*.ps1")
     ) 
