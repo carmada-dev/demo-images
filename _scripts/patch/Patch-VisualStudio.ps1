@@ -153,5 +153,5 @@ if ($vswhereExe) {
 	
 } else {
 
-	throw "Could not find 'vswhere.exe'"
+	Write-Host "!!! Could not find 'vswhere.exe'"
 }
