@@ -86,10 +86,10 @@ build {
   # Installing Windows Updates (Post Initialization)
   # =============================================================================================
 
-  provisioner "windows-update" {
-    search_criteria = local.update.search
-    filters = local.update.filters
-  }
+  #provisioner "windows-update" {
+  #  search_criteria = local.update.search
+  #  filters = local.update.filters
+  #}
 
   # =============================================================================================
   # Upload Artifacts
@@ -215,10 +215,10 @@ build {
   # Installing Windows Updates (Post Packages)
   # =============================================================================================
 
-  provisioner "windows-update" {
-    search_criteria = local.update.search
-    filters = local.update.filters
-  }
+  #provisioner "windows-update" {
+  #  search_criteria = local.update.search
+  #  filters = local.update.filters
+  #}
 
   # =============================================================================================
   # Prepare Active Setup 
