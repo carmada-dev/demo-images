@@ -142,7 +142,6 @@ locals {
     ]
 
     postPackageScripts = [
-		# "${path.root}/../_scripts/Install-SitecoreVSIX.ps1",
 		"${path.root}/../_scripts/Install-SitecoreXP0-1003C.ps1"
     ]
 

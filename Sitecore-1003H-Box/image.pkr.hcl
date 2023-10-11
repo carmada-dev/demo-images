@@ -119,7 +119,7 @@ locals {
 		{
 			name = "Microsoft.SQLServerManagementStudio"
 			scope = "machine"
-		},
+		}
 
 		# {
 		# 	name = "dockerDesktop"
@@ -143,20 +143,19 @@ locals {
 		# 	scope = "machine"
 		# },
 
-		{
-			name ="Google.Chrome"
-			scope = "machine"
-		},
-		{
-			name = "Mozilla.Firefox"
-			scope = "machine"
-		}
+		# {
+		# 	name ="Google.Chrome"
+		# 	scope = "machine"
+		# },
+		# {
+		# 	name = "Mozilla.Firefox"
+		# 	scope = "machine"
+		# }
 
     ]
 
     postPackageScripts = [
-		# "${path.root}/../_scripts/Install-SitecoreVSIX.ps1",
-		# "${path.root}/../_scripts/Install-SitecoreXP0-1003.ps1"
+		# "${path.root}/../_scripts/Install-SitecoreXP0-1003H.ps1"
     ]
 
 }
