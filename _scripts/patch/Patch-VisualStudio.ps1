@@ -148,7 +148,10 @@ if ($vswhereExe) {
 
 	if ($Packer) {
 		Write-Host ">>> Register Patch-VisualStudio via ActiveSetup"
-		Register-ActiveSetup -Path (Copy-Item -Path $MyInvocation.MyCommand.Path -Destination (Join-Path -Path $env:DEVBOX_HOME -ChildPath 'ActiveSetup/Patch-VisualStudio.ps1') -Force -PassThru | Select-Object -ExpandProperty Fullname)
+		$activeSetupDirectory = Join-Path -Path $env:DEVBOX_HOME -ChildPath 'ActiveSetup'
+		New-Item -Path $activeSetupDirectory -ItemType Directory -Force
+		$activeSetupScript = Join-Path -Path $activeSetupDirectory -ChildPath 'Patch-VisualStudio.ps1'
+		Register-ActiveSetup -Path (Copy-Item -Path $MyInvocation.MyCommand.Path -Destination $activeSetupScript -Force -PassThru | Select-Object -ExpandProperty Fullname)
 	}
 	
 } else {

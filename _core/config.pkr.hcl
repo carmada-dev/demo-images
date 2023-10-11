@@ -33,6 +33,8 @@ locals {
 		identities = [
 			"/subscriptions/bffe1654-7f9a-4630-b7b9-d24759a76222/resourceGroups/BLD-Carmada/providers/Microsoft.ManagedIdentity/userAssignedIdentities/Carmada"
 		]
+		# Filter Windows updates that should be applied to images - use "IsInstalled=0" to install ALL updates
+		updates = "IsInstalled=1"
 	}
 
 	path = {

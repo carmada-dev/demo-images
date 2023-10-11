@@ -88,7 +88,7 @@ build {
 
   provisioner "windows-update" {
     # https://github.com/rgl/packer-plugin-windows-update
-    search_criteria = "IsInstalled=0"
+    search_criteria = local.factory.updates
   }
 
   # =============================================================================================
@@ -217,7 +217,7 @@ build {
 
   provisioner "windows-update" {
     # https://github.com/rgl/packer-plugin-windows-update
-    search_criteria = "IsInstalled=0"
+    search_criteria = local.factory.updates
   }
 
   # =============================================================================================
