@@ -222,7 +222,7 @@ if ($Packer) {
 		& '.\compose-init.ps1' -LicenseXmlPath (Join-Path $scd 'license.xml')
 
 		Write-Host ">>> Pulling Docker Images"
-		Invoke-CommandLine -Command $dockerComposeExe -Arguments "pull --ignore-pull-failures --include-deps" -WorkingDirectory $scd -IgnoreStdOut | Select-Object -ExpandProperty StdErr
+		Invoke-CommandLine -Command $dockerComposeExe -Arguments "pull --ignore-pull-failures --include-deps" -WorkingDirectory $scd -IgnoreStdOut | Select-Object -ExpandProperty StdErr | Get-Unique
 
 		$images = [string[]] (Invoke-CommandLine -Command $dockerExe -Arguments "image ls --all --format `"{{ .ID }}`"" | Select-Object -ExpandProperty StdOut)
 		if ($images.Count -gt 0) {
@@ -259,7 +259,7 @@ if ($Packer) {
 			Invoke-CommandLine -Command $dockerExe -Arguments "container rm $($containers -join " ")" | Select-Object -ExpandProperty StdOut
 		}
 
-		$images = [string[]] (Invoke-CommandLine -Command $dockerExe -Arguments "image ls --all --format `"{{ .ID }}`"" | Select-Object -ExpandProperty StdOut)
+		$images = [string[]] (Invoke-CommandLine -Command $dockerExe -Arguments "image ls --all --format `"{{ .ID }}`"" | Select-Object -ExpandProperty StdOut) -split '\r?\n' | Where-Object { $_.Trim() -ne [string]::Empty }
 		if ($images.Count -gt 0) {
 		
 			Write-Host ">>> Deleting Docker Images"
