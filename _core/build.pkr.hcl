@@ -87,8 +87,8 @@ build {
   # =============================================================================================
 
   provisioner "windows-update" {
-    # https://github.com/rgl/packer-plugin-windows-update
-    search_criteria = local.factory.updates
+    search_criteria = local.update.search
+    filters = local.update.filters
   }
 
   # =============================================================================================
@@ -216,8 +216,8 @@ build {
   # =============================================================================================
 
   provisioner "windows-update" {
-    # https://github.com/rgl/packer-plugin-windows-update
-    search_criteria = local.factory.updates
+    search_criteria = local.update.search
+    filters = local.update.filters
   }
 
   # =============================================================================================
