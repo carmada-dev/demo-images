@@ -222,7 +222,7 @@ if ($Packer) {
 		& '.\compose-init.ps1' -LicenseXmlPath (Join-Path $scd 'license.xml')
 
 		Write-Host ">>> Pulling Docker Images"
-		Invoke-CommandLine -Command $dockerComposeExe -Arguments "pull --ignore-pull-failures --include-deps" -WorkingDirectory $scd -IgnoreStdOut | Select-Object -ExpandProperty StdErr | Get-Unique
+		(Invoke-CommandLine -Command $dockerComposeExe -Arguments "pull --ignore-pull-failures --include-deps" -WorkingDirectory $scd -IgnoreStdOut | Select-Object -ExpandProperty StdErr) -split '\r?\n' | Where-Object { $_.Trim() -ne [string]::Empty } | Get-Unique
 
 		$images = [string[]] (Invoke-CommandLine -Command $dockerExe -Arguments "image ls --all --format `"{{ .ID }}`"" | Select-Object -ExpandProperty StdOut)
 		if ($images.Count -gt 0) {
