@@ -1,6 +1,6 @@
 
 function Has-Property() {
-    param (
+    param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object] $InputObject,
         [Parameter(Mandatory = $true)]
@@ -11,7 +11,7 @@ function Has-Property() {
 }
 
 function Get-PropertyValue() {
-    param (
+    param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object] $InputObject,
         [Parameter(Mandatory = $true)]
@@ -70,7 +70,7 @@ function Invoke-FileDownload() {
 }
 
 function Convert-CapabilitiesMD2HTML() {
-    param (
+    param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string] $MarkdownFile
     )
@@ -100,7 +100,7 @@ function Convert-CapabilitiesMD2HTML() {
 }
 
 function Extract-OutputValue() {
-    param (
+    param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object] $InputObject,
         [Parameter(Mandatory = $true)]
@@ -111,7 +111,7 @@ function Extract-OutputValue() {
 }
 
 function Parse-WinGetPackage() {
-    param (
+    param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)] 
 		[object] $Package
     )

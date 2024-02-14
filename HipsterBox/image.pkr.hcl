@@ -41,7 +41,27 @@ locals {
 		compute = "general_i_8c32gb1024ssd_v2"
 	}
 
-    prePackageScripts = [
+	devDrive = {
+		sizeGB = 250
+		repositories = [
+			{
+				repoUrl = "https://github.com/kubernetes/kubernetes.git"
+			},
+			{
+				repoUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git"
+			},
+			{
+				repoUrl = "https://github.com/markusheiliger/courier.git"
+				tokenUrl = "https://carmada.vault.azure.net/secrets/GitHub/"
+			}
+		]
+	}
+
+	features = [
+
+	]
+
+    prepare = [
 	    "${path.root}/../_scripts/Install-WSL2.ps1"
     ]
 
@@ -56,50 +76,51 @@ locals {
 			source = "alias"
 		},
 
-		{
-			name = "git"
-			source = "alias"
-		},
+		# {
+		# 	name = "git"
+		# 	source = "alias"
+		# },
 
-		{
-			name = "GitHub.cli"
-			scope = "machine"
-		},
-		{
-			name = "GitHub.GitHubDesktop"
-			scope = "machine"
-		},
+		# {
+		# 	name = "GitHub.cli"
+		# 	scope = "machine"
+		# },
+		# {
+		# 	name = "GitHub.GitHubDesktop"
+		# 	scope = "machine"
+		# },
 		
-		{
-			name = "dockerDesktop"
-			source = "alias"
-		},
+		# {
+		# 	name = "dockerDesktopWSL"
+		# 	source = "alias"
+		# },
 
-		{
-			name = "Microsoft.AzureCLI"
-			scope = "machine"
-		},
+		# {
+		# 	name = "Microsoft.AzureCLI"
+		# 	scope = "machine"
+		# },
 
 		{
 			name = "Postman.Postman"
 			scope = "user"
-		},
-		{
-			name ="Google.Chrome"
-			scope = "machine"
-		},
-		{
-			name = "Mozilla.Firefox"
-			scope = "machine"
-		},
-
-		{
-			name = "Wiesemann-Theis.USB-Redirector"
-			scope = "machine"
 		}
+		
+		# {
+		# 	name ="Google.Chrome"
+		# 	scope = "machine"
+		# },
+		# {
+		# 	name = "Mozilla.Firefox"
+		# 	scope = "machine"
+		# },
+
+		# {
+		# 	name = "Wiesemann-Theis.USB-Redirector"
+		# 	scope = "machine"
+		# }
     ]
 
-    postPackageScripts = [
+    configure = [
 
     ]
 

@@ -1,7 +1,25 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+param(
+    [Parameter(Mandatory=$false)]
+    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
+)
+
+Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
+	Write-Host ">>> Importing PowerShell Module: $_"
+	Import-Module -Name $_
+} 
+
+if ($Packer) {
+	Write-Host ">>> Register ActiveSetup"
+	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Install-WinGet.ps1' -Elevate
+} else { 
+    Write-Host ">>> Initializing transcript"
+    Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 
+}
 
 $ProgressPreference = 'SilentlyContinue'	# hide any progress output
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+# ==============================================================================
 
 $adminWinGetConfig = @"
 {
@@ -17,109 +35,39 @@ $adminWinGetConfig = @"
 }
 "@
 
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType] 'Ssl3 , Tls12'
+Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
-function Get-IsPacker() {
-	return ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
-}
+	$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 
-function Get-IsAdmin() {
-	$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-	return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-}
+	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
+	$path = Invoke-FileDownload -Url "https://aka.ms/Microsoft.VCLibs.$osType.14.00.Desktop.appx"
+	Add-AppxPackage -Path $path -ErrorAction Stop
 
-function Get-LatestLink($match) {
-	$uri = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
-	$get = Invoke-RestMethod -uri $uri -Method Get -ErrorAction stop
-	$data = $get[0].assets | Where-Object name -Match $match
-	return $data.browser_download_url
-}
+	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
+	$path = Invoke-FileDownload -Url "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.7.1" -Name 'Microsoft.UI.Xaml.nuget.zip' -Expand $true
+	Add-AppxPackage -Path (Join-Path -path $path -ChildPath "tools\AppX\$osType\Release\Microsoft.UI.Xaml.2.7.appx") -ErrorAction SilentlyContinue
 
-function Invoke-FileDownload() {
-	param(
-		[Parameter(Mandatory=$true)][string] $url,
-		[Parameter(Mandatory=$false)][string] $name,
-		[Parameter(Mandatory=$false)][boolean] $expand,
-		[Parameter(Mandatory=$false)][uint32] $retries = 0		
-	)
+	Write-Host ">>> Installing WinGet CLI..."
+	$path = Invoke-FileDownload -Url "$(Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle')"
+	Add-AppxPackage -Path $path -ErrorAction Stop
 
-	$path = Join-Path -path $env:temp -ChildPath (Split-Path $url -leaf)
-	if ($name) { $path = Join-Path -path $env:temp -ChildPath $name }
-	
-	[uint32] $retry = 0
-	while ($true) {
-		try {
-
-			Write-Host ">>> Downloading $url > $path"
-			Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
-
-			break
-		}
-		catch {
-
-			if (++$retry -gt $retries) { throw } 
-			
-			Write-Host "Failed - retry #$retry/$retries in 10 seconds"
-			Start-Sleep -Seconds 10
-		}
+	if (Test-IsElevated) {
+		Write-Host ">>> Resetting WinGet Sources ..."
+		Invoke-CommandLine -Command 'winget' -Arguments "source reset --force --disable-interactivity" | Select-Object -ExpandProperty Output | Write-Host
+		# Start-Process winget -ArgumentList "source reset --force --disable-interactivity" -NoNewWindow -Wait -RedirectStandardError "NUL" | Out-Null
 	}
 
-	if ($expand) {
-		$arch = Join-Path -path $env:temp -ChildPath ([System.IO.Path]::GetFileNameWithoutExtension($path))
+	Write-Host ">>> Adding WinGet Source Cache Package ..."
+	$path = Invoke-FileDownload -Url "https://cdn.winget.microsoft.com/cache/source.msix" -Retries 5
+	Add-AppxPackage -Path $path -ErrorAction Stop
 
-        Write-Host ">>> Expanding $path > $arch"
-		Expand-Archive -Path $path -DestinationPath $arch -Force
+	if ($Packer) {
 
-		return $arch
+		$settingsInfo = @(winget --info) | Where-Object { $_.StartsWith('User Settings') } | Select-Object -First 1
+		$settingsPath = $settingsInfo.Split(' ') | Select-Object -Last 1 
+		$settingsPath = [Environment]::ExpandEnvironmentVariables($settingsPath.Trim())
+
+		Write-Host ">>> Patching WinGet Config ..."
+		$adminWinGetConfig | Out-File $settingsPath -Encoding ASCII
 	}
-	
-	return $path
-}
-
-if (-not (Get-IsPacker)) {
-	Write-Host ">>> Starting transcript ..."
-	Start-Transcript -Path ([System.IO.Path]::ChangeExtension($MyInvocation.MyCommand.Path, 'log')) -Append | Out-Null
-}
-
-Write-Host ">>> Downloading WinGet Packages ..."
-$xamlPath = Invoke-FileDownload -url "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.7.1" -name 'Microsoft.UI.Xaml.nuget.zip' -expand $true
-$msixPath = Invoke-FileDownload -url "https://cdn.winget.microsoft.com/cache/source.msix" -retries 5
-$wingetPath = Invoke-FileDownload -url (Get-LatestLink("msixbundle"))
-
-if ([Environment]::Is64BitOperatingSystem) {
-
-	$vclibs = Invoke-FileDownload -url "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx"
-
-	Write-Host ">>> Installing WinGet pre-requisites (64bit) ..."
-	Add-AppxPackage -Path $vclibs -ErrorAction Stop
-	Add-AppxPackage -Path (Join-Path -path $xamlPath -ChildPath 'tools\AppX\x64\Release\Microsoft.UI.Xaml.2.7.appx') -ErrorAction SilentlyContinue
-
-} else {
-
-	$vclibs = Invoke-FileDownload -url "https://aka.ms/Microsoft.VCLibs.x86.14.00.Desktop.appx"
-
-	Write-Host ">>> Installing WinGet pre-requisites (32bit) ..."
-	Add-AppxPackage -Path $vclibs -ErrorAction Stop
-	Add-AppxPackage -Path (Join-Path -path $xamlPath -ChildPath 'tools\AppX\x86\Release\Microsoft.UI.Xaml.2.7.appx') -ErrorAction SilentlyContinue
-}
-
-Write-Host ">>> Installing WinGet (user scope) ..."
-Add-AppxPackage -Path $wingetPath -ErrorAction Stop
-
-if (Get-IsAdmin) {
-	Write-Host ">>> Resetting WinGet Sources ..."
-	Start-Process winget -ArgumentList "source reset --force --disable-interactivity" -NoNewWindow -Wait -RedirectStandardError "NUL" | Out-Null
-}
-
-Write-Host ">>> Adding WinGet Source Cache Package ..."
-Add-AppxPackage -Path $msixPath -ErrorAction Stop
-
-if (Get-IsPacker) {
-
-	$settingsInfo = @(winget --info) | Where-Object { $_.StartsWith('User Settings') } | Select-Object -First 1
-	$settingsPath = $settingsInfo.Split(' ') | Select-Object -Last 1 
-	$settingsPath = [Environment]::ExpandEnvironmentVariables($settingsPath.Trim())
-
-	Write-Host ">>> Patching WinGet Config ..."
-	$adminWinGetConfig | Out-File $settingsPath -Encoding ASCII
 }

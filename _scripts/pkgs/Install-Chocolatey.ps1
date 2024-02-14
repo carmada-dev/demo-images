@@ -1,44 +1,31 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+param(
+    [Parameter(Mandatory=$false)]
+    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
+)
 
-function Get-IsPacker() {
-	return ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
+Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
+	Write-Host ">>> Importing PowerShell Module: $_"
+	Import-Module -Name $_
+} 
+
+if ($Packer) {
+	Write-Host ">>> Register ActiveSetup"
+	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Install-Chocolatey.ps1' -Elevate
+} else { 
+    Write-Host ">>> Initializing transcript"
+    Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 
 }
 
-function Invoke-FileDownload() {
-	param(
-		[Parameter(Mandatory=$true)][string] $url,
-		[Parameter(Mandatory=$false)][string] $name,
-		[Parameter(Mandatory=$false)][boolean] $expand		
-	)
+$ProgressPreference = 'SilentlyContinue'	# hide any progress output
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-	$path = Join-Path -path $env:temp -ChildPath (Split-Path $url -leaf)
-	if ($name) { $path = Join-Path -path $env:temp -ChildPath $name }
-	
-	Write-Host ">>> Downloading $url > $path"
-	Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
-	
-	if ($expand) {
-		$arch = Join-Path -path $env:temp -ChildPath ([System.IO.Path]::GetFileNameWithoutExtension($path))
+# ==============================================================================
 
-        Write-Host ">>> Expanding $path > $arch"
-		Expand-Archive -Path $path -DestinationPath $arch -Force
+Invoke-ScriptSection -Title "Installing Choco Package Manager" -ScriptBlock {
 
-		return $arch
-	}
-	
-	return $path
+	Write-Host ">>> Downloading Chocolatey ..."
+	$installer = Invoke-FileDownload -Url 'https://chocolatey.org/install.ps1'
+
+	Write-Host ">>> Installing Chocolatey ..."
+	& $installer | Out-Null
 }
-
-$env:chocolateyUseWindowsCompression = 'false'
-
-if (-not (Get-IsPacker)) {
-	Write-Host ">>> Starting transcript ..."
-	Start-Transcript -Path ([System.IO.Path]::ChangeExtension($MyInvocation.MyCommand.Path, 'log')) -Append | Out-Null
-}
-
-Write-Host ">>> Downloading Chocolatey ..."
-$installer = Invoke-FileDownload -url 'https://chocolatey.org/install.ps1'
-
-Write-Host ">>> Installing Chocolatey ..."
-& $installer | Out-Null

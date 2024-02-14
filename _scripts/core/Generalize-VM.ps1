@@ -1,59 +1,104 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+$ProgressPreference = 'SilentlyContinue'	# hide any progress output
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$volumeCachePath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches"
-$volumeCacheKey = "StateFlags0042"
+Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
+	Write-Host ">>> Importing PowerShell Module: $_"
+	Import-Module -Name $_
+} 
 
-try {
-	Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object {
+Invoke-ScriptSection -Title 'Disable reserved storage' -ScriptBlock {
+	Invoke-CommandLine -Command 'dism' -Arguments '/Online /Set-ReservedStorageState /State:Disabled'
+}
+
+Invoke-ScriptSection -Title 'Enable Active Setup Tasks' -ScriptBlock {
+	Enable-ActiveSetup
+}
+
+Invoke-ScriptSection -Title 'Remove APPX packages' -ScriptBlock {
+	Get-AppxPackage | ForEach-Object {
+		Write-Host "- $($_.PackageFullName)"
+		Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue
+	}
+}
+
+Invoke-ScriptSection -Title 'Cleaning up Volumne Caches' -ScriptBlock {
+	$volumeCachePath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches"
+	$volumeCacheKey = "StateFlags0042"
+	try {
 		# set state flags for clean-up run
-		New-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -PropertyType DWord -Value 2 -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null
-	}
-	
-	Write-Host ">>> Cleaning up system drive ..."
-	Start-Process cleanmgr -ArgumentList "/sagerun:42" -Wait -NoNewWindow -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-		
-}
-finally {
-
-	Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object {
+		Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object { 
+			Write-Host "- Register Volumne Cache for clean up: $_"
+			New-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -PropertyType DWord -Value 2 -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null 
+		}
+		# run clean up manager
+		Start-Process cleanmgr -ArgumentList "/sagerun:42" -Wait -NoNewWindow -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+	} finally {
 		# remove state flags set before
-		Remove-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null
+		Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object { Remove-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null }
 	}
 }
 
-Write-Host ">>> Disable AutoLogon for elevated task processing ..."
-Remove-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name AutoAdminLogon
-Remove-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name DefaultUsername
-Remove-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name DefaultPassword
-
-Write-Host ">>> Enable User Access Control ..."
-Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name EnableLUA -Value 1 -type DWord
-
-Write-Host '>>> Remove APPX packages ...'
-Get-AppxPackage | % {
-	Write-Host "- $($_.PackageFullName)"
-	Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue
+Invoke-ScriptSection -Title 'Defrag disk' -ScriptBlock {
+	Write-Host ">>> Disable scheduled task"
+	Get-ScheduledTask ScheduledDefrag | Disable-ScheduledTask | Out-String | Write-Host
+	Write-Host ">>> Run free space consolidation"
+	Invoke-CommandLine -Command 'defrag' -Arguments 'c: /FreespaceConsolidate /Verbose'
+	Write-Host ">>> Run boot optimization"
+	Invoke-CommandLine -Command 'defrag' -Arguments 'c: /BootOptimize /Verbose'
 }
 
-Write-Host '>>> Waiting for GA Service (RdAgent) to start ...'
-while ((Get-Service RdAgent -ErrorAction SilentlyContinue) -and ((Get-Service RdAgent).Status -ne 'Running')) { Start-Sleep -s 5 }
+Invoke-ScriptSection -Title 'Shrink System Partition' -ScriptBlock {
 
-Write-Host '>>> Waiting for GA Service (WindowsAzureTelemetryService) to start ...'
-while ((Get-Service WindowsAzureTelemetryService -ErrorAction SilentlyContinue) -and ((Get-Service WindowsAzureTelemetryService).Status -ne 'Running')) { Start-Sleep -s 5 }
+	$partition = Get-Partition | Where-Object { -not($_.IsHidden) } | Sort-Object { $_.DriveLetter } | Select-Object -First 1
+	$partitionSize = Get-PartitionSupportedSize -DiskNumber ($partition.DiskNumber) -PartitionNumber ($partition.PartitionNumber)
+	
+	$devDriveUnused = Get-Volume | Where-Object { $_.DriveLetter -and ($_.FileSystemType -eq 'ReFS') } | Measure-Object -Property SizeRemaining -Sum | Select-Object -ExpandProperty Sum
+	if (-not($devDriveUnused)) { $devDriveUnused = 0 }
 
-Write-Host '>>> Waiting for GA Service (WindowsAzureGuestAgent) to start ...'
-while ((Get-Service WindowsAzureGuestAgent -ErrorAction SilentlyContinue) -and ((Get-Service WindowsAzureGuestAgent).Status -ne 'Running')) { Start-Sleep -s 5 }
+	$targetSizes = @( 256GB, 512GB, 1024GB, 2048GB )
+	$targetSize = $targetSizes | Where-Object { $_ -gt ($partitionSize.SizeMin + $devDriveUnused) } | Select-Object -First 1
+	
+	if ($targetSize) {
+		Write-Host ">>> Resizing System Partition to $([Math]::Round($targetSize / 1GB,2)) GB" 
+		Resize-Partition -DiskNumber $partition.DiskNumber -PartitionNumber $partition.PartitionNumber -Size $targetSize -ErrorAction SilentlyContinue
+	} else {
+		Write-Host ">>> Keeping System Partition Size ($([Math]::Round($partition.Size / 1GB,2)) GB)" 
+	}
+}
 
-Write-Host '>>> Sysprepping VM ...'
-& $env:SystemRoot\System32\Sysprep\Sysprep.exe /generalize /oobe /mode:vm /quiet /quit
+Invoke-ScriptSection -Title 'Disable AutoLogon' -ScriptBlock {
+	$names = 'AutoAdminLogon', 'DefaultUsername', 'DefaultPassword'
+	$names | ForEach-Object {
+		Write-Host "- Removing key '$_' at HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+		Remove-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name $_ -ErrorAction SilentlyContinue
+	}
+}
 
-while($true) { 
-	$imageState = Get-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\State | Select ImageState
-	if($imageState.ImageState -ne 'IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE') { 
-		Write-Host $imageState.ImageState
-		Start-Sleep -s 10  
-	} else { 
-		break 
-	} 
+Invoke-ScriptSection -Title 'Enable User Access Control' -ScriptBlock {
+	Write-Host "- Setting 'EnableLUA' at HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System to 1"
+	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name EnableLUA -Value 1 -type DWord -ErrorAction SilentlyContinue
+}
+
+Invoke-ScriptSection -Title 'Waiting for Windows Services' -ScriptBlock {
+	Write-Host '>>> RdAgent ...'
+	while ((Get-Service RdAgent -ErrorAction SilentlyContinue) -and ((Get-Service RdAgent).Status -ne 'Running')) { Start-Sleep -s 5 }
+	Write-Host '>>> WindowsAzureTelemetryService ...'
+	while ((Get-Service WindowsAzureTelemetryService -ErrorAction SilentlyContinue) -and ((Get-Service WindowsAzureTelemetryService).Status -ne 'Running')) { Start-Sleep -s 5 }
+	Write-Host '>>> WindowsAzureGuestAgent ...'
+	while ((Get-Service WindowsAzureGuestAgent -ErrorAction SilentlyContinue) -and ((Get-Service WindowsAzureGuestAgent).Status -ne 'Running')) { Start-Sleep -s 5 }
+}
+
+Invoke-ScriptSection -Title 'Generalizing System' -ScriptBlock {
+	& $env:SystemRoot\System32\Sysprep\Sysprep.exe /generalize /oobe /mode:vm /quiet /quit
+	Write-Host '>>> Waiting for generalized state ...'
+	while($true) { 
+		$imageState = Get-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\State | Select-Object -ExpandProperty ImageState
+		if($imageState -eq 'IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE') { 
+			Write-Host $imageState
+			break 
+		} else { 
+			Write-Host $imageState
+			Start-Sleep -s 10  
+		} 
+	}
 }

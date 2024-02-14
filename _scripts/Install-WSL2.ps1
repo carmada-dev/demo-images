@@ -1,44 +1,57 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+param(
+    [Parameter(Mandatory=$false)]
+    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
+)
 
-$ProgressPreference = 'SilentlyContinue'	# hide any progress output
+Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
+	Write-Host ">>> Importing PowerShell Module: $_"
+	Import-Module -Name $_
+} 
 
-function Invoke-FileDownload() {
-	param(
-		[Parameter(Mandatory=$true)][string] $url,
-		[Parameter(Mandatory=$false)][string] $name,
-		[Parameter(Mandatory=$false)][boolean] $expand		
-	)
-
-	$path = Join-Path -path $env:temp -ChildPath (Split-Path $url -leaf)
-	if ($name) { $path = Join-Path -path $env:temp -ChildPath $name }
-	
-	Write-Host ">>> Downloading $url > $path"
-	Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
-	
-	if ($expand) {
-		$arch = Join-Path -path $env:temp -ChildPath ([System.IO.Path]::GetFileNameWithoutExtension($path))
-
-        Write-Host ">>> Expanding $path > $arch"
-		Expand-Archive -Path $path -DestinationPath $arch -Force
-
-		return $arch
-	}
-	
-	return $path
+if ($Packer) {
+	Write-Host ">>> Register ActiveSetup"
+	Register-ActiveSetup -Path $MyInvocation.MyCommand.Path -Name 'Install-WSL2.ps1' -Elevate
+} else { 
+    Write-Host ">>> Initializing transcript"
+    Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 
 }
 
-Write-Host ">>> Enabling Virtual Machine Platform and Windows Subsystem for Linux ..."
-Enable-WindowsOptionalFeature `
-      -FeatureName "VirtualMachinePlatform", "Microsoft-Windows-Subsystem-Linux" `
-	  -Online -All -NoRestart | Out-null
+$ProgressPreference = 'SilentlyContinue'	# hide any progress output
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-Write-Host ">>> Downloading WSL2 kernel update ..."
-$installer = Invoke-FileDownload -url "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
+# ==============================================================================
 
-Write-Host ">>> Installing WSL2 kernel update ..."
-Start-Process msiexec.exe -ArgumentList "/I $installer /quiet /norestart" -NoNewWindow -Wait 
+Invoke-ScriptSection -Title "Installing WSL2" -ScriptBlock {
 
-Write-Host ">>> Setting default WSL version to 2 ..."
-Start-Process wsl -ArgumentList "--set-default-version 2" -NoNewWindow -Wait -RedirectStandardOutput "NUL"
-  
+	if (-not(Get-Command wsl -ErrorAction SilentlyContinue)) {
+		Write-Host "Could not find wsl.exe"
+		exit 1
+	}
+
+	if ($Packer) {
+
+		Write-Host ">>> Downloading WSL2 kernel update ..."
+		$installer = Invoke-FileDownload -url "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
+
+		Write-Host ">>> Installing WSL2 kernel update ..."
+		Invoke-CommandLine -Command 'msiexec' -Arguments "/I $installer /quiet /norestart" | Select-Object -ExpandProperty Output | Write-Host
+
+		Write-Host ">>> Setting default WSL version to 2 ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--set-default-version 2" | Select-Object -ExpandProperty Output | Write-Host
+
+		Write-Host ">>> Enforcing WSL Update ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--update --web-download" | Select-Object -ExpandProperty Output | Write-Host
+	} 
+
+	Write-Host ">>> Installing WSL Default Distro (Ubuntu) ..."
+	Invoke-CommandLine -Command 'wsl' -Arguments "--status" | Select-Object -ExpandProperty Output | Write-Host
+
+	Write-Host ">>> Installing WSL Default Distro (Ubuntu) ..."
+	Invoke-CommandLine -Command 'wsl' -Arguments "--install --distribution ubuntu --inbox --web-download --no-launch" | Select-Object -ExpandProperty Output | Write-Host
+
+	# Write-Host ">>> Launching WSL Default Distro (Ubuntu) ..."
+	# Invoke-CommandLine -Command 'ubuntu' -Arguments "install --root --autoinstall" | Select-Object -ExpandProperty Output | Write-Host
+	
+	Write-Host ">>> WSL Distro overview ..."
+	Invoke-CommandLine -Command 'wsl' -Arguments "--list --verbose" | Select-Object -ExpandProperty Output | Write-Host
+}

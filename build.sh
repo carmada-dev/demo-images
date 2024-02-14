@@ -94,7 +94,6 @@ buildImage() {
 			--image-reference id="$DEVCENTERGALLERY_IMAGEID" \
 			--os-storage-type $(echo $IMAGEJSON | jq --raw-output '.devCenter.storage') \
 			--sku name="$(echo $IMAGEJSON | jq --raw-output '.devCenter.compute')" \
-			--no-wait \
 			--only-show-errors | tee -a ./image.pkr.log)
 
 		if [ -n "$PROJECT" ]; then

@@ -41,7 +41,15 @@ locals {
 		compute = "general_i_8c32gb1024ssd_v2"
 	}
 
-    prePackageScripts = [
+	devDrive = {
+		sizeGB = 0
+	}
+
+	features = [
+
+	]
+
+    prepare = [
 	    "${path.root}/../_scripts/Install-WSL2.ps1"
     ]
 
@@ -80,7 +88,7 @@ locals {
 		},
 		
 		{
-			name = "dockerDesktop"
+			name = "dockerDesktopWSL"
 			source = "alias"
 		},
 
@@ -117,7 +125,7 @@ locals {
 		}
     ]
 
-    postPackageScripts = [
+    configure = [
 		"${path.root}/../_scripts/Install-FabulaTechUSBServer.ps1"
     ]
 
