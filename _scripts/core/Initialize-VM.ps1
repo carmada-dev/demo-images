@@ -63,6 +63,11 @@ Invoke-ScriptSection -Title 'Setting DevBox environment variables' -ScriptBlock 
 	Get-ChildItem -Path Env:DEVBOX_* | Out-String | Write-Host
 }
 
+Invoke-ScriptSection -Title 'Disable Defrag Schedule' -ScriptBlock {
+
+	Get-ScheduledTask ScheduledDefrag | Disable-ScheduledTask | Out-String | Write-Host
+}
+
 Invoke-ScriptSection -Title 'Enable AutoLogon' -ScriptBlock {
 
 	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name AutoAdminLogon -Value 1 -type String

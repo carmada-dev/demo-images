@@ -38,13 +38,18 @@ Invoke-ScriptSection -Title 'Cleaning up Volumne Caches' -ScriptBlock {
 	}
 }
 
-Invoke-ScriptSection -Title 'Defrag disk' -ScriptBlock {
-	Write-Host ">>> Disable scheduled task"
-	Get-ScheduledTask ScheduledDefrag | Disable-ScheduledTask | Out-String | Write-Host
+Invoke-ScriptSection -Title 'Defrag Windows Partition' -ScriptBlock {
+
 	Write-Host ">>> Run free space consolidation"
 	Invoke-CommandLine -Command 'defrag' -Arguments 'c: /FreespaceConsolidate /Verbose'
+
 	Write-Host ">>> Run boot optimization"
 	Invoke-CommandLine -Command 'defrag' -Arguments 'c: /BootOptimize /Verbose'
+}
+
+Invoke-ScriptSection -Title 'Enable Defrag Schedule' -ScriptBlock {
+
+	Get-ScheduledTask ScheduledDefrag | Enable-ScheduledTask | Out-String | Write-Host
 }
 
 Invoke-ScriptSection -Title 'Shrink System Partition' -ScriptBlock {
