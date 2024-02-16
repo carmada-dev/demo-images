@@ -174,6 +174,9 @@ locals {
 					"/DefaultBranchName:main",
 					"/Editor:VisualStudioCode"
 				]
+				configure = [
+					"${path.root}/../_scripts/Configure-Git.ps1"
+				]
 			}
 
 			vscode = {

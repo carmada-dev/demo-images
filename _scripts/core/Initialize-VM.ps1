@@ -92,7 +92,7 @@ Invoke-ScriptSection -Title 'Deleting Sysprep Logs' -ScriptBlock {
 
 Invoke-ScriptSection -Title 'Disable OneDrive Folder Backup' -ScriptBlock {
 	
-	$OneDriveRegKeyPath = "HKLM:\SOFTWARE\Policies\Microsoft\OneDrives"
+	$OneDriveRegKeyPath = "HKLM:\SOFTWARE\Policies\Microsoft\OneDrive"
 	if (-not(Test-Path -Path $OneDriveRegKeyPath)) { New-Item -Path $OneDriveRegKeyPath -ItemType Directory -Force | Out-Null }
 	New-ItemProperty -Path $OneDriveRegKeyPath -Name KFMBlockOptIn -PropertyType DWORD -Value 1 -Force | Out-Null
 	Write-Host "done"
@@ -135,8 +135,13 @@ Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 	Write-Host ">>> Register PSGallery"
 	Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
-	Write-Host ">>> Installing PowerShellGet module" 
-	Install-Module -Name PowerShellGet -Force -AllowClobber
+	if (Get-Module -ListAvailable -Name PowerShellGet) {
+		Write-Host ">>> Upgrading Powershell Module: PowerShellGet"
+		Update-Module -Name PowerShellGet -AcceptLicense -Force -WarningAction SilentlyContinue -ErrorAction Stop
+	} else {
+		Write-Host ">>> Installing Powershell Module: PowerShellGet" 
+		Install-Module -Name PowerShellGet -AcceptLicense -Force -AllowClobber -WarningAction SilentlyContinue -ErrorAction Stop
+	}
 }
 
 $Artifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath 'Artifacts'
@@ -149,10 +154,14 @@ if (Test-Path -Path $Artifacts -PathType Container) {
 		Invoke-ScriptSection -Title "Download artifacts prepare" -ScriptBlock {
 
 			@( 'Az.Accounts' ) `
-			| Where-Object { -not(Get-Module -ListAvailable -Name $_) } `
 			| ForEach-Object { 
-				Write-Host ">>> Installing $_ module";
-				Install-Module -Name $_ -Repository PSGallery -Force -AllowClobber 
+				if (Get-Module -ListAvailable -Name $_) {
+					Write-Host ">>> Upgrading Powershell Module: $_";
+					Update-Module -Name $_ -AcceptLicense -Force -WarningAction SilentlyContinue -ErrorAction Stop
+				} else {
+					Write-Host ">>> Installing Powershell Module: $_";
+					Install-Module -Name $_ -AcceptLicense -Repository PSGallery -Force -AllowClobber -WarningAction SilentlyContinue -ErrorAction Stop
+				}
 			}
 		
 			Write-Host ">>> Connect Azure"

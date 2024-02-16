@@ -15,26 +15,51 @@ Invoke-ScriptSection -Title 'Enable Active Setup Tasks' -ScriptBlock {
 }
 
 Invoke-ScriptSection -Title 'Remove APPX packages' -ScriptBlock {
+
 	Get-AppxPackage | ForEach-Object {
 		Write-Host "- $($_.PackageFullName)"
 		Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue
 	}
 }
 
-Invoke-ScriptSection -Title 'Cleaning up Volumne Caches' -ScriptBlock {
+Invoke-ScriptSection -Title 'Cleanup Event Logs' -ScriptBlock {
+
+	$logs = Get-EventLog -List | Select-Object -ExpandProperty Log
+
+	Write-Host ">>> Enforce 'OverwriteAsNeeded' as OverflowAction for all logs"
+	Limit-EventLog -LogName $logs -OverflowAction OverwriteAsNeeded 
+
+	Write-Host ">>> Clear all logs"
+	Clear-EventLog -LogName $logs
+	
+	Get-EventLog -List `
+	| Format-Table	Log, `
+		@{L='Current Size KB'; E={ [System.Math]::ceiling((Get-WmiObject -Class Win32_NTEventLogFile -filter "LogFileName = '$($_.Log)'").FileSize / 1KB) }}, `
+		@{L='Maximum Size KB'; E={ $_.MaximumKilobytes }}, `
+		@{L='Overflow Action'; E={ $_.OverflowAction }}
+}
+
+Invoke-ScriptSection -Title 'Cleanup Volumne Caches' -ScriptBlock {
+
 	$volumeCachePath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches"
 	$volumeCacheKey = "StateFlags0042"
+
 	try {
-		# set state flags for clean-up run
+
 		Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object { 
 			Write-Host "- Register Volumne Cache for clean up: $_"
 			New-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -PropertyType DWord -Value 2 -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null 
 		}
-		# run clean up manager
-		Start-Process cleanmgr -ArgumentList "/sagerun:42" -Wait -NoNewWindow -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+
+		Write-Host ">>> Run Disk Cleanup Utility"
+		Invoke-CommandLine -Command 'cleanmgr' -Arguments '/sagerun:42' | Select-Object -ExpandProperty Output | Write-Host
+
 	} finally {
-		# remove state flags set before
-		Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object { Remove-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null }
+		
+		Write-Host ">>> Remove Volumne Cache Registrations"
+		Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object { 
+			Remove-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null 
+		}
 	}
 }
 

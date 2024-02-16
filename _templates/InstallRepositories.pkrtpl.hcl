@@ -39,7 +39,7 @@ if ($Packer) {
 
     if (Get-Command 'git') {
 
-        $configureGit = {
+        Invoke-ScriptSection -Title "Configure git" -ScriptBlock {
             
             Write-Host ">>> Ensure git user name" 
 
@@ -49,14 +49,7 @@ if ($Packer) {
                 | Out-String
 
             if (-not($gitUserName)) { 
-
-                if ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0) {
-                    $gitUserName = 'Packer'
-                } else {
-                    $gitUserName = Get-ChildItem -Path HKCU:\Software\Microsoft\OneDrive\Accounts -Recurse | Get-ItemPropertyValue -Name UserName -ErrorAction SilentlyContinue | Select-Object -First 1
-                }
-
-                if ($gitUserName) { Invoke-CommandLine -Command 'git' -Arguments "config --global user.name `"$gitUserName`"" | Select-Object -ExpandProperty Output | Write-Host }
+                Invoke-CommandLine -Command 'git' -Arguments "config --global user.name `"Packer`"" | Select-Object -ExpandProperty Output | Write-Host
             }
 
             Write-Host ">>> Ensure git user email" 
@@ -67,28 +60,10 @@ if ($Packer) {
                 | Out-String
 
             if (-not($gitUserEmail)) { 
-
-                if ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0) {
-                    $gitUserEmail = 'packer@microsoft.com'
-                } else {
-                    $gitUserEmail = Get-ChildItem -Path HKCU:\Software\Microsoft\OneDrive\Accounts -Recurse | Get-ItemPropertyValue -Name UserEmail -ErrorAction SilentlyContinue | Select-Object -First 1
-                }
-                
-                if ($gitUserEmail) { Invoke-CommandLine -Command 'git' -Arguments "config --global user.email `"$gitUserEmail`"" | Select-Object -ExpandProperty Output | Write-Host }
+                Invoke-CommandLine -Command 'git' -Arguments "config --global user.email `"packer@microsoft.com`"" | Select-Object -ExpandProperty Output | Write-Host
             }
 
         }
-
-        Invoke-ScriptSection -Title "Configure git" -ScriptBlock $configureGit
-
-        $taskScriptSource = $configureGit | Out-String -Width ([int]::MaxValue)
-        $taskScriptEncoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes(($taskScriptSource)))
-        $taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -EncodedCommand $taskScriptEncoded"
-        $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
-        $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew 
-        $taskTriggers = @( New-ScheduledTaskTrigger -AtLogOn -RandomDelay (New-TimeSpan -Minutes 5) )
-
-        Register-ScheduledTask -Force -TaskName 'Configure Git' -TaskPath '\' -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal | Out-Null
     } 
 
     if ($repositories) {
@@ -103,66 +78,58 @@ if ($Packer) {
             exist 1
         }
 
-        if ($repositories | Where-Object { ($_) -and ($_ | Get-PropertyValue -Name "repoUrl" -DefaultValue '') }) {
-            Invoke-ScriptSection -Title "Connecting Azure" -ScriptBlock {
-
-                @( 'Az.Accounts' ) `
-                | Where-Object { -not(Get-Module -ListAvailable -Name $_) } `
-                | ForEach-Object { 
-                    Write-Host ">>> Installing $_ module";
-                    Install-Module -Name $_ -Repository PSGallery -Force -AllowClobber 
-                }
-            
-                Write-Host ">>> Connect Azure"
-                Connect-AzAccount -Identity -ErrorAction Stop | Out-Null
-            }
-        }
-
         Invoke-ScriptSection -Title "Cloning repositories" -ScriptBlock {
 
-            [string] $repoHome = $null
+            $ddl = Get-Volume | ? { $_.FileSystemType -eq 'ReFS' } | Sort { $_.DriveLetter } | Select -First 1 -ExpandProperty DriveLetter
+            $repoHome = New-Item -Path "$($ddl):\\repositories" -ItemType Directory -Force -ErrorAction SilentlyContinue | Select -ExpandProperty FullName 
 
-            $repositories | ForEach-Object -Begin {
+            @( 'Az.Accounts' ) `
+            | ForEach-Object { 
+                if (Get-Module -ListAvailable -Name $_) {
+                    Write-Host ">>> Upgrading Powershell Module: $_ module";
+                    Update-Module -Name $_ -AcceptLicense -Force -WarningAction SilentlyContinue -ErrorAction Stop
+                } else {
+                    Write-Host ">>> Installing Powershell Module: $_ module";
+                    Install-Module -Name $_ -AcceptLicense -Repository PSGallery -Force -AllowClobber -WarningAction SilentlyContinue -ErrorAction Stop
+                }
+            }
+        
+            Write-Host ">>> Connect Azure"
+            Connect-AzAccount -Identity -ErrorAction Stop | Out-Null
 
-                $ddl = Get-Volume | ? { $_.FileSystemType -eq 'ReFS' } | Sort { $_.DriveLetter } | Select -First 1 -ExpandProperty DriveLetter
-                if ($ddl) { $repoHome = New-Item -Path "$($ddl):\\repositories" -ItemType Directory -Force | Select -ExpandProperty FullName }
+            $repositories | Where-Object { $_ } | ForEach-Object {
 
-            } -Process {
+                $repoUrl = $_ | Get-PropertyValue -Name "repoUrl" -DefaultValue ''
 
-                if ($_) {
+                if ($repoUrl) {
 
-                    $repoUrl = $_ | Get-PropertyValue -Name "repoUrl" -DefaultValue ''
+                    Write-Host ">>> Cloning $repoUrl"
 
-                    if ($repoUrl) {
+                    $repoTokenUrl = $_ | Get-PropertyValue -Name "tokenUrl" -DefaultValue ''
+                    $repoToken = $null
 
-                        Write-Host ">>> Cloning $repoUrl"
+                    if ($repoTokenUrl) {
 
-                        $repoTokenUrl = $_ | Get-PropertyValue -Name "tokenUrl" -DefaultValue ''
-                        $repoToken = $null
+                        $keyVaultEndpoint = (Get-AzEnvironment -Name AzureCloud | Select-Object -ExpandProperty AzureKeyVaultServiceEndpointResourceId)
+                        $keyVaultToken = Get-AzAccessToken -ResourceUrl $keyVaultEndpoint -ErrorAction Stop
+                        $keyVaultHeaders = @{"Authorization" = "Bearer $($keyVaultToken.Token)"}
+                        $keyVaultResponse = Invoke-RestMethod -Uri "$($repoTokenUrl)?api-version=7.1" -Headers $KeyVaultHeaders -ErrorAction Stop
 
-                        if ($repoTokenUrl) {
-
-                            $keyVaultEndpoint = (Get-AzEnvironment -Name AzureCloud | Select-Object -ExpandProperty AzureKeyVaultServiceEndpointResourceId)
-                            $keyVaultToken = Get-AzAccessToken -ResourceUrl $keyVaultEndpoint -ErrorAction Stop
-                            $keyVaultHeaders = @{"Authorization" = "Bearer $($keyVaultToken.Token)"}
-                            $keyVaultResponse = Invoke-RestMethod -Uri "$($repoTokenUrl)?api-version=7.1" -Headers $KeyVaultHeaders -ErrorAction Stop
-
-                            $repoToken = $keyVaultResponse.value
-                        }
-
-                        if ($repoToken) {
-                            
-                            $uriBuilder = new-object System.UriBuilder -ArgumentList $repoUrl
-                            $uriBuilder.UserName = ($uriBuilder.Host.Split('.', [StringSplitOptions]::RemoveEmptyEntries)[0])
-                            $uriBuilder.Password = $repoToken
-
-                            $repoUrl = $uriBuilder.Uri.ToString()
-                        }
-
-                        Invoke-CommandLine -Command 'git' -Arguments "clone --quiet $repoUrl" -WorkingDirectory $repoHome -Mask @( $repoToken ) `
-                            | Select-Object -ExpandProperty Output `
-                            | Write-Host
+                        $repoToken = $keyVaultResponse.value
                     }
+
+                    if ($repoToken) {
+                        
+                        $uriBuilder = new-object System.UriBuilder -ArgumentList $repoUrl
+                        $uriBuilder.UserName = ($uriBuilder.Host.Split('.', [StringSplitOptions]::RemoveEmptyEntries)[0])
+                        $uriBuilder.Password = $repoToken
+
+                        $repoUrl = $uriBuilder.Uri.ToString()
+                    }
+
+                    Invoke-CommandLine -Command 'git' -Arguments "clone --quiet $repoUrl" -WorkingDirectory $repoHome -Mask @( $repoToken ) `
+                        | Select-Object -ExpandProperty Output `
+                        | Write-Host
                 }
             }
         }

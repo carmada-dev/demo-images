@@ -47,11 +47,8 @@ Invoke-ScriptSection -Title "Installing WSL2" -ScriptBlock {
 	Invoke-CommandLine -Command 'wsl' -Arguments "--status" | Select-Object -ExpandProperty Output | Write-Host
 
 	Write-Host ">>> Installing WSL Default Distro (Ubuntu) ..."
-	Invoke-CommandLine -Command 'wsl' -Arguments "--install --distribution ubuntu --inbox --web-download --no-launch" | Select-Object -ExpandProperty Output | Write-Host
+	Invoke-CommandLine -Command 'wsl' -Arguments "--install --distribution ubuntu --no-launch" | Select-Object -ExpandProperty Output | Write-Host
 
-	# Write-Host ">>> Launching WSL Default Distro (Ubuntu) ..."
-	# Invoke-CommandLine -Command 'ubuntu' -Arguments "install --root --autoinstall" | Select-Object -ExpandProperty Output | Write-Host
-	
 	Write-Host ">>> WSL Distro overview ..."
 	Invoke-CommandLine -Command 'wsl' -Arguments "--list --verbose" | Select-Object -ExpandProperty Output | Write-Host
 }
