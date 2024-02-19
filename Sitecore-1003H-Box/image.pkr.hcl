@@ -50,7 +50,7 @@ locals {
 	]
 
     prepare = [
-	    "${path.root}/../_scripts/Install-HyperV.ps1"
+
     ]
 
     packages = [
@@ -67,7 +67,7 @@ locals {
     ]
 
     configure = [
-		# "${path.root}/../_scripts/Install-SitecoreXP0-1003H.ps1"
+		"${path.root}/../_scripts/Install-SitecoreXP0-1003H.ps1"
     ]
 
 }
