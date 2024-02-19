@@ -95,7 +95,7 @@ if ($Packer) {
             }
         
             Write-Host ">>> Connect Azure"
-            Connect-AzAccount -Identity -ErrorAction Stop | Out-Null
+            Connect-AzAccount -Identity -ErrorAction Stop -ErrorAction SilentlyContinue | Out-Null
 
             $repositories | Where-Object { $_ } | ForEach-Object {
 
@@ -111,7 +111,7 @@ if ($Packer) {
                     if ($repoTokenUrl) {
 
                         $keyVaultEndpoint = (Get-AzEnvironment -Name AzureCloud | Select-Object -ExpandProperty AzureKeyVaultServiceEndpointResourceId)
-                        $keyVaultToken = Get-AzAccessToken -ResourceUrl $keyVaultEndpoint -ErrorAction Stop
+                        $keyVaultToken = Get-AzAccessToken -ResourceUrl $keyVaultEndpoint -ErrorAction Stop -WarningAction SilentlyContinue
                         $keyVaultHeaders = @{"Authorization" = "Bearer $($keyVaultToken.Token)"}
                         $keyVaultResponse = Invoke-RestMethod -Uri "$($repoTokenUrl)?api-version=7.1" -Headers $KeyVaultHeaders -ErrorAction Stop
 

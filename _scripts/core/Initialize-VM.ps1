@@ -26,7 +26,7 @@ $downloadKeyVaultArtifact = {
 	param([string] $Source, [string] $Destination, [string] $TokenEndpoint)
 
 	Write-Host ">>> Downloading KeyVault Artifact $Source"
-	$KeyVaultToken = Get-AzAccessToken -ResourceUrl $TokenEndpoint -ErrorAction Stop
+	$KeyVaultToken = Get-AzAccessToken -ResourceUrl $TokenEndpoint -ErrorAction Stop -WarningAction SilentlyContinue
 	$KeyVaultHeaders = @{"Authorization" = "Bearer $($KeyVaultToken.Token)"}
 	$KeyVaultResponse = Invoke-RestMethod -Uri "$($Source)?api-version=7.1" -Headers $KeyVaultHeaders -ErrorAction Stop
 		
@@ -165,7 +165,7 @@ if (Test-Path -Path $Artifacts -PathType Container) {
 			}
 		
 			Write-Host ">>> Connect Azure"
-			Connect-AzAccount -Identity -ErrorAction Stop | Out-Null
+			Connect-AzAccount -Identity -ErrorAction Stop -WarningAction SilentlyContinue | Out-Null
 		}
 
 		Invoke-ScriptSection -Title "Download artifacts" -ScriptBlock {
