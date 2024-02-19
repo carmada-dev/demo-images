@@ -10,9 +10,9 @@ locals {
 
 		base = {
 
-			publisher = "MicrosoftWindowsDesktop"
-			offer = "windows-ent-cpc"
-			sku = "win11-22h2-ent-cpc-os"
+			publisher = "MicrosoftVisualStudio"
+			offer = "windowsplustools"
+			sku = "base-win11-gen2"
 			version = "latest"
 		}
     }
