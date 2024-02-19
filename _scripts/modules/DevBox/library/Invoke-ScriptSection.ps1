@@ -10,6 +10,7 @@ function Invoke-ScriptSection {
         $Info        
     )
 
+    $failed = $false
     $started = Get-Date
     $dblLine = "=========================================================================================================="
     $sglLine = "----------------------------------------------------------------------------------------------------------"
@@ -35,6 +36,13 @@ function Invoke-ScriptSection {
 
         $measure = Measure-Command -Expression { . $ScriptBlock }    
     }
+    catch
+    {
+        Write-Host $sglLine
+        Write-Error $_        
+
+        $failed = $true
+    }
     finally
     {
         if (-not($measure)) { 
@@ -47,6 +55,11 @@ function Invoke-ScriptSection {
             "Finished after $($measure.ToString("hh\:mm\:ss\.fff")) as $($env:username) $(&{ if (Test-IsElevated -ErrorAction SilentlyContinue) { '(elevated)' } else { '' } })", 
             $dblLine
         ) | Write-Host
+    }
+
+    if ($failed) { 
+        $exitCode = [Math]::MaxValue($LASTEXITCODE, 1)
+        exit $exitCode
     }
 }
 
