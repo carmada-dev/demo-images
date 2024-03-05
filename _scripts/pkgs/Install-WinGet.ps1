@@ -44,8 +44,8 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Add-AppxPackage -Path $path -ErrorAction Stop
 
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
-	$path = Invoke-FileDownload -Url "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.7.1" -Name 'Microsoft.UI.Xaml.nuget.zip' -Expand $true
-	Add-AppxPackage -Path (Join-Path -path $path -ChildPath "tools\AppX\$osType\Release\Microsoft.UI.Xaml.2.7.appx") -ErrorAction SilentlyContinue
+	$path = Invoke-FileDownload -Url "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6" -Name 'Microsoft.UI.Xaml.nuget.zip' -Expand $true
+	Add-AppxPackage -Path (Join-Path -path $path -ChildPath "tools\AppX\$osType\Release\Microsoft.UI.Xaml.2.8.appx") -ErrorAction SilentlyContinue
 
 	Write-Host ">>> Installing WinGet CLI..."
 	$path = Invoke-FileDownload -Url "$(Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle')"
