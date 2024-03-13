@@ -173,7 +173,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest    
     if: ${{ !cancelled() }}
-    
+
     defaults:
       run:
         shell: bash
@@ -197,7 +197,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript:	| 
-            for IMAGEVERSION in $(az sig image-version list --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ inputs.imageName }} --query [?publishingProfile.excludeFromLatest].id --output tsv 2>/dev/null); do
+            for IMAGEVERSION in $(az sig image-version list --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ inputs.imageName }} --query "[?publishingProfile.excludeFromLatest && name!='${{ steps.image.outputs.imageVersion }}'].id" --output tsv 2>/dev/null); do
               echo "Deleting image version '$IMAGEVERSION' ..." 
               az sig image-version delete --ids $IMAGEVERSION --no-wait --output none 
             done   
