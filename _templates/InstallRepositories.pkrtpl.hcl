@@ -95,7 +95,7 @@ if ($Packer) {
             }
         
             Write-Host ">>> Connect Azure"
-            Connect-AzAccount -Identity -ErrorAction Stop -ErrorAction SilentlyContinue | Out-Null
+            Connect-AzAccount -Identity -ErrorAction Stop | Out-Null
 
             $repositories | Where-Object { $_ } | ForEach-Object {
 
