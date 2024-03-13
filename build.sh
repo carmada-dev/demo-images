@@ -48,6 +48,9 @@ buildImage() {
 	IMAGENAME="$(basename "$(dirname "$1")")-$(whoami | tr '[:lower:]' '[:upper:]')"
 	IMAGEJSON="$(echo "jsonencode(local)" | packer console ./image.pkr.hcl | jq | tee -a ./image.pkr.log)"
 
+	displayHeader "Switch subscription context" | tee -a ./image.pkr.log
+	az account set --subscription $(echo "$IMAGEJSON" | jq --raw-output '.gallery.subscription') | tee -a ./image.pkr.log
+	
 	displayHeader "Ensure Image Definition ($1)" | tee -a ./image.pkr.log
 	az sig image-definition create \
 		--subscription $(echo "$IMAGEJSON" | jq --raw-output '.gallery.subscription') \

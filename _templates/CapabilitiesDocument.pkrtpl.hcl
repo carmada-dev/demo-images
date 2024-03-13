@@ -128,12 +128,16 @@ function Parse-WinGetPackage() {
 
 	$output = winget.exe ($arguments -join ' ')
 
-	return [PSCustomObject]@{
-		Title   	= $output | Extract-OutputValue -Header 'Found'
-		Version 	= $output | Extract-OutputValue -Header 'Version:'
-		Publisher   = $output | Extract-OutputValue -Header 'Publisher:'
-		Description = $output | Extract-OutputValue -Header 'Description:'
-		Homepage	= $output | Extract-OutputValue -Header 'Homepage:'
+	if ($output) {
+
+		return [PSCustomObject]@{
+			Title   	= $output | Extract-OutputValue -Header 'Found'
+			Version 	= $output | Extract-OutputValue -Header 'Version:'
+			Publisher   = $output | Extract-OutputValue -Header 'Publisher:'
+			Description = $output | Extract-OutputValue -Header 'Description:'
+			Homepage	= $output | Extract-OutputValue -Header 'Homepage:'
+		}
+
 	}
 }
 
@@ -160,7 +164,7 @@ foreach ($package in $packages) {
 
 $capabilitiesMarkdown = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.md"
 
-$results | Sort-Object Version | Sort-Object Title | ForEach-Object -Begin {
+$results | Where-Object { $_ } | Sort-Object Version | Sort-Object Title | ForEach-Object -Begin {
 
 @"
 
