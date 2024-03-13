@@ -126,7 +126,7 @@ function Parse-WinGetPackage() {
 	$arguments += "--accept-package-agreements"
 	$arguments += "--accept-source-agreements"
 
-	$output = winget.exe ($arguments -join ' ')
+	$output = winget ($arguments -join ' ')
 
 	if ($output) {
 
