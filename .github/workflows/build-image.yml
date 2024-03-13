@@ -169,6 +169,39 @@ jobs:
               az keyvault purge --name $KEYVAULT -o none & 
             done          
 
+  cleanup-images:
+    needs: build
+    runs-on: ubuntu-latest    
+    if: ${{ !cancelled() }}
+    
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ format('./{0}', inputs.imageName) }}
+
+    steps:
+
+      - name: Download Image Info
+        uses: actions/download-artifact@v3
+
+      - name: Load Image Info
+        id: image
+        run: cat ./image.info >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
+
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Delete pre-release Images (excluded from latest)
+        continue-on-error: true
+        uses: azure/CLI@v1
+        with:
+          inlineScript:	| 
+            for IMAGEVERSION in $(az sig image-version list --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ inputs.imageName }} --query [?publishingProfile.excludeFromLatest].id --output tsv 2>/dev/null); do
+              echo "Deleting image version '$IMAGEVERSION' ..." 
+              az sig image-version delete --ids $IMAGEVERSION --no-wait --output none 
+            done   
+
   release:
     needs: build
     runs-on: ubuntu-latest    
@@ -248,38 +281,6 @@ jobs:
                 --only-show-errors && break || echo "DevBox definition '${{ inputs.imageName }}' can't be created or updated because of a pending gallery update - retry in 60 sec"
             done 
 
-  cleanup-images:
-    needs: release
-    runs-on: ubuntu-latest    
-
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ format('./{0}', inputs.imageName) }}
-
-    steps:
-
-      - name: Download Image Info
-        uses: actions/download-artifact@v3
-
-      - name: Load Image Info
-        id: image
-        run: cat ./image.info >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
-
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Delete pre-release Images (excluded from latest)
-        continue-on-error: true
-        uses: azure/CLI@v1
-        with:
-          inlineScript:	| 
-            for IMAGEVERSION in $(az sig image-version list --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ inputs.imageName }} --query [?publishingProfile.excludeFromLatest].id --output tsv 2>/dev/null); do
-              echo "Deleting image version '$IMAGEVERSION' ..." 
-              az sig image-version delete --ids $IMAGEVERSION --no-wait --output none 
-            done   
-
   archive:
     needs: release
     runs-on: ubuntu-latest    
@@ -324,7 +325,7 @@ jobs:
               --query id \
               --output tsv)" >> $GITHUB_OUTPUT
             
-              echo "resourceUrl=$(az disk grant-access \
+            echo "resourceUrl=$(az disk grant-access \
               --subscription ${{ steps.image.outputs.gallery_subscription }} \
               --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
               --name $DISK_NAME \
