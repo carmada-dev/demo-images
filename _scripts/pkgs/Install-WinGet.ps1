@@ -42,10 +42,10 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
 	$path = Invoke-FileDownload -Url "https://aka.ms/Microsoft.VCLibs.$osType.14.00.Desktop.appx"
 	Add-AppxPackage -Path $path -ErrorAction Stop
-
+	
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
-	$path = Invoke-FileDownload -Url "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.7.1" -Name 'Microsoft.UI.Xaml.nuget.zip' -Expand $true
-	Add-AppxPackage -Path (Join-Path -path $path -ChildPath "tools\AppX\$osType\Release\Microsoft.UI.Xaml.2.7.appx") -ErrorAction SilentlyContinue
+	$path = Invoke-FileDownload -Url "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6" -Name 'Microsoft.UI.Xaml.zip' -Expand $true
+	Add-AppxPackage -Path (Join-Path -path $path -ChildPath "tools\AppX\$osType\Release\Microsoft.UI.Xaml.2.8.appx") -ErrorAction Stop
 
 	Write-Host ">>> Installing WinGet CLI..."
 	$path = Invoke-FileDownload -Url "$(Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle')"
@@ -54,7 +54,6 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	if (Test-IsElevated) {
 		Write-Host ">>> Resetting WinGet Sources ..."
 		Invoke-CommandLine -Command 'winget' -Arguments "source reset --force --disable-interactivity" | Select-Object -ExpandProperty Output | Write-Host
-		# Start-Process winget -ArgumentList "source reset --force --disable-interactivity" -NoNewWindow -Wait -RedirectStandardError "NUL" | Out-Null
 	}
 
 	Write-Host ">>> Adding WinGet Source Cache Package ..."

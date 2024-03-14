@@ -43,7 +43,7 @@ locals {
 		# search = "AutoSelectOnWebSites=1 and IsInstalled=0" 
 		# filters = [
 		# 	"exclude:$_.Title -like '*Preview*'",
-		# 	"include:$true",
+		# 	"include:$true"
 		# ]
 
 		# Recommended
@@ -51,7 +51,7 @@ locals {
 		# search = "BrowseOnly=0 and IsInstalled=0" 
 		# filters = [
 		# 	"exclude:$_.Title -like '*Preview*'",
-		# 	"include:$true",
+		# 	"include:$true"
 		# ]
 
 		# All Updates
@@ -59,8 +59,16 @@ locals {
 		search = "BrowseOnly=0 and IsInstalled=0" 
 		filters = [
 			"exclude:$_.Title -like '*Preview*'",
-			"include:$true",
+			"include:$true"
 		]
+
+		# None Updates
+		# ----------------------------------------------
+		# search = "BrowseOnly=0 and IsInstalled=0" 
+		# filters = [
+		# 	"exclude:$true",
+		# 	"include:$false"
+		# ]
 	}
 
 	path = {

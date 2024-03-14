@@ -58,7 +58,7 @@ function Invoke-ScriptSection {
     }
 
     if ($failed) { 
-        $exitCode = [Math]::MaxValue($LASTEXITCODE, 1)
+        $exitCode = [System.Math]::Max($LASTEXITCODE, 1)
         exit $exitCode
     }
 }

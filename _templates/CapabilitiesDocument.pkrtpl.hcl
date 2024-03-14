@@ -1,4 +1,19 @@
 
+param(
+    [Parameter(Mandatory=$false)]
+    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
+)
+
+Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
+	Write-Host ">>> Importing PowerShell Module: $_"
+	Import-Module -Name $_
+} 
+
+$ProgressPreference = 'SilentlyContinue'	# hide any progress output
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+# ==============================================================================
+
 function Has-Property() {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -30,73 +45,52 @@ function Get-PropertyValue() {
 	return $value
 }
 
-function Set-Shortcut() {
-	param( 
-		[Parameter(Mandatory=$true)][string]$Path,
-		[Parameter(Mandatory=$true)][string]$TargetPath,
-		[Parameter(Mandatory=$false)][string]$TargetArguments = ""
-	)
-
-	$Shell = New-Object -ComObject ("WScript.Shell")
-	$Shortcut = $Shell.CreateShortcut($Path)
-	$Shortcut.TargetPath = $TargetPath
-	$Shortcut.Arguments = $TargetArguments
-	$Shortcut.Save()
-}
-
-function Invoke-FileDownload() {
-	param(
-		[Parameter(Mandatory=$true)][string] $url,
-		[Parameter(Mandatory=$false)][string] $name,
-		[Parameter(Mandatory=$false)][boolean] $expand		
-	)
-
-	$path = Join-Path -path $env:temp -ChildPath (Split-Path $url -leaf)
-	if ($name) { $path = Join-Path -path $env:temp -ChildPath $name }
-	
-	Write-Host ">>> Downloading $url > $path"
-	Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing
-	
-	if ($expand) {
-		$arch = Join-Path -path $env:temp -ChildPath ([System.IO.Path]::GetFileNameWithoutExtension($path))
-
-        Write-Host ">>> Expanding $path > $arch"
-		Expand-Archive -Path $path -DestinationPath $arch -Force
-
-		return $arch
-	}
-	
-	return $path
-}
-
-function Convert-CapabilitiesMD2HTML() {
+function Convert-Markdown2HTML() {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string] $MarkdownFile
-    )
-    
-    $HtmlFile = [System.IO.Path]::ChangeExtension($MarkdownFile, 'html')
-
-	$pandocUrl = (Invoke-WebRequest 'https://api.github.com/repos/jgm/pandoc/releases' | ConvertFrom-Json) `
-                | Where-Object { $_.draft -eq $false -and $_.prerelease -eq $false } | Select-Object -First 1 -ExpandProperty assets `
-                | Where-Object { $_.name.endswith('-windows-x86_64.zip') } | Select-Object -First 1 -ExpandProperty browser_download_url
-
-	$pandocDir = Invoke-FileDownload -url $pandocUrl -expand $true
-	$pandocExe = Get-ChildItem -Path $pandocDir -Filter 'pandoc.exe' -Recurse | Select-Object -First 1 -ExpandProperty 'Fullname'
-    $pandocCss = Invoke-FileDownload -url 'https://raw.githubusercontent.com/SepCode/vscode-markdown-style/master/preview/github.css' -name 'pandoc.css'
-
-    $pandocArgs = (
-		"`"$MarkdownFile`"",
-		"--standalone",
-		"-c `"$pandocCss`"",
-		"-o `"$HtmlFile`"",
-		"--metadata title=`"DevBox Capabilities`""
+        [string] $Markdown
     )
 
-	$process = Start-Process $pandocExe -ArgumentList $pandocArgs -NoNewWindow -Wait -PassThru
-	if ($process.ExitCode -ne 0) { Write-Warning "Pandoc exited with code $($process.ExitCode) !!!" }
+	$payload = [PSCustomObject]@{
 
-	$HtmlFile | Write-Output
+		text = $Markdown
+		mode = "markdown"
+
+	} | ConvertTo-Json -Compress | Out-String
+
+	$response = Invoke-WebRequest -Method Post -Uri 'https://api.github.com/markdown' -Body $payload 
+
+return @"
+<!doctype html>
+<html lang=\"en\">
+	<head>
+		<meta charset=\"utf-8\">
+		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, minimal-ui\">
+		<title>Microsoft DevBox Capabilities</title>
+		<meta name=\"color-scheme\" content=\"light dark\">
+		<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown.css\">
+		<style>
+			body {
+				box-sizing: border-box;
+				min-width: 200px;
+				max-width: 980px;
+				margin: 0 auto;
+				padding: 45px;
+			}
+
+			@media (prefers-color-scheme: dark) {
+				body {
+					background-color: #0d1117;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<article class=\"markdown-body\">$($response.Content | Out-String)</article>
+	</body>
+</html>
+"@ | Out-String
+
 }
 
 function Extract-OutputValue() {
@@ -141,33 +135,8 @@ function Parse-WinGetPackage() {
 	}
 }
 
-[array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json 
-[array]	$results = @()
 
-foreach ($package in $packages) {
-
-	$source = $package | Get-PropertyValue -Name "source" -DefaultValue "winget"
-
-	switch -exact ($source.ToLowerInvariant()) {
-
-		'winget' {
-			$results += $package | Parse-WinGetPackage
-			Break
-		}
-
-		'msstore' {
-			$results += $package | Parse-WinGetPackage
-			Break
-		}
-	}
-}
-
-$capabilitiesMarkdown = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.md"
-
-$results | Where-Object { $_ } | Sort-Object Version | Sort-Object Title | ForEach-Object -Begin {
-
-@"
-
+$capabilitiesMarkdown = @{@"
 # DevBox Capabilities
 ---
 
@@ -175,26 +144,42 @@ Image Name: $($DEVBOX_IMAGENAME)
 Image Name: $($DEVBOX_IMAGEVERSION)
 
 ---
-"@ | Write-Output
+"@)
 
+[array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json 
 
-} -Process {
+$packages | ForEach-Object { 
 
-@"
+	$source = $package | Get-PropertyValue -Name "source" -DefaultValue "winget"
 
+	switch -exact ($source.ToLowerInvariant()) {
+
+		'winget' {
+			$package | Parse-WinGetPackage
+			Break
+		}
+
+		'msstore' {
+			$package | Parse-WinGetPackage
+			Break
+		}
+	}
+
+} | Where-Object { $_ } | Sort-Object Version | Sort-Object Title | ForEach-Object {
+
+$capabilitiesMarkdown += @"
 ## [$($_.Title)]($($_.Homepage)) 
 
 Publisher: $($_.Publisher)
 Version:   $($_.Version)
 
 $($_.Description)
-"@ | Write-Output
+"@
 
-} | Out-File -FilePath $capabilitiesMarkdown -Encoding utf8
+} 
 
-$capabilitiesHTMLURI = ([System.Uri]($capabilitiesMarkdown | Convert-CapabilitiesMD2HTML)).AbsoluteUri
-$capabilitiesHTMLLNK = (Join-Path ([Environment]::GetFolderPath("CommonDesktopDirectory")) -ChildPath "DevBox Capabilities.lnk")
+$capabilitiesFile = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.html"
+$capabilitiesLink = Join-Path ([Environment]::GetFolderPath("CommonDesktopDirectory")) -ChildPath "Capabilities.lnk"
 
-Set-Shortcut -Path $capabilitiesHTMLLNK -TargetPath $capabilitiesHTMLURI
-
-exit 0
+$capabilitiesMarkdown -join '' | Convert-Markdown2HTML | Out-File -FilePath $capabilitiesFile -Encoding utf8 -Force
+New-Shortcut -Path $capabilitiesLink -TargetPath $capabilitiesFile -
