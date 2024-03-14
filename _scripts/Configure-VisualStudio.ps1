@@ -49,7 +49,7 @@ Invoke-ScriptSection -Title "Configure Visual Studio" -ScriptBlock {
 		$instances = [array](Invoke-CommandLine -Command $vswhereExe -Arguments '-all -prerelease -utf8 -format json' | Select-Object -ExpandProperty Output | ConvertFrom-Json)
 		$instances | ForEach-Object { 
 			$edition = "$($_.displayName) $(if ($_.isPrerelease) {'PRE'} else {''})".Trim()
-			$installer = (Join-Path $($_.enginePath) 'VSIXInstaller.exe')
+			$installer = Join-Path -Path ($_.enginePath) -ChildPath 'VSIXInstaller.exe'
 			Invoke-VSIXInstaller -Edition $edition -Installer $installer
 		}
 
