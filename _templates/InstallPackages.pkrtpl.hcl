@@ -147,17 +147,10 @@ function Install-ChocoPackage {
 [array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json
 $allowedScopes = ('all', (&{ if ($Packer) { 'machine' } else { 'user' } }))
 
-Invoke-ScriptSection -Title "Packages" -ScriptBlock { $packages | ConvertTo-Json | Write-Host }
-
-Invoke-ScriptSection -Title "WinGet initialization" -ScriptBlock {
-
-	if (Test-IsElevated) {
-		Write-Host ">>> Reset WinGet Sources"
-		Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'reset', '--force') -NoNewWindow -Wait 
-	}
-
-	Write-Host ">>> Update WinGet Sources"
-	Start-Process -FilePath "winget.exe" -ArgumentList ('source', 'update') -NoNewWindow -Wait 
+Invoke-ScriptSection -Title "Packages" -ScriptBlock { 
+	# just for debugging we dump the packages
+	# to install to the console in JSON format	
+	$packages | ConvertTo-Json | Write-Host 
 }
 
 $successExitCodes_winget = @(

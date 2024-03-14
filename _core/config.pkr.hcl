@@ -56,19 +56,19 @@ locals {
 
 		# All Updates
 		# ----------------------------------------------
-		search = "BrowseOnly=0 and IsInstalled=0" 
-		filters = [
-			"exclude:$_.Title -like '*Preview*'",
-			"include:$true"
-		]
+		# search = "BrowseOnly=0 and IsInstalled=0" 
+		# filters = [
+		# 	"exclude:$_.Title -like '*Preview*'",
+		# 	"include:$true"
+		# ]
 
 		# None Updates
 		# ----------------------------------------------
-		# search = "BrowseOnly=0 and IsInstalled=0" 
-		# filters = [
-		# 	"exclude:$true",
-		# 	"include:$false"
-		# ]
+		search = "BrowseOnly=0 and IsInstalled=0" 
+		filters = [
+			"exclude:$true",
+			"include:$false"
+		]
 	}
 
 	path = {

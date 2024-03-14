@@ -136,7 +136,9 @@ function Parse-WinGetPackage() {
 }
 
 
-$capabilitiesMarkdown = @{@"
+$capabilitiesMarkdown = @()
+
+$capabilitiesMarkdown += @"
 # DevBox Capabilities
 ---
 
@@ -144,23 +146,23 @@ Image Name: $($DEVBOX_IMAGENAME)
 Image Name: $($DEVBOX_IMAGEVERSION)
 
 ---
-"@)
+"@
 
 [array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json 
 
 $packages | ForEach-Object { 
 
-	$source = $package | Get-PropertyValue -Name "source" -DefaultValue "winget"
+	$source = $_ | Get-PropertyValue -Name "source" -DefaultValue "winget"
 
 	switch -exact ($source.ToLowerInvariant()) {
 
 		'winget' {
-			$package | Parse-WinGetPackage
+			$_ | Parse-WinGetPackage
 			Break
 		}
 
 		'msstore' {
-			$package | Parse-WinGetPackage
+			$_ | Parse-WinGetPackage
 			Break
 		}
 	}
