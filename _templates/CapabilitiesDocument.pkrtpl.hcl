@@ -184,4 +184,4 @@ $capabilitiesFile = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.ht
 $capabilitiesLink = Join-Path ([Environment]::GetFolderPath("CommonDesktopDirectory")) -ChildPath "Capabilities.lnk"
 
 $capabilitiesMarkdown -join '' | Convert-Markdown2HTML | Out-File -FilePath $capabilitiesFile -Encoding utf8 -Force
-New-Shortcut -Path $capabilitiesLink -TargetPath $capabilitiesFile -
+New-Shortcut -Path $capabilitiesLink -TargetPath $capabilitiesFile
