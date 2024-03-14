@@ -60,7 +60,7 @@ function Convert-Markdown2HTML() {
 
 	$response = Invoke-WebRequest -Method Post -Uri 'https://api.github.com/markdown' -Body $payload 
 
-return @"
+	return @"
 <!doctype html>
 <html lang=\"en\">
 	<head>
@@ -135,10 +135,12 @@ function Parse-WinGetPackage() {
 	}
 }
 
+if ($Packer) { 
+    Invoke-ScriptSection -Title "Generate Capabilities Document" -ScriptBlock {
 
-$capabilitiesMarkdown = @()
+		$capabilitiesMarkdown = @()
+		$capabilitiesMarkdown += @"
 
-$capabilitiesMarkdown += @"
 # DevBox Capabilities
 ---
 
@@ -148,28 +150,29 @@ Image Name: $($DEVBOX_IMAGEVERSION)
 ---
 "@
 
-[array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json 
+		[array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json 
 
-$packages | ForEach-Object { 
+		$packages | ForEach-Object { 
 
-	$source = $_ | Get-PropertyValue -Name "source" -DefaultValue "winget"
+			$source = $_ | Get-PropertyValue -Name "source" -DefaultValue "winget"
 
-	switch -exact ($source.ToLowerInvariant()) {
+			switch -exact ($source.ToLowerInvariant()) {
 
-		'winget' {
-			$_ | Parse-WinGetPackage
-			Break
-		}
+				'winget' {
+					$_ | Parse-WinGetPackage
+					Break
+				}
 
-		'msstore' {
-			$_ | Parse-WinGetPackage
-			Break
-		}
-	}
+				'msstore' {
+					$_ | Parse-WinGetPackage
+					Break
+				}
+			}
 
-} | Where-Object { $_ } | Sort-Object Version | Sort-Object Title | ForEach-Object {
+		} | Where-Object { $_ } | Sort-Object Version | Sort-Object Title | ForEach-Object {
 
-$capabilitiesMarkdown += @"
+			$capabilitiesMarkdown += @"
+
 ## [$($_.Title)]($($_.Homepage)) 
 
 Publisher: $($_.Publisher)
@@ -180,8 +183,10 @@ $($_.Description)
 
 } 
 
-$capabilitiesFile = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.html"
-$capabilitiesLink = Join-Path ([Environment]::GetFolderPath("CommonDesktopDirectory")) -ChildPath "Capabilities.lnk"
+		$capabilitiesFile = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.html"
+		$capabilitiesLink = Join-Path ([Environment]::GetFolderPath("CommonDesktopDirectory")) -ChildPath "Capabilities.lnk"
 
-$capabilitiesMarkdown -join '' | Convert-Markdown2HTML | Out-File -FilePath $capabilitiesFile -Encoding utf8 -Force
-New-Shortcut -Path $capabilitiesLink -TargetPath $capabilitiesFile
+		$capabilitiesMarkdown -join '' | Convert-Markdown2HTML | Out-File -FilePath $capabilitiesFile -Encoding utf8 -Force
+		New-Shortcut -Path $capabilitiesLink -Target $capabilitiesFile | Out-Null
+	}
+}

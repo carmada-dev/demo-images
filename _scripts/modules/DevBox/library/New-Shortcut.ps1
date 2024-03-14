@@ -12,19 +12,23 @@ function New-Shortcut {
         [switch] $Force
     )
 
-    if (-not($Icon) -and ([IO.Path]::GetExtension($Target) -eq '.exe') ) {
-        $Icon = $Target | New-AppIcon
-    }
     if ($Force) {
         Remove-Item -Path $Path -Force -ErrorAction SilentlyContinue
     }
 
-	$Shell = New-Object -ComObject ("WScript.Shell")
+    $Shell = New-Object -ComObject ("WScript.Shell")
 	$Shortcut = $Shell.CreateShortcut($Path)
 	$Shortcut.TargetPath = "`"$Target`""
 	$Shortcut.Arguments = $Arguments
-    $Shortcut.IconLocation = $Icon
-	$Shortcut.Save()
+
+    if ($Icon) {
+        $Shortcut.IconLocation = $Icon
+    }
+    elseif (-not($Icon) -and ([IO.Path]::GetExtension($Target) -eq '.exe') ) {
+        $Shortcut.IconLocation = $Target | New-AppIcon
+    }
+
+    $Shortcut.Save()
 
     $Path
 }
