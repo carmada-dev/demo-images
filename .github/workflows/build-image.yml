@@ -45,6 +45,8 @@ jobs:
         id: image
         run: |
           IMAGEJSON="$(echo "jsonencode(local)" | packer console ./image.pkr.hcl)"
+          echo "factory_subscription=$(echo $IMAGEJSON | jq --raw-output '.factory.subscription')" >> $GITHUB_OUTPUT
+          echo "factory_region=$(echo $IMAGEJSON | jq --raw-output '.factory.region')" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $IMAGEJSON | jq --raw-output '.image.publisher')" >> $GITHUB_OUTPUT
           echo "image_offer=$(echo $IMAGEJSON | jq --raw-output '.image.offer')" >> $GITHUB_OUTPUT
           echo "image_sku=$(echo $IMAGEJSON | jq --raw-output '.image.sku')" >> $GITHUB_OUTPUT
@@ -61,17 +63,6 @@ jobs:
           echo "devcenter_compute=$(echo $IMAGEJSON | jq --raw-output '.devCenter.compute')" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
-      - name: Cleanup Factory Subscription        
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
-            RGNAME_SUFFIX=$(echo "-${{ github.workflow }}" | tr [:lower:] [:upper:])
-            for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.devcenter_subscription }} | jq --raw-output ".[] | select((.name | ascii_upcase | startswith(\"$RGNAME_PREFIX\")) and (.name | ascii_upcase | endswith(\"$RGNAME_SUFFIX\"))) | .name"); do
-              echo "Deleting resource group '$RESOURCEGROUP' in subscription '${{ steps.image.outputs.devcenter_subscription }}' ..."
-              az group delete --subscription ${{ steps.image.outputs.devcenter_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --yes &
-            done; wait
-  
       - name: Ensure Image Definition
         uses: azure/CLI@v1
         with:
@@ -90,17 +81,36 @@ jobs:
               --features 'IsHibernateSupported=true SecurityType=TrustedLaunch' \
               --only-show-errors 2>&1
 
-      - name: Cleanup Image Version
+      - name: Delete Image PreReleases
+        continue-on-error: true
         uses: azure/CLI@v1
         with:
-          inlineScript:	|
-            az sig image-version delete \
-              --subscription ${{ steps.image.outputs.gallery_subscription }} \
-              --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
-              --gallery-name ${{ steps.image.outputs.gallery_name }} \
-              --gallery-image-definition ${{ inputs.imageName }} \
-              --gallery-image-version '${{ inputs.imageVersion }}' \
-              --only-show-errors 2>&1
+          inlineScript:	| 
+            for IMAGEVERSION in $(az sig image-version list --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ inputs.imageName }} --query "[?publishingProfile.excludeFromLatest].id" --output tsv 2>/dev/null); do
+              echo "Deleting image version '$IMAGEVERSION' ..." 
+              az sig image-version delete --subscription ${{ steps.image.outputs.gallery_subscription }} --ids $IMAGEVERSION --output none &
+            done; wait
+              
+      - name: Delete Packer ResourceGroups        
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
+            RGNAME_SUFFIX=$(echo "-${{ github.workflow }}" | tr [:lower:] [:upper:])
+            for RESOURCEGROUP in $(az group list --subscription ${{ steps.image.outputs.factory_subscription }} | jq --raw-output ".[] | select((.name | ascii_upcase | startswith(\"$RGNAME_PREFIX\")) and (.name | ascii_upcase | endswith(\"$RGNAME_SUFFIX\"))) | .name"); do
+              echo "Deleting resource group '$RESOURCEGROUP' in subscription '${{ steps.image.outputs.factory_subscription }}' ..."
+              az group delete --subscription ${{ steps.image.outputs.factory_subscription }} --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --yes &
+            done; wait
+  
+      - name: Delete Packer KeyVaults
+        continue-on-error: true
+        uses: azure/CLI@v1
+        with:
+          inlineScript:	| 
+            for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
+              echo "Purging deleted key vault '$KEYVAULT' ..." 
+              az keyvault purge --subscription ${{ steps.image.outputs.factory_subscription }} --name $KEYVAULT -o none & 
+            done; wait  
 
       - name: Prepare Image
         run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
@@ -147,60 +157,6 @@ jobs:
               --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
               --sku name="${{ steps.image.outputs.devcenter_compute }}" \
               --only-show-errors 2>&1
-
-  cleanup-keyvaults:
-    needs: build
-    runs-on: ubuntu-latest    
-    if: ${{ !cancelled() }}
-
-    steps:
-
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Purge Deleted KeyVaults
-        continue-on-error: true
-        uses: azure/CLI@v1
-        with:
-          inlineScript:	| 
-            for KEYVAULT in $(az keyvault list-deleted --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
-              echo "Purging deleted key vault '$KEYVAULT' ..." 
-              az keyvault purge --name $KEYVAULT -o none & 
-            done          
-
-  cleanup-images:
-    needs: build
-    runs-on: ubuntu-latest    
-    if: ${{ !cancelled() }}
-
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ format('./{0}', inputs.imageName) }}
-
-    steps:
-
-      - name: Download Image Info
-        uses: actions/download-artifact@v3
-
-      - name: Load Image Info
-        id: image
-        run: cat ./image.info >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
-
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Delete pre-release Images (excluded from latest)
-        continue-on-error: true
-        uses: azure/CLI@v1
-        with:
-          inlineScript:	| 
-            for IMAGEVERSION in $(az sig image-version list --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ inputs.imageName }} --query "[?publishingProfile.excludeFromLatest && name!='${{ steps.image.outputs.imageVersion }}'].id" --output tsv 2>/dev/null); do
-              echo "Deleting image version '$IMAGEVERSION' ..." 
-              az sig image-version delete --ids $IMAGEVERSION --no-wait --output none 
-            done   
 
   release:
     needs: build

@@ -26,7 +26,7 @@ locals {
 
 	factory = {
 		# The ID of the Azure subscription that should be used as the image factory.
-		subscription = "f9fcf631-fa8d-4ea2-8298-61b43220a3d1"
+		subscription = local.gallery.subscription
 		# The Azure region that should be used to create factory (temporary) resources.
 		location = "${try(local.image.regions[0], "West Europe")}"
 		# User definied managed identities that should be assigned to temp VMs (resource id)
