@@ -36,7 +36,7 @@ Invoke-ScriptSection -Title "Configure Visual Studio" -ScriptBlock {
 			
 			Write-Host ">>> $edition ($installer)"
 
-			$visxFolder = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Artifacts/$Edition"
+			$visxFolder = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Artifacts/$edition"
 			if (Test-Path -Path $vsixHome -PathType Container) {
 
 				Get-ChildItem -Path $visxFolder -Filter '*.visx' | Select-Object -ExpandProperty FullName | ForEach-Object {
