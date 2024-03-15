@@ -29,25 +29,15 @@ Invoke-ScriptSection -Title "Configure Visual Studio" -ScriptBlock {
 		$instances = [array](Invoke-CommandLine -Command $vswhereExe -Arguments '-all -prerelease -utf8 -format json' | Select-Object -ExpandProperty Output | ConvertFrom-Json)
 		$instances | ForEach-Object { 
 
-			$_ | ConvertTo-Json -Compress | Write-Host
-
 			$edition = "$($_.displayName) $(if ($_.isPrerelease) {'PRE'} else {''})".Trim()
-			$installer = Join-Path -Path ($_.enginePath) -ChildPath 'VSIXInstaller.exe'
+			$vsixInstaller = Join-Path -Path ($_.enginePath) -ChildPath 'VSIXInstaller.exe'
+			$vsixArtifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Artifacts/$edition"
 			
-			Write-Host ">>> $edition ($installer)"
-
-			$visxFolder = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Artifacts/$edition"
-			if (Test-Path -Path $vsixHome -PathType Container) {
-
-				Get-ChildItem -Path $visxFolder -Filter '*.visx' | Select-Object -ExpandProperty FullName | ForEach-Object {
-					Write-Host "- Installing Extension: $_"
-					Invoke-CommandLine -Command $installer -Argument "$(if ($Packer) { '/a' }) /q `"$visx`"".Trim() | Select-Object -ExpandProperty Output
-				}
-
-			} else {
-
-				Write-Host "!!! Missing Visual Studio Extension folder: $visxFolder"
+			Get-ChildItem -Path $vsixArtifacts -Filter '*.visx' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object {
+				Write-Host "- Installing extension for $edition: $_"
+				Invoke-CommandLine -Command $vsixInstaller -Argument "$(if ($Packer) { '/a' }) /q `"$_`"".Trim() | Select-Object -ExpandProperty Output
 			}
+
 		}
 
 	} else {
