@@ -34,7 +34,7 @@ Invoke-ScriptSection -Title "Configure Visual Studio" -ScriptBlock {
 			$vsixArtifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Artifacts/$edition"
 			
 			Get-ChildItem -Path $vsixArtifacts -Filter '*.visx' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object {
-				Write-Host "- Installing extension for $edition: $_"
+				Write-Host "- Installing extension for $($edition): $_"
 				Invoke-CommandLine -Command $vsixInstaller -Argument "$(if ($Packer) { '/a' }) /q `"$_`"".Trim() | Select-Object -ExpandProperty Output
 			}
 
