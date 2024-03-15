@@ -21,26 +21,6 @@ $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
 # ==============================================================================
 
-function Invoke-VSIXInstaller {
-
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $Edition,
-		[Parameter(Mandatory = $true)]
-		[string] $Installer
-	)
-
-	$ErrorActionPreference = 'SilentlyContinue'
-
-	$visxFolder = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Artifacts/$Edition"
-	if (Test-Path -Path $vsixHome -PathType Container) {
-		Get-ChildItem -Path $visxFolder -Filter '*.visx' | Select-Object -ExpandProperty FullName | ForEach-Object -Begin { Write-Host ">>> $Edition" } -Process {
-            Write-Host "- Installing Extension: $_"
-            Invoke-CommandLine -Command $Installer -Argument "$(if ($Packer) { '/a' }) /q `"$visx`"".Trim() | Select-Object -ExpandProperty Output
-		}
-	}
-}
-
 Invoke-ScriptSection -Title "Configure Visual Studio" -ScriptBlock {
 
 	$vswhereExe = Get-Command 'vswhere.exe' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty path
@@ -48,9 +28,26 @@ Invoke-ScriptSection -Title "Configure Visual Studio" -ScriptBlock {
 	
 		$instances = [array](Invoke-CommandLine -Command $vswhereExe -Arguments '-all -prerelease -utf8 -format json' | Select-Object -ExpandProperty Output | ConvertFrom-Json)
 		$instances | ForEach-Object { 
+
+			$_ | ConvertTo-Json -Compress | Write-Host
+
 			$edition = "$($_.displayName) $(if ($_.isPrerelease) {'PRE'} else {''})".Trim()
 			$installer = Join-Path -Path ($_.enginePath) -ChildPath 'VSIXInstaller.exe'
-			Invoke-VSIXInstaller -Edition $edition -Installer $installer
+			
+			Write-Host ">>> $edition ($installer)"
+
+			$visxFolder = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Artifacts/$Edition"
+			if (Test-Path -Path $vsixHome -PathType Container) {
+
+				Get-ChildItem -Path $visxFolder -Filter '*.visx' | Select-Object -ExpandProperty FullName | ForEach-Object {
+					Write-Host "- Installing Extension: $_"
+					Invoke-CommandLine -Command $installer -Argument "$(if ($Packer) { '/a' }) /q `"$visx`"".Trim() | Select-Object -ExpandProperty Output
+				}
+
+			} else {
+
+				Write-Host "!!! Missing Visual Studio Extension folder: $visxFolder"
+			}
 		}
 
 	} else {
