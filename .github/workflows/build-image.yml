@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Prepare Image Folder
-        run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
+        run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./ && ls -l
 
       - uses: azure/login@v1
         with:
@@ -49,8 +49,8 @@ jobs:
         run: |
           HCLJSON="$(echo "jsonencode(local)" | packer console ./)"
           echo $HCLJSON | jq '.'
-          echo "factory_subscription=$(echo $HCLJSON | jq --raw-output '.default.factory.subscription')" >> $GITHUB_OUTPUT
-          echo "factory_region=$(echo $HCLJSON | jq --raw-output '.default.factory.region')" >> $GITHUB_OUTPUT
+          echo "factory_subscription=$(echo $HCLJSON | jq --raw-output '.factory.subscription')" >> $GITHUB_OUTPUT
+          echo "factory_region=$(echo $HCLJSON | jq --raw-output '.factory.region')" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $HCLJSON | jq --raw-output '.image.publisher')" >> $GITHUB_OUTPUT
           echo "image_offer=$(echo $HCLJSON | jq --raw-output '.image.offer')" >> $GITHUB_OUTPUT
           echo "image_sku=$(echo $HCLJSON | jq --raw-output '.image.sku')" >> $GITHUB_OUTPUT
