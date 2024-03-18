@@ -110,7 +110,10 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript:	| 
-            for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
+            RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
+            RGNAME_SUFFIX=$(echo "-${{ github.workflow }}" | tr [:lower:] [:upper:])
+            # for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
+            for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} | jq --raw-output ".[] | select((.properties.vaultId | ascii_upcase | contains(\"/resourceGroups/PKR-SITECORE\")) and (.properties.vaultId | ascii_upcase | contains(\"-FACTORY/providers/\"))).name"); do
               echo "Purging deleted key vault '$KEYVAULT' ..." 
               az keyvault purge --subscription ${{ steps.image.outputs.factory_subscription }} --name $KEYVAULT -o none & 
             done; wait  
