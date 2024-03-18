@@ -32,6 +32,9 @@ jobs:
       - name: Download Source
         uses: actions/checkout@v3
 
+      - name: Prepare Image Folder
+        run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
+
       - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
@@ -44,7 +47,7 @@ jobs:
       - name: Resolve Image Information
         id: image
         run: |
-          IMAGEJSON="$(echo "jsonencode(local)" | packer console ./image.pkr.hcl)"
+          IMAGEJSON="$(echo "jsonencode(local)" | packer console .)"
           echo "factory_subscription=$(echo $IMAGEJSON | jq --raw-output '.factory.subscription')" >> $GITHUB_OUTPUT
           echo "factory_region=$(echo $IMAGEJSON | jq --raw-output '.factory.region')" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $IMAGEJSON | jq --raw-output '.image.publisher')" >> $GITHUB_OUTPUT
@@ -111,9 +114,6 @@ jobs:
               echo "Purging deleted key vault '$KEYVAULT' ..." 
               az keyvault purge --subscription ${{ steps.image.outputs.factory_subscription }} --name $KEYVAULT -o none & 
             done; wait  
-
-      - name: Prepare Image
-        run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./
 
       - name: Init Packer
         run: packer init .
