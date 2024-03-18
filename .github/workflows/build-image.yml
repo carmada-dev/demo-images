@@ -48,8 +48,6 @@ jobs:
         id: image
         run: |
           HCLJSON="$(echo "jsonencode(local)" | packer console ./)"
-          # echo $HCLJSON | jq '.'
-          cat ./config.pkr.hcl
           echo "factory_subscription=$(echo $HCLJSON | jq --raw-output '.factory.subscription')" >> $GITHUB_OUTPUT
           echo "factory_region=$(echo $HCLJSON | jq --raw-output '.factory.region')" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $HCLJSON | jq --raw-output '.image.publisher')" >> $GITHUB_OUTPUT
