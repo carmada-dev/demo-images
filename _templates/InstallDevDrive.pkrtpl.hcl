@@ -1,8 +1,3 @@
-param(
-    [Parameter(Mandatory=$false)]
-    [boolean] $Packer = $true # ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
-)
-
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
@@ -38,7 +33,7 @@ $driveConfig = '${jsonencode(devDrive)}' | ConvertFrom-Json
 $driveSizeGB = [int]($driveConfig | Get-PropertyValue -Name "sizeGB" -DefaultValue "0")
 $drivePath = $null
 
-if ($Packer -and $driveSizeGB -gt 0) {
+if ((Test-IsPacker) -and ($driveSizeGB -gt 0)) {
     
     Invoke-ScriptSection -Title "Creating DevDrive" -ScriptBlock {
 

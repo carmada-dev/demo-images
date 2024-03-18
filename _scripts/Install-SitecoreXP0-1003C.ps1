@@ -1,8 +1,3 @@
-param(
-    [Parameter(Mandatory=$false)]
-    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
-)
-
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
@@ -11,7 +6,7 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 if (-not(Test-SoftwareInstalled -Name 'Docker Desktop', 'Podman*')) {
 	Write-Host "!!! Docker Desktop or Podman must be installed"
 	exit 1
-} elseif ($Packer) {
+} elseif (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
 	Register-ActiveSetup -Path $MyInvocation.MyCommand.Path -Name 'Install-Sidecore.ps1' -Elevate
 } else { 
@@ -67,7 +62,7 @@ Invoke-ScriptSection -Title "Configure Sitecore XP0 10.03" -ScriptBlock {
 
 	$sitecoreDeploymentDirectory = 'C:\Sitecore'
 
-	if ($Packer) {
+	if (Test-IsPacker) {
 		
 		$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'Sitecore' -Repository 'container-deployment' -Release "SXP Sitecore Container Deployment 10.3..*" -Asset "SitecoreContainerDeployment.*.zip"
 		$tmp = Invoke-FileDownload -Url $url -Name "SitecoreContainerDeployment.zip" -Expand

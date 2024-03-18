@@ -1,14 +1,9 @@
-param(
-    [Parameter(Mandatory=$false)]
-    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
-)
-
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
 } 
 
-if ($Packer) {
+if (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
 	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Install-WinGet.ps1' -Elevate
 } else { 
@@ -60,7 +55,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	$path = Invoke-FileDownload -Url "https://cdn.winget.microsoft.com/cache/source.msix" -Retries 5
 	Add-AppxPackage -Path $path -ErrorAction Stop
 
-	if ($Packer) {
+	if (Test-IsPacker) {
 
 		$settingsInfo = @(winget --info) | Where-Object { $_.StartsWith('User Settings') } | Select-Object -First 1
 		$settingsPath = $settingsInfo.Split(' ') | Select-Object -Last 1 

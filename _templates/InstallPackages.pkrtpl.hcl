@@ -1,14 +1,9 @@
-param(
-    [Parameter(Mandatory=$false)]
-    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
-)
-
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
 } 
 
-if ($Packer) {
+if (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
 	Register-ActiveSetup -Path $MyInvocation.MyCommand.Path -Name 'Install-Packages.ps1' -Elevate
 } else { 
@@ -145,23 +140,42 @@ function Install-ChocoPackage {
 }
 
 [array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json
-$allowedScopes = ('all', (&{ if ($Packer) { 'machine' } else { 'user' } }))
+$allowedScopes = ('all', (&{ if (Test-IsPacker) { 'machine' } else { 'user' } }))
 
 Invoke-ScriptSection -Title "Packages" -ScriptBlock { 
-	# just for debugging we dump the packages
-	# to install to the console in JSON format	
+	# dump the packages to the console	
 	$packages | ConvertTo-Json | Write-Host 
 }
 
+# define success exit codes for winget
 $successExitCodes_winget = @(
 	-1978335189 # APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE  
 )
 
+# define success exit codes for choco
 $successExitCodes_choco = @(
 
 )
 
+$lastSuccessPackageFile = Join-Path $env:DEVBOX_HOME 'Package.info'
+$lastSuccessPackageHash = Get-Content -Path $lastSuccessPackageFile -ErrorAction SilentlyContinue
+
 foreach ($package in $packages) {
+
+	# calculate the hash of the current package
+	$currentPackageHash = $package | ConvertTo-Json -Compress | ConvertTo-GUID
+
+	if ($lastSuccessPackageHash) {
+
+		if ($currentPackageHash -eq $lastSuccessPackageHash) {
+			# reset last package hash to enable install of the next package again
+			$lastSuccessPackageHash = $null
+		}
+
+		# skip the package if it was already processed
+		Write-Host ">>> Skipping $($package.name) - already installed"; continue
+
+	}
 
 	$package | Invoke-ScriptSection -Title "Install Package" -ScriptBlock {
 
@@ -193,15 +207,27 @@ foreach ($package in $packages) {
 			}
 
 			if ($successExitCodes -notcontains $exitCode) {
-				Write-ErrorMessage "Installing $($package.name) failed with exit code '$exitCode'." 
-				exit $exitCode
+				# installation failed with an unexpected exit code
+				Write-ErrorMessage "Installing $($package.name) failed with exit code '$exitCode'."; exit $exitCode
 			} elseif ($exitCode -ne 0) {
-				Write-ErrorMessage "Installing $($package.name) failed with exit code '$exitCode', but was ignored (SUCCESS EXIT CODES: $($successExitCodes -join ', '))"
+				# installation failed with an expected exit code
+				Write-ErrorMessage "Installing $($package.name) failed with exit code '$exitCode' but was ignored (SUCCESS EXIT CODES: $($successExitCodes -join ', '))"
 			}
-
+			
 		} else {
 
-			Write-Host "Installation skipped - package scope not allowed"
+			Write-Host "Installation skipped - package scope mismatch: $($package | Get-PropertyValue -Name 'scope')"
 		}
 	}
+	
+	# store the last successful package hash
+	$currentPackageHash | Set-Content -Path $lastSuccessPackageFile -Force
+
+	if (Test-PendingReboot) {
+		Write-ErrorMessage ">>> Pending reboot detected after installing package $($package.name) - restarting the machine ..."
+		Restart-Computer -Force; exit 3010
+	}
 }
+
+# remove the last successful package file
+Remove-Item -Path $lastSuccessPackageFile -Force -ErrorAction SilentlyContinue

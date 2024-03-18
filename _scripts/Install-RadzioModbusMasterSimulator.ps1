@@ -1,8 +1,3 @@
-param(
-    [Parameter(Mandatory=$false)]
-    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
-)
-
 $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
 function Invoke-FileDownload() {

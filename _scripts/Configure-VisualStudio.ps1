@@ -1,14 +1,9 @@
-param(
-    [Parameter(Mandatory=$false)]
-    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
-)
-
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
 } 
 
-if ($Packer) {
+if (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
 	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Configure-VSWhere.ps1' -Elevate
 } else { 
@@ -35,7 +30,7 @@ Invoke-ScriptSection -Title "Configure Visual Studio" -ScriptBlock {
 			
 			Get-ChildItem -Path $vsixArtifacts -Filter '*.visx' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object {
 				Write-Host ">>> Installing extension for $($edition): $_"
-				Invoke-CommandLine -Command $vsixInstaller -Argument "$(if ($Packer) { '/a' }) /q `"$_`"".Trim() | Select-Object -ExpandProperty Output
+				Invoke-CommandLine -Command $vsixInstaller -Argument "$(if (Test-IsPacker) { '/a' }) /q `"$_`"".Trim() | Select-Object -ExpandProperty Output
 			}
 
 		}

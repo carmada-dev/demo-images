@@ -1,14 +1,9 @@
-param(
-    [Parameter(Mandatory=$false)]
-    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
-)
-
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
 } 
 
-if ($Packer) {
+if (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
 	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Configure-Podman.ps1' -Elevate
 } else { 
@@ -29,7 +24,7 @@ Invoke-ScriptSection -Title "Configure Podman" -ScriptBlock {
 		exit 1
 	}
 
-	if ($Packer) {
+	if (Test-IsPacker) {
 
 		$dockerExe = Get-Command 'docker.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
 

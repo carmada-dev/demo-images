@@ -1,8 +1,3 @@
-param(
-    [Parameter(Mandatory=$false)]
-    [boolean] $Packer = ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
-)
-
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
@@ -13,7 +8,7 @@ $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
 # ==============================================================================
 
-if ($Packer) {
+if (Test-IsPacker) {
 
 	Invoke-ScriptSection -Title "Installing BGInfo" -ScriptBlock {
 

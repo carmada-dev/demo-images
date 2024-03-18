@@ -117,6 +117,11 @@ locals {
 		
 		{
 			name = "Microsoft.SQLServerManagementStudio"
+			override = [
+				"/install",
+				"/quiet",
+				"/norestart"
+			]
 			scope = "machine"
 		},
 		{

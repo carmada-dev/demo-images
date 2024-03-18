@@ -1,5 +1,5 @@
 function Test-IsPacker {
-    return ((Get-ChildItem env:packer_* | Measure-Object).Count -gt 0)
+    return ($env:USERNAME -eq 'packer')
 }
 
 Export-ModuleMember -Function Test-IsPacker
