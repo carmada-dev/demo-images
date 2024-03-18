@@ -255,20 +255,20 @@ locals {
 		# but also those form the main configuration. Furthermore; alias packages are resolved and replaced
 		# by their real definition.
 		packages = concat(
-			[ for p in concat(local.default.packages, local.packages): p if try(p.source != "alias", true) ], 
-			[ for p in concat(local.default.packages, local.packages): lookup(local.default.packageAlias, p.name, p) if try(p.source == "alias", false) ]
+			[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
+			[ for p in concat(local.default.packages, local.image.packages): lookup(local.default.packageAlias, p.name, p) if try(p.source == "alias", false) ]
 		)
 
 		# Get a list of all features to enable. This includes features definied in the default configuration, 
 		# the image definition, and all resolved packages.
 		features = distinct(concat(
 			try(local.default.features, []),
-			try(local.devDrive.sizeGB, 0) == 0 ? [] : ["Microsoft-Hyper-V-All"],
+			try(local.image.devDrive.sizeGB, 0) == 0 ? [] : ["Microsoft-Hyper-V-All"],
 			flatten([ for p in concat(
-				[ for p in concat(local.default.packages, local.packages): p if try(p.source != "alias", true) ], 
-				[ for p in concat(local.default.packages, local.packages): lookup(local.default.packageAlias, p.name, p) if try(p.source == "alias", false) ]
+				[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
+				[ for p in concat(local.default.packages, local.image.packages): lookup(local.default.packageAlias, p.name, p) if try(p.source == "alias", false) ]
 			): try(p.features, []) ]),
-			try(local.features, [])
+			try(local.image.features, [])
 		))
 
 		# Get a list of all prepare scripts to apply. This includes prepare scripts definied in the 
@@ -277,10 +277,10 @@ locals {
 			["${path.root}/../_scripts/core/NOOP.ps1"],
 			try(local.default.prepare, []),
 			flatten([ for p in concat(
-				[ for p in concat(local.default.packages, local.packages): p if try(p.source != "alias", true) ], 
-				[ for p in concat(local.default.packages, local.packages): lookup(local.default.packageAlias, p.name, p) if try(p.source == "alias", false) ]
+				[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
+				[ for p in concat(local.default.packages, local.image.packages): lookup(local.default.packageAlias, p.name, p) if try(p.source == "alias", false) ]
 			): try(p.prepare, []) ]),
-			try(local.prepare, [])
+			try(local.image.prepare, [])
 		))
 
 		# Get a list of all configure scripts to apply. This includes configure scripts definied in the 
@@ -289,10 +289,10 @@ locals {
 			["${path.root}/../_scripts/core/NOOP.ps1"],
 			try(local.default.configure, []),
 			flatten([ for p in concat(
-				[ for p in concat(local.default.packages, local.packages): p if try(p.source != "alias", true) ], 
-				[ for p in concat(local.default.packages, local.packages): lookup(local.default.packageAlias, p.name, p) if try(p.source == "alias", false) ]
+				[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
+				[ for p in concat(local.default.packages, local.image.packages): lookup(local.default.packageAlias, p.name, p) if try(p.source == "alias", false) ]
 			): try(p.configure, []) ]),
-			try(local.configure, [])
+			try(local.image.configure, [])
 		))
 	}
 }
