@@ -47,23 +47,23 @@ jobs:
       - name: Resolve Image Information
         id: image
         run: |
-          IMAGEJSON="$(echo "jsonencode(local)" | packer console ./)"
-          echo "factory_subscription=$(echo $IMAGEJSON | jq --raw-output '.factory.subscription')" >> $GITHUB_OUTPUT
-          echo "factory_region=$(echo $IMAGEJSON | jq --raw-output '.factory.region')" >> $GITHUB_OUTPUT
-          echo "image_publisher=$(echo $IMAGEJSON | jq --raw-output '.image.publisher')" >> $GITHUB_OUTPUT
-          echo "image_offer=$(echo $IMAGEJSON | jq --raw-output '.image.offer')" >> $GITHUB_OUTPUT
-          echo "image_sku=$(echo $IMAGEJSON | jq --raw-output '.image.sku')" >> $GITHUB_OUTPUT
-          echo "gallery_subscription=$(echo $IMAGEJSON | jq --raw-output '.gallery.subscription')" >> $GITHUB_OUTPUT
-          echo "gallery_resourcegroup=$(echo $IMAGEJSON | jq --raw-output '.gallery.resourceGroup')" >> $GITHUB_OUTPUT
-          echo "gallery_name=$(echo $IMAGEJSON | jq --raw-output '.gallery.name')" >> $GITHUB_OUTPUT
-          echo "archive_subscription=$(echo $IMAGEJSON | jq --raw-output '.archive.subscription')" >> $GITHUB_OUTPUT
-          echo "archive_resourcegroup=$(echo $IMAGEJSON | jq --raw-output '.archive.resourceGroup')" >> $GITHUB_OUTPUT
-          echo "archive_name=$(echo $IMAGEJSON | jq --raw-output '.archive.name')" >> $GITHUB_OUTPUT
-          echo "devcenter_subscription=$(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription')" >> $GITHUB_OUTPUT
-          echo "devcenter_resourcegroup=$(echo $IMAGEJSON | jq --raw-output '.devCenter.resourceGroup')" >> $GITHUB_OUTPUT
-          echo "devcenter_name=$(echo $IMAGEJSON | jq --raw-output '.devCenter.name')" >> $GITHUB_OUTPUT          
-          echo "devcenter_storage=$(echo $IMAGEJSON | jq --raw-output '.devCenter.storage')" >> $GITHUB_OUTPUT          
-          echo "devcenter_compute=$(echo $IMAGEJSON | jq --raw-output '.devCenter.compute')" >> $GITHUB_OUTPUT          
+          LOCALJSON="$(echo "jsonencode(local)" | packer console ./)"
+          echo "factory_subscription=$(echo $LOCALJSON | jq --raw-output '.default.factory.subscription')" >> $GITHUB_OUTPUT
+          echo "factory_region=$(echo $LOCALJSON | jq --raw-output '.default.factory.region')" >> $GITHUB_OUTPUT
+          echo "image_publisher=$(echo $LOCALJSON | jq --raw-output '.image.publisher')" >> $GITHUB_OUTPUT
+          echo "image_offer=$(echo $LOCALJSON | jq --raw-output '.image.offer')" >> $GITHUB_OUTPUT
+          echo "image_sku=$(echo $LOCALJSON | jq --raw-output '.image.sku')" >> $GITHUB_OUTPUT
+          echo "gallery_subscription=$(echo $LOCALJSON | jq --raw-output '.gallery.subscription')" >> $GITHUB_OUTPUT
+          echo "gallery_resourcegroup=$(echo $LOCALJSON | jq --raw-output '.gallery.resourceGroup')" >> $GITHUB_OUTPUT
+          echo "gallery_name=$(echo $LOCALJSON | jq --raw-output '.gallery.name')" >> $GITHUB_OUTPUT
+          echo "archive_subscription=$(echo $LOCALJSON | jq --raw-output '.archive.subscription')" >> $GITHUB_OUTPUT
+          echo "archive_resourcegroup=$(echo $LOCALJSON | jq --raw-output '.archive.resourceGroup')" >> $GITHUB_OUTPUT
+          echo "archive_name=$(echo $LOCALJSON | jq --raw-output '.archive.name')" >> $GITHUB_OUTPUT
+          echo "devcenter_subscription=$(echo $LOCALJSON | jq --raw-output '.devCenter.subscription')" >> $GITHUB_OUTPUT
+          echo "devcenter_resourcegroup=$(echo $LOCALJSON | jq --raw-output '.devCenter.resourceGroup')" >> $GITHUB_OUTPUT
+          echo "devcenter_name=$(echo $LOCALJSON | jq --raw-output '.devCenter.name')" >> $GITHUB_OUTPUT          
+          echo "devcenter_storage=$(echo $LOCALJSON | jq --raw-output '.devCenter.storage')" >> $GITHUB_OUTPUT          
+          echo "devcenter_compute=$(echo $LOCALJSON | jq --raw-output '.devCenter.compute')" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
       - name: Ensure Image Definition
