@@ -137,7 +137,7 @@ build {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.default.environmentVariables
-    inline            = [templatefile("${path.root}/../_templates/InstallDevDrive.pkrtpl.hcl", { devDrive = local.devDrive })]
+    inline            = [templatefile("${path.root}/../_templates/InstallDevDrive.pkrtpl.hcl", { devDrive = local.image.devDrive })]
   }
 
   provisioner "windows-restart" {
