@@ -45,15 +45,15 @@ source "azure-arm" "vm" {
 
   # temporary resource location
   subscription_id                     = local.factory.subscription
-  location                            = local.factory.location
+  location                            = local.factory.region
   user_assigned_managed_identities    = local.factory.identities
   temp_resource_group_name            = "PKR-${upper(local.variables.imageName)}-${upper(local.variables.imageVersion)}${upper(local.variables.imageSuffix)}"
 
   # publish image to gallery
   shared_image_gallery_destination {
-    subscription                      = local.gallery.subscription
-    gallery_name                      = local.gallery.name
-    resource_group                    = local.gallery.resourceGroup
+    subscription                      = local.image.gallery.subscription
+    gallery_name                      = local.image.gallery.name
+    resource_group                    = local.image.gallery.resourceGroup
     image_name                        = local.variables.imageName
     image_version                     = local.variables.imageVersion
     replication_regions               = local.image.regions
