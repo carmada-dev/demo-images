@@ -47,7 +47,7 @@ jobs:
       - name: Resolve Image Information
         id: image
         run: |
-          IMAGEJSON="$(echo "jsonencode(local)" | packer console .)"
+          IMAGEJSON="$(echo "jsonencode(local)" | packer console ./)"
           echo "factory_subscription=$(echo $IMAGEJSON | jq --raw-output '.factory.subscription')" >> $GITHUB_OUTPUT
           echo "factory_region=$(echo $IMAGEJSON | jq --raw-output '.factory.region')" >> $GITHUB_OUTPUT
           echo "image_publisher=$(echo $IMAGEJSON | jq --raw-output '.image.publisher')" >> $GITHUB_OUTPUT
