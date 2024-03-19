@@ -29,20 +29,23 @@ jobs:
 
     steps:
 
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Download Source
         uses: actions/checkout@v3
 
       - name: Prepare Image Folder
         run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./ && ls -l
 
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
         with:
           version: "latest"
+  
+      - name: Init Packer
+        run: packer init .
   
       - name: Resolve Image Information
         id: image
@@ -117,9 +120,6 @@ jobs:
               echo "Purging deleted key vault '$KEYVAULT' ..." 
               az keyvault purge --subscription ${{ steps.image.outputs.factory_subscription }} --name $KEYVAULT -o none & 
             done; wait  
-
-      - name: Init Packer
-        run: packer init .
 
       - name: Build Image
         id: packer
