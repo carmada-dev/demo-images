@@ -25,7 +25,7 @@ jobs:
       - name: Generate Image Matrix
         id: set-imageMatrix
         run: |
-          echo "matrix=$(find . -type f -name 'image.pkr.hcl' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT      
+          echo "matrix=$(find . -type f -name 'image.json' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT      
           cat $GITHUB_OUTPUT
 
       - name: Generate Image Version

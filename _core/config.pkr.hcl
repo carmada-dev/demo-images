@@ -15,6 +15,8 @@ variable "imageVersion" {
 
 locals {
 
+	image = jsondecode(replace(replace(file("${path.root}/image.json"), "$${path.root}", "${path.root}"), "$${path.cwd}", "${path.cwd}"))
+
 	variables = {
 		# This section wraps the variables defined in the config file to ensure each of them has a acceptable value.
 		# Whenever you make changes to the Packer files in this repo, you should always reference these locals and

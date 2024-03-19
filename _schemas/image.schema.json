@@ -1,0 +1,313 @@
+{
+	"$id": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_schemas/image.scheam.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+
+
+	"$defs":{
+		"guid": {
+			"type": "string",
+			"pattern":"^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$"
+		},
+		"gallery": {
+			"type": "object",
+			"description": "The target gallery to upload the image",
+			"properties": {
+				"subscription": {
+					"$ref": "#/$defs/guid",
+					"description": "The subscription ID of the gallery"
+				},
+				"resourceGroup": {
+					"type": "string",
+					"description": "The resource group of the gallery"
+				},
+				"name": {
+					"type": "string",
+					"description": "The gallery resource name"
+				}
+			},
+			"required": [ "subscription", "resourceGroup", "name" ],
+			"additionalProperties": false
+		},
+		"archive": {
+			"type": "object",
+			"description": "The target archive to upload the image in VHDX format",
+			"properties": {
+				"subscription": {
+					"$ref": "#/$defs/guid",
+					"description": "The subscription ID of the archive"
+				},
+				"resourceGroup": {
+					"type": "string",
+					"description": "The resource group of the archive"
+				},
+				"name": {
+					"type": "string",
+					"description": "The archive storage account resource name",
+					"default": ""
+				}				
+			},
+			"required": [ "subscription", "resourceGroup", "name" ],
+			"additionalProperties": false
+		},
+		"devCenter": {
+			"type": "object",
+			"description": "The target dev center to create a DevBox Definition in",
+			"properties": {
+				"subscription": {
+					"$ref": "#/$defs/guid",
+					"description": "The subscription ID of the dev center"
+				},
+				"resourceGroup": {
+					"type": "string",
+					"description": "The resource group of the dev center"
+				},
+				"name": {
+					"type": "string",
+					"description": "The dev center resource name"
+				},
+				"storage": {
+					"type": "string",
+					"description": "The storage size to use for the DevBox Definition"
+				},
+				"compute": {
+					"type": "string",
+					"description": "The compute size to use for the DevBox Definition"
+				}
+			},
+			"required": [ "subscription", "resourceGroup", "name", "storage", "compute" ],
+			"additionalProperties": false
+		},
+		"devDrive": {
+			"type": "object",
+			"description": "Create a DevDrive inside the image",
+			"properties": {
+				"sizeGB": {
+					"type": "integer",
+					"description": "The size of the dev drive in GB (minimum 5GB) - set to 0 to disable DevDrive",
+					"minimum": 0,
+					"default": 0
+				},
+				"repositories": {
+					"type": "array",
+					"description": "List of repositories to clone into the DevDrive",
+					"default": [],
+					"items": {
+						"type": "object",
+						"properties": {
+							"repoUrl": {
+								"type": "string",
+								"description": "The URL of the repository"
+							},
+							"tokenUrl": {
+								"type": "string",
+								"description": "An Azure KeyVault secret URL containing the token to access the repository"
+							}
+						},
+						"required": [ "repoUrl" ],
+						"additionalProperties": false
+					}
+				}
+			},
+			"required": [ "sizeGB", "repositories" ],
+			"additionalProperties": false		
+		},
+		"package": {
+			"type": "object",
+			"description": "A package to install in the image",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "The name of the package"
+				},
+				"scope": {
+					"type": "string",
+					"description": "The scope of the package",
+					"enum": [ "machine", "user", "all" ]
+				},
+				"source": {
+					"type": "string",
+					"description": "The source of the package",
+					"default": "winget"
+				},
+				"version": {
+					"type": "string",
+					"description": "The version of the package",
+					"default": "latest"
+				},
+				"options": {
+					"type": "array",
+					"description": "List of options to pass to the package manager when installing the package",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				},
+				"override": {
+					"type": "array",
+					"description": "List of arguments to override the default arguments used by the package when executing the installer",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				},
+				"existCodes": {
+					"type": "array",
+					"description": "List of exit codes to ignore (treat as success) when installing the package",
+					"default": [],
+					"items": {
+						"type": "integer"
+					}
+				},
+				"features": {
+					"type": "array",
+					"description": "List of features to enable in the image before the package is installed",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				},
+				"prepare": {
+					"type": "array",
+					"description": "List of scripts to run to prepare the image before the package is installed",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				},
+				"configure": {
+					"type": "array",
+					"description": "List of scripts to run to configure the image after the package is installed",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				}
+			},
+			"required": [ "name", "scope" ],
+			"additionalProperties": false
+		},
+		"packageRef": {
+			"type": "object",
+			"description": "A package to install in the image by reference (using the 'alias' source)",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "The name of the package"
+				},
+				"source": {
+					"type": "string",
+					"description": "The source of the package",
+					"const": "alias"
+				}
+			},
+			"required": [ "name", "source" ],
+			"additionalProperties": false
+		}
+	},
+
+
+	"title": "Image",
+	"description": "DevBox image definition",
+	"type": "object",
+	"properties": {
+		"publisher": {
+			"type": "string",
+			"description": "The publisher of the image"
+		},
+		"offer": {
+			"type": "string",
+			"description": "The offer of the image"
+		},
+		"sku": {
+			"type": "string",
+			"description": "The SKU of the image"
+		},
+		"regions": {
+			"type": "array",
+			"description": "The regions where the image is available",
+			"items": {
+				"type": "string"
+			}
+		},
+		"base": {
+			"type": "object",
+			"description": "The base image",
+			"properties": {
+				"publisher": {
+					"type": "string",
+					"description": "The publisher of the base image"
+				},
+				"offer": {
+					"type": "string",
+					"description": "The offer of the base image"
+				},
+				"sku": {
+					"type": "string",
+					"description": "The SKU of the base image"
+				},
+				"version": {
+					"type": "string",
+					"description": "The version of the base image",
+					"default": "latest"
+				}
+			},
+			"required": [ "publisher", "offer", "sku", "version" ],
+			"additionalProperties": false
+		},
+		"gallery": {
+			"type": "object",
+			"$ref": "#/$defs/gallery"
+		},
+		"archive": {
+			"type": "object",
+			"$ref": "#/$defs/archive"
+		},
+		"devCenter": {
+			"type": "object",
+			"$ref": "#/$defs/devCenter"
+		},
+		"devDrive": {
+			"type": "object",
+			"$ref": "#/$defs/devDrive"
+		},
+		"features": {
+			"type": "array",
+			"description": "List of features to enable in the image",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		},
+		"prepare": {
+			"type": "array",
+			"description": "List of scripts to run to prepare the image before installing packages",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		},
+		"packages": {
+			"type": "array",
+			"description": "List of packages to install in the image",
+			"default": [],
+			"items": {				
+				"oneOf": [
+					{
+						"$ref": "#/$defs/package"
+					},
+					{
+						"$ref": "#/$defs/packageRef"
+					}
+				]
+			}
+		},
+		"configure": {
+			"type": "array",
+			"description": "List of scripts to run to configure the image after installing packages",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		}
+	}
+}

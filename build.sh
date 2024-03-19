@@ -41,21 +41,22 @@ buildImage() {
 
 	pushd "$(dirname "$1")" > /dev/null
 
-	rm -f ./image.pkr.log
+	rm -f ./image.log
 
-	displayHeader "Read Image Definition ($1)" | tee -a ./image.pkr.log
+	displayHeader "Read Image Definition ($1)" | tee -a ./image.log
 	IMAGESUFFIX="$(uname -n | tr '[:lower:]' '[:upper:]')"
 	IMAGENAME="$(basename "$(dirname "$1")")-$(whoami | tr '[:lower:]' '[:upper:]')"
-	IMAGEJSON="$(echo "jsonencode(local)" | packer console ./image.pkr.hcl | jq | tee -a ./image.pkr.log)"
+	IMAGEJSON="$(echo "jsonencode(local)" | packer console ./ | jq | tee -a ./image.log)"
+	echo "$IMAGEJSON" | jq .
 
-	displayHeader "Switch subscription context" | tee -a ./image.pkr.log
-	az account set --subscription $(echo "$IMAGEJSON" | jq --raw-output '.gallery.subscription') | tee -a ./image.pkr.log
+	displayHeader "Switch subscription context" | tee -a ./image.log
+	az account set --subscription $(echo "$IMAGEJSON" | jq --raw-output '.factory.subscription') | tee -a ./image.log
 	
-	displayHeader "Ensure Image Definition ($1)" | tee -a ./image.pkr.log
+	displayHeader "Ensure Image Definition ($1)" | tee -a ./image.log
 	az sig image-definition create \
-		--subscription $(echo "$IMAGEJSON" | jq --raw-output '.gallery.subscription') \
-		--resource-group $(echo "$IMAGEJSON" | jq --raw-output '.gallery.resourceGroup') \
-		--gallery-name $(echo "$IMAGEJSON" | jq --raw-output '.gallery.name') \
+		--subscription $(echo "$IMAGEJSON" | jq --raw-output '.image.gallery.subscription') \
+		--resource-group $(echo "$IMAGEJSON" | jq --raw-output '.image.gallery.resourceGroup') \
+		--gallery-name $(echo "$IMAGEJSON" | jq --raw-output '.image.gallery.name') \
 		--gallery-image-definition $IMAGENAME \
 		--publisher $(whoami) \
 		--offer $(echo "$IMAGEJSON" | jq --raw-output '.image.offer') \
@@ -64,13 +65,13 @@ buildImage() {
 		--os-state Generalized \
 		--hyper-v-generation V2 \
 		--features 'IsHibernateSupported=true SecurityType=TrustedLaunch' \
-		--only-show-errors | tee -a ./image.pkr.log
+		--only-show-errors | tee -a ./image.log
 
-	displayHeader "Initializing Image ($1)" | tee -a ./image.pkr.log
+	displayHeader "Initializing Image ($1)" | tee -a ./image.log
 	packer init \
-		. 2>&1 | tee -a ./image.pkr.log
+		. 2>&1 | tee -a ./image.log
 
-	displayHeader "Building Image ($1)" | tee -a ./image.pkr.log
+	displayHeader "Building Image ($1)" | tee -a ./image.log
 	packer build \
 		-force \
 		-color=false \
@@ -78,32 +79,32 @@ buildImage() {
 		-var "imageName=$IMAGENAME" \
 		-var "imageSuffix=$IMAGESUFFIX" \
 		-var "imageVersion=$IMAGEVERSION" \
-		. 2>&1 | tee -a ./image.pkr.log
+		. 2>&1 | tee -a ./image.log
 
-	IMAGEID=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)
+	IMAGEID=$(tail -n 15 ./image.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)
 
 	if [ ! -z "$IMAGEID" ]; then
 
 		COMPUTEGALLERY_RESOURCEID=$(echo $IMAGEID | cut -d '/' -f -9)
-		DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription $(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription') --resource-group $(echo $IMAGEJSON | jq --raw-output '.devCenter.resourceGroup') --dev-center $(echo $IMAGEJSON | jq --raw-output '.devCenter.name') | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
+		DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription $(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription') --resource-group $(echo $IMAGEJSON | jq --raw-output '.image.devCenter.resourceGroup') --dev-center $(echo $IMAGEJSON | jq --raw-output '.image.devCenter.name') | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
 		DEVCENTERGALLERY_IMAGEID="$DEVCENTERGALLERY_RESOURCEID/$(echo "echo $IMAGEID" | cut -d '/' -f 10-)"
 
-		displayHeader "Updating DevBox Definition ($1)" | tee -a ./image.pkr.log
+		displayHeader "Updating DevBox Definition ($1)" | tee -a ./image.log
 		DEFINITIONJSON=$(az devcenter admin devbox-definition create \
 			--devbox-definition-name $IMAGENAME \
-			--subscription $(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription') \
-			--resource-group $(echo $IMAGEJSON | jq --raw-output '.devCenter.resourceGroup') \
-			--dev-center $(echo $IMAGEJSON | jq --raw-output '.devCenter.name') \
+			--subscription $(echo $IMAGEJSON | jq --raw-output '.image.devCenter.subscription') \
+			--resource-group $(echo $IMAGEJSON | jq --raw-output '.image.devCenter.resourceGroup') \
+			--dev-center $(echo $IMAGEJSON | jq --raw-output '.image.devCenter.name') \
 			--image-reference id="$DEVCENTERGALLERY_IMAGEID" \
-			--os-storage-type $(echo $IMAGEJSON | jq --raw-output '.devCenter.storage') \
-			--sku name="$(echo $IMAGEJSON | jq --raw-output '.devCenter.compute')" \
-			--only-show-errors | tee -a ./image.pkr.log)
+			--os-storage-type $(echo $IMAGEJSON | jq --raw-output '.image.devCenter.storage') \
+			--sku name="$(echo $IMAGEJSON | jq --raw-output '.image.devCenter.compute')" \
+			--only-show-errors | tee -a ./image.log)
 
 		if [ -n "$PROJECT" ]; then
 
-			displayHeader "Creation DevBox Instance ($1)" | tee -a ./image.pkr.log
+			displayHeader "Creation DevBox Instance ($1)" | tee -a ./image.log
 			PROJECTJSON=$(az devcenter admin project list \
-				--query "[?starts_with(devCenterId, '/subscriptions/$(echo $IMAGEJSON | jq --raw-output '.devCenter.subscription')/') && ends_with(devCenterId, '/$(echo $IMAGEJSON | jq --raw-output '.devCenter.name')') && name == '$PROJECT'] | [0]" 
+				--query "[?starts_with(devCenterId, '/subscriptions/$(echo $IMAGEJSON | jq --raw-output '.image.devCenter.subscription')/') && ends_with(devCenterId, '/$(echo $IMAGEJSON | jq --raw-output '.image.devCenter.name')') && name == '$PROJECT'] | [0]" 
 				--output tsv | dos2unix)
 
 			if [ -n "$PROJECTJSON" ]; then
@@ -126,7 +127,7 @@ buildImage() {
 						--devbox-definition-name $IMAGENAME \
 						--network-connection-name $PROJECT \
 						--local-administrator "Enabled" \
-						--only-show-errors | tee -a ./image.pkr.log)
+						--only-show-errors | tee -a ./image.log)
 				
 				fi
 
@@ -138,7 +139,7 @@ buildImage() {
 
 				az devcenter dev dev-box create \
 					--subscription $(echo $PROJECTJSON | jq --raw-output '.id | split("/")[2]') \
-					--dev-center-name $(echo $IMAGEJSON | jq --raw-output '.devCenter.name') \
+					--dev-center-name $(echo $IMAGEJSON | jq --raw-output '.image.devCenter.name') \
 					--project-name $PROJECT \
 					--pool-name $(echo $POOLJSON | jq --raw-output '.name') \
 					--dev-box-name "$IMAGENAME-$(echo $IMAGEVERSION | tr "." "-")" \
@@ -166,4 +167,4 @@ while read IMAGEPATH; do
 
 	find ./_core -type f -name '*.pkr.hcl' -exec sh -c "rm -f $(dirname $IMAGEPATH)/$(basename {})" \;
 
-done < <(find . -type f -path './*/image.pkr.hcl')
+done < <(find . -type f -path './*/image.json')

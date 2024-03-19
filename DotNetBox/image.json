@@ -1,0 +1,153 @@
+{
+	"$schema": "../_schemas/image.schema.json",
+
+	"publisher": "CarmadaRnD",
+	"offer": "CarmadaDev",
+	"sku": "win11-dotnet-devbox",
+	"regions": [ "West Europe" ],
+
+	"base": {
+		"publisher": "MicrosoftVisualStudio",
+		"offer": "windowsplustools",
+		"sku": "base-win11-gen2",
+		"version": "latest"
+	},
+	
+	"gallery": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": "CarmadaRnD"
+	},
+	
+	"archive": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": ""
+	},
+	
+	"devCenter": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": "CarmadaRnD",
+		"compute": "general_i_8c32gb1024ssd_v2",
+		"storage": "ssd_1024gb"
+	},
+	
+	"devDrive": {
+		"sizeGB": 0,
+		"repositories": []
+	},
+
+	"features": [
+
+	],
+
+	"prepare": [
+
+	],
+
+	"packages": [
+		{
+			"name": "Microsoft.DotNet.SDK.3_1",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DotNet.SDK.5",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DotNet.SDK.6",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DotNet.SDK.7",
+			"scope": "machine"
+		},
+		{
+			"name": "vscode",
+			"source": "alias"
+		},
+		{
+			"name": "Microsoft.VisualStudio.2022.Enterprise",
+			"scope": "machine",
+			"override": [
+				"--add Microsoft.VisualStudio.Workload.CoreEditor", 
+				"--add Microsoft.VisualStudio.Workload.Azure", 
+				"--add Microsoft.VisualStudio.Workload.NetCrossPlat",
+				"--add Microsoft.VisualStudio.Workload.NetWeb",
+				"--add Microsoft.VisualStudio.Workload.Node", 
+				"--add Microsoft.VisualStudio.Workload.Python",
+				"--add Microsoft.VisualStudio.Workload.ManagedDesktop", 
+				"--includeRecommended",
+				"--installWhileDownloading",
+				"--quiet",
+				"--norestart",
+				"--force",
+				"--wait",
+				"--nocache"
+			]
+		},
+		{
+			"name": "git",
+			"source": "alias"
+		},
+		{
+			"name": "GitHub.cli",
+			"scope": "machine"
+		},
+		{
+			"name": "GitHub.GitHubDesktop",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.SQLServerManagementStudio",
+			"scope": "machine",
+			"override": [
+				"/install",
+				"/quiet",
+				"/norestart"
+			]
+		},
+		{
+			"name": "dockerDesktopWSL",
+			"source": "alias"
+		},
+		{
+			"name": "VideoLAN.VLC",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.Bicep",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.AzureCLI",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.Azure.StorageExplorer",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.AzureDataStudio",
+			"scope": "machine"
+		},
+		{
+			"name": "Google.Chrome",
+			"scope": "machine"
+		},
+		{
+			"name": "Mozilla.Firefox",
+			"scope": "machine"
+		},
+		{
+			"name": "Wiesemann-Theis.USB-Redirector",
+			"scope": "machine"
+		}
+	],
+
+	"configure": [
+		"${path.root}/../_scripts/Install-FabulaTechUSBServer.ps1",
+		"${path.root}/../_scripts/Install-RadzioModbusMasterSimulator.ps1"
+	]
+}
