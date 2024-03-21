@@ -12,7 +12,7 @@ locals {
 		# This section wraps the variables defined in the config file to ensure each of them has a acceptable value.
 		# Whenever you make changes to the Packer files in this repo, you should always reference these locals and
 		# never the original variables defined in the top of this file!
-		imageName = "${length(trimspace(var.imageName)) == 0 ? basename(abspath(path.root)) : var.imageName}"
+		imageName = "${length(trimspace(var.imageName)) == 0 ? basename(abspath(path.cwd)) : var.imageName}"
 		imageSuffix = "${length(trimspace(var.imageSuffix)) == 0 ? "" : "-${trimprefix(var.imageSuffix, "-")}"}"
 		imageVersion = "${length(trimspace(var.imageVersion)) == 0 ? formatdate("YYYY.MMDD.hhmm", timestamp()) : var.imageVersion}"
 		imageDefinition = "${abspath(var.imageDefinition)}"
