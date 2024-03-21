@@ -147,7 +147,7 @@
 	],
 
 	"configure": [
-		"${path.root}/../_scripts/Install-FabulaTechUSBServer.ps1",
-		"${path.root}/../_scripts/Install-RadzioModbusMasterSimulator.ps1"
+		"[IMAGEROOT]/../_scripts/Install-FabulaTechUSBServer.ps1",
+		"[IMAGEROOT]/../_scripts/Install-RadzioModbusMasterSimulator.ps1"
 	]
 }

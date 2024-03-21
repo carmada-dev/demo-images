@@ -1,0 +1,44 @@
+{
+	"$schema": "../_schemas/default.schema.json",
+
+	"features": [
+
+	],
+
+	"prepare": [
+		"[IMAGEROOT]/../_scripts/Install-BGInfo.ps1"
+	],
+
+	"packages": [
+		{
+			"name": "Microsoft.PowerShell",
+			"scope": "machine"
+		},
+		{
+			"name": "git",
+			"source": "alias"
+		},
+		{
+			"name": "Microsoft.WindowsAppRuntime.1.4",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DevHome",
+			"scope": "user",
+			"options": [ "--skip-dependencies" ]
+		},
+		{
+			"name": "Microsoft.VisualStudio.Locator",
+			"scope": "all"
+		},
+		{
+			"name": "Microsoft.WindowsTerminal",
+			"scope": "user"
+		}
+	],
+
+	"configure": [
+		"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1",
+		"[IMAGEROOT]/../_scripts/Configure-VisualStudioCode.ps1"
+	]
+}

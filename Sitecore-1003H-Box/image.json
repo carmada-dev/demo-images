@@ -61,6 +61,6 @@
 	],
 
 	"configure": [
-		"${path.root}/../_scripts/Install-SitecoreXP0-1003H.ps1"
+		"[IMAGEROOT]/../_scripts/Install-SitecoreXP0-1003H.ps1"
 	]
 }

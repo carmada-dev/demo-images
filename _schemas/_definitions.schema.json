@@ -1,0 +1,126 @@
+{
+	"$id": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_schemas/definitions.scheam.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+
+
+	"$defs":{
+		"resourceId_ManagedIdentity": {
+			"type": "string"
+		},
+		"guid": {
+			"type": "string",
+			"pattern":"^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$"
+		},
+		"region":{
+			"type": "string",
+			"enum": [
+				"Australia East",
+				"Canada Central",
+				"West Europe",
+				"Japan East",
+				"UK South",
+				"East US",
+				"East US 2",
+				"South Central US",
+				"West US 3",
+				"Central India",
+				"East Asia",
+				"North Europe",
+				"Korea Central"
+			]
+		},
+		"package": {
+			"type": "object",
+			"description": "A package to install in the image",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "The name of the package"
+				},
+				"scope": {
+					"type": "string",
+					"description": "The scope of the package",
+					"enum": [ "machine", "user", "all" ]
+				},
+				"source": {
+					"type": "string",
+					"description": "The source of the package",
+					"default": "winget"
+				},
+				"version": {
+					"type": "string",
+					"description": "The version of the package",
+					"default": "latest"
+				},
+				"options": {
+					"type": "array",
+					"description": "List of options to pass to the package manager when installing the package",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				},
+				"override": {
+					"type": "array",
+					"description": "List of arguments to override the default arguments used by the package when executing the installer",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				},
+				"existCodes": {
+					"type": "array",
+					"description": "List of exit codes to ignore (treat as success) when installing the package",
+					"default": [],
+					"items": {
+						"type": "integer"
+					}
+				},
+				"features": {
+					"type": "array",
+					"description": "List of features to enable in the image before the package is installed",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				},
+				"prepare": {
+					"type": "array",
+					"description": "List of scripts to run to prepare the image before the package is installed",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				},
+				"configure": {
+					"type": "array",
+					"description": "List of scripts to run to configure the image after the package is installed",
+					"default": [],
+					"items": {
+						"type": "string"
+					}
+				}
+			},
+			"required": [ "name", "scope" ],
+			"additionalProperties": false
+		},
+		"packageRef": {
+			"type": "object",
+			"description": "A package to install in the image by reference (using the 'alias' source)",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "The name of the package"
+				},
+				"source": {
+					"type": "string",
+					"description": "The source of the package",
+					"const": "alias"
+				}
+			},
+			"required": [ "name", "source" ],
+			"additionalProperties": false
+		}
+
+	}
+}

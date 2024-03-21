@@ -50,7 +50,7 @@
 	],
 
 	"prepare": [
-		"${path.root}/../_scripts/Install-WSL2.ps1"
+		"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
 	],
 
 	"packages": [

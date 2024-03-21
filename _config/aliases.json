@@ -1,0 +1,79 @@
+{
+	"$schema": "../_schemas/aliases.schema.json",
+
+	"git": {
+		"name": "Git.Git",
+		"scope": "machine",
+		"override": [
+			"/VERYSILENT",
+			"/SUPPRESSMSGBOXES",
+			"/NORESTART",
+			"/NOCANCEL",
+			"/SP-",
+			"/WindowsTerminal",
+			"/WindowsTerminalProfile",
+			"/DefaultBranchName:main",
+			"/Editor:VisualStudioCode"
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-Git.ps1"
+		]
+	},
+
+	"vscode": {
+		"name": "Microsoft.VisualStudioCode",
+		"scope": "machine",
+		"override": [ 
+			"/VERYSILENT",
+			"/NORESTART",
+			"/MERGETASKS=desktopicon,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath,!runcode"
+		]
+	},
+
+	"dockerDesktopWSL": {
+		"name": "Docker.DockerDesktop",
+		"scope": "machine",
+		"override": [
+			"install",
+			"--quiet",
+			"--accept-license",
+			"--backend=wsl-2",
+			"--always-run-service"
+		],
+		"features": [
+			"Microsoft-Windows-Subsystem-Linux",
+			"VirtualMachinePlatform",
+			"Containers"
+		],
+		"prepare": [
+			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1"
+		]
+	},
+
+	"dockerDesktopHyperV": {
+		"name": "Docker.DockerDesktop",
+		"scope": "machine",
+		"override": [
+			"install",
+			"--quiet",
+			"--accept-license",
+			"--backend=hyperv",
+			"--always-run-service"
+		],
+		"features": [
+			"Microsoft-Windows-Subsystem-Linux",
+			"VirtualMachinePlatform",
+			"Containers",
+			"Microsoft-Hyper-V-All"
+		],
+		"prepare": [
+			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1"
+		]
+	}
+}

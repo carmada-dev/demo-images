@@ -1,0 +1,12 @@
+{
+	"$id": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_schemas/packages.scheam.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+
+	"title": "Packages",
+	"description": "Alias packages for all images",
+	"patternProperties": {
+		"^\\w+$": {
+			"$ref": "./_definitions.schema.json#/$defs/package"
+		}
+	}
+}

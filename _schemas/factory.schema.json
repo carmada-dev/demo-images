@@ -1,0 +1,22 @@
+{
+	"$id": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_schemas/factory.scheam.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+
+	"title": "Factory",
+	"description": "Factory (Packer) configuration",
+	"type": "object",
+	"properties": {
+		"subscription": {
+			"$ref": "./_definitions.schema.json#/$defs/guid",
+			"description": "The subscription ID of the factory"
+		},
+		"region": {
+			"$ref": "./_definitions.schema.json#/$defs/region",
+			"description": "The region to use for the factory"
+		},
+		"identity": {
+			"$ref": "./_definitions.schema.json#/$defs/resourceId_ManagedIdentity",
+			"description": "The identity resource ID of the factory"
+		}
+	}
+}

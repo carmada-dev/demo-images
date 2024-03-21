@@ -1,0 +1,53 @@
+{
+	"$id": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_schemas/packages.scheam.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+
+	"$defs": {
+
+	},
+
+	"title": "Default",
+	"description": "Default image definition",
+	"type": "object",
+	"properties": {
+		"features": {
+			"type": "array",
+			"description": "List of features to enable in the image",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		},
+		"prepare": {
+			"type": "array",
+			"description": "List of scripts to run to prepare the image before installing packages",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		},
+		"packages": {
+			"type": "array",
+			"description": "List of packages to install in the image",
+			"default": [],
+			"items": {				
+				"oneOf": [
+					{
+						"$ref": "./_definitions.schema.json#/$defs/package"
+					},
+					{
+						"$ref": "./_definitions.schema.json#/$defs/packageRef"
+					}
+				]
+			}
+		},
+		"configure": {
+			"type": "array",
+			"description": "List of scripts to run to configure the image after installing packages",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		}
+	}
+}
