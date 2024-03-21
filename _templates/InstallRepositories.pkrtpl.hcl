@@ -94,6 +94,7 @@ if (Test-IsPacker) {
 			while ($true) {
 				try {
 					Connect-AzAccount -Identity -ErrorAction Stop -WarningAction SilentlyContinue | Out-Null
+                    Write-Host "- Azure login succeeded"
 					break
 				} catch {
                     if ((Get-Date) -gt $timeout) { throw }
