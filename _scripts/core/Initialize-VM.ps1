@@ -166,13 +166,14 @@ if (Test-Path -Path $Artifacts -PathType Container) {
 		
 			Write-Host ">>> Connect Azure"
 			$timeout = (Get-Date).AddMinutes(5)
-			while ((Get-Date) -lt $timeout) {
+			while ($true) {
 				try {
 					Connect-AzAccount -Identity -ErrorAction Stop -WarningAction SilentlyContinue | Out-Null
 					break
 				} catch {
-					Write-Host "- Azure login failed - retry in 10 seconds"
-					Start-Sleep -Seconds 10
+                    if ((Get-Date) -gt $timeout) { throw }
+                    Write-Host "- Azure login failed - retry in 10 seconds"
+                    Start-Sleep -Seconds 10
 				}
 			}
 		}
