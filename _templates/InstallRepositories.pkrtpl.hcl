@@ -90,7 +90,16 @@ if (Test-IsPacker) {
             }
         
             Write-Host ">>> Connect Azure"
-            Connect-AzAccount -Identity -ErrorAction Stop | Out-Null
+			$timeout = (Get-Date).AddMinutes(5)
+			while ((Get-Date) -lt $timeout) {
+				try {
+					Connect-AzAccount -Identity -ErrorAction Stop -WarningAction SilentlyContinue | Out-Null
+					break
+				} catch {
+					Write-Host "- Azure login failed - retry in 10 seconds"
+					Start-Sleep -Seconds 10
+				}
+			}
 
             $repositories | Where-Object { $_ } | ForEach-Object {
 
