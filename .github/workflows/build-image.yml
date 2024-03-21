@@ -36,8 +36,8 @@ jobs:
       - name: Download Source
         uses: actions/checkout@v3
 
-      - name: Prepare Image Folder
-        run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./ && ls -l
+      # - name: Prepare Image Folder
+      #   run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./ && ls -l
 
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
