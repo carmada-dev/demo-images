@@ -125,8 +125,8 @@ jobs:
       - name: Build Image
         id: packer
         run: |
-          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=${{ github.workflow }}" -var "imageVersion=${{ inputs.imageVersion }}" ../_packer/ | tee ./image.pkr.log
-          echo "gallery_imageid=$(tail -n 15 ./image.pkr.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
+          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=${{ github.workflow }}" -var "imageVersion=${{ inputs.imageVersion }}" ../_packer/ | tee ./image.log
+          echo "gallery_imageid=$(tail -n 15 ./image.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
       - name: Upload Image Info
