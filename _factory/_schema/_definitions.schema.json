@@ -1,0 +1,43 @@
+{
+	"$id": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_schemas/definitions.scheam.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+
+
+	"$defs":{
+		"guid": {
+			"type": "string",
+			"pattern":"^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$"
+		},
+		"region":{
+			"type": "string",
+			"enum": [
+				"Australia East",
+				"Canada Central",
+				"West Europe",
+				"Japan East",
+				"UK South",
+				"East US",
+				"East US 2",
+				"South Central US",
+				"West US 3",
+				"Central India",
+				"East Asia",
+				"North Europe",
+				"Korea Central"
+			]
+		},
+		"addressPrefix":{
+			"type": "string",
+			"pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\/[0-9]{1,2}$"
+		},
+		"ipAddress":{
+			"type": "string",
+			"pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}$"
+		},
+		"resourceId_VirtualNetwork": {
+			"type": "string",
+			"pattern": "^\/subscriptions\/[0-9a-f-]{36}\/resourceGroups\/[a-zA-Z0-9-]{1,90}\/providers\/Microsoft.Network\/virtualNetworks\/[a-zA-Z0-9-]{1,90}$"
+		}
+
+	}
+}

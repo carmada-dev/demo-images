@@ -1,0 +1,15 @@
+
+{
+	"$schema": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_factory/_schemas/imageFactory.scheam.json",
+	"name": "Carmada",
+	"subscription": "bffe1654-7f9a-4630-b7b9-d24759a76222",
+	"region": "West Europe",
+	"network": {
+		"addressPrefix": "192.168.250.0/24"
+	},
+	"runner": {
+		"type": "GitHub",
+		"owner": "carmada-dev",
+		"repo": "demo-images"
+	}
+}

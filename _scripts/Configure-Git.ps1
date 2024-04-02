@@ -9,7 +9,7 @@ $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 # ==============================================================================
 
 if ( -not(Get-Command 'git') ) {
-    Write-ErrorMessage '!!! Docker could not be found.'
+    Write-ErrorMessage '!!! Git could not be found.'
     exit 1
 }
 

@@ -1,0 +1,110 @@
+{
+	"$id": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_factory/_schemas/imageFactory.scheam.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+
+	"title": "Image Factory",
+	"description": "Image Factory configuration",
+
+	"$defs": {
+		"gitHubRunner" : {
+			"type": "object",
+			"description": "The GitHub runner configuration for the factory",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "GitHub"
+				},
+				"owner": {
+					"type": "string",
+					"description": "The owner of the repository"
+				},
+				"repo": {
+					"type": "string",
+					"description": "The repository name"
+				}
+			},
+			"required": ["type", "owner", "repo"],
+			"additionalProperties": false
+		},
+		"devOpsRunner" : {
+			"type": "object",
+			"description": "The Azure DevOps runner configuration for the factory",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "AzureDevOps"
+				},
+				"organization": {
+					"type": "string",
+					"description": "The organization of the project"
+				},
+				"pool": {
+					"type": "string",
+					"description": "The pool name of the runner"
+				}
+			},
+			"required": ["type", "organization", "pool"],
+			"additionalProperties": false
+		}
+	},
+
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string",
+			"const": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_factory/_schemas/imageFactory.scheam.json"
+		},
+		"name": {
+			"type": "string",
+			"description": "The name of the image factory"
+		},
+		"subscription": {
+			"$ref": "./_definitions.schema.json#/$defs/guid",
+			"description": "The subscription ID of the factory"
+		},
+		"region": {
+			"$ref": "./_definitions.schema.json#/$defs/region",
+			"description": "The region to use for the factory"
+		},
+		"network": {
+			"type": "object",
+			"description": "The network configuration for the factory",
+			"properties": {
+				"addressPrefix": {
+					"$ref": "./_definitions.schema.json#/$defs/addressPrefix",
+					"description": "The network addressPrefix to use for the factory"
+				},
+				"peer": {
+					"type": "object",
+					"description": "Peering information for the network",
+					"properties": {
+						"networkId": {
+							"$ref": "./_definitions.schema.json#/$defs/resourceId_VirtualNetwork",
+							"description": "The network ID of the peer"
+						},
+						"gatewayIP": {
+							"$ref": "./_definitions.schema.json#/$defs/ipAddress",
+							"description": "The default gateway IP of the peer"
+						}
+					}
+				}
+			},
+			"required": ["addressPrefix"],
+			"additionalProperties": false
+		},
+		"runner": {
+			"type": "object",
+			"description": "The runner configuration for the factory",
+			"oneOf": [
+				{
+					"$ref": "#/$defs/gitHubRunner"
+				},
+				{
+					"$ref": "#/$defs/devOpsRunner"
+				}
+			]
+		}		
+	},
+	"required": ["name", "subscription", "region", "network", "runner"],
+	"additionalProperties": false
+}
