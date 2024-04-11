@@ -75,5 +75,27 @@
 		"configure": [
 			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1"
 		]
+	},
+
+	"podman": {
+		"name": "RedHat.Podman-Desktop",
+		"scope": "machine",
+		"override": [
+			"install",
+			"--quiet",
+			"--accept-license",
+			"--always-run-service"
+		],
+		"features": [
+			"Microsoft-Windows-Subsystem-Linux",
+			"VirtualMachinePlatform",
+			"Containers"
+		],
+		"prepare": [
+			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-Podman.ps1"
+		]
 	}
 }

@@ -1,14 +1,14 @@
 {
 	"$schema": "https://raw.githubusercontent.com/carmada-dev/demo-images/main/_factory/_schemas/imageFactory.scheam.json",
 	"name": "Carmada",
-	"subscription": "bffe1654-7f9a-4630-b7b9-d24759a76222",
+	"subscription": "a71067ce-fb2f-455b-9cd0-140f7ca06e48",
 	"region": "West Europe",
 	"network": {
 		"addressPrefix": "192.168.250.0/24"
 	},
 	"runner": {
 		"type": "AzureDevOps",
-		"organization": "carmada-dev",
+		"organization": "Developer Compass",
 		"pool": "Carmada"
 	}
 }

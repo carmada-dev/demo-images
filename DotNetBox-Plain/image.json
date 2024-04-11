@@ -1,0 +1,97 @@
+{
+	"$schema": "../_schemas/image.schema.json",
+	"publisher": "Developer Compass",
+	"offer": "PlainDevBox",
+	"sku": "win11-dotnet-devbox",
+	"regions": [
+		"West Europe"
+	],
+	"base": {
+		"publisher": "MicrosoftVisualStudio",
+		"offer": "windowsplustools",
+		"sku": "base-win11-gen2",
+		"version": "latest"
+	},
+	"gallery": {
+		"subscription": "a71067ce-fb2f-455b-9cd0-140f7ca06e48",
+		"resourceGroup": "DevBoxImages",
+		"name": "DotNetDevBox"
+	},
+	"archive": {
+		"subscription": "a71067ce-fb2f-455b-9cd0-140f7ca06e48",
+		"resourceGroup": "DevBoxArchive",
+		"name": ""
+	},
+	"devCenter": {
+		"subscription": "261a4972-a913-4301-a6b3-805f497816ab",
+		"resourceGroup": "DevCenter-DevCompass-prod",
+		"name": "Win11-Dotnet",
+		"compute": "general_i_8c32gb512ssd_v2",
+		"storage": "ssd_512gb"
+	},
+	"devDrive": {
+		"sizeGB": 0,
+		"repositories": []
+	},
+	"features": [],
+	"prepare": [],
+	"packages": [
+		{
+			"name": "Microsoft.DotNet.SDK.3_1",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DotNet.SDK.6",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DotNet.SDK.8",
+			"scope": "machine"
+		},
+		{
+			"name": "vscode",
+			"source": "alias"
+		},
+		{
+			"name": "Microsoft.VisualStudio.2022.Enterprise",
+			"scope": "machine",
+			"override": [
+				"--add Microsoft.VisualStudio.Workload.CoreEditor",
+				"--add Microsoft.VisualStudio.Workload.Azure",
+				"--add Microsoft.VisualStudio.Workload.NetCrossPlat",
+				"--add Microsoft.VisualStudio.Workload.NetWeb",
+				"--add Microsoft.VisualStudio.Workload.Node",
+				"--add Microsoft.VisualStudio.Workload.Python",
+				"--add Microsoft.VisualStudio.Workload.ManagedDesktop",
+				"--includeRecommended",
+				"--installWhileDownloading",
+				"--quiet",
+				"--norestart",
+				"--force",
+				"--wait",
+				"--nocache"
+			]
+		},
+		{
+			"name": "git",
+			"source": "alias"
+		},
+		{
+			"name": "GitHub.cli",
+			"scope": "machine"
+		},
+		{
+			"name": "GitHub.GitHubDesktop",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.Azure.StorageExplorer",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.AzureDataStudio",
+			"scope": "machine"
+		}
+	],
+	"configure": []
+}
