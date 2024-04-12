@@ -616,3 +616,1094 @@ Building Image (./HipsterBox/image.json)
 2024-04-12T20:05:42Z: ==> azure-arm.vm: A system shutdown is in progress.(1115)
 2024-04-12T20:05:47Z: ==> azure-arm.vm: A system shutdown is in progress.(1115)
 2024-04-12T20:05:52Z: ==> azure-arm.vm: A system shutdown is in progress.(1115)
+2024-04-12T20:08:29Z: ==> azure-arm.vm: Checking for pending restart...
+2024-04-12T20:08:49Z:     azure-arm.vm: pkrvmwchvl70cnt restarted.
+2024-04-12T20:08:50Z: ==> azure-arm.vm: Restart complete
+2024-04-12T20:08:50Z: ==> azure-arm.vm: Running Windows update...
+2024-04-12T20:09:34Z:     azure-arm.vm: Searching for Windows updates...
+2024-04-12T20:09:54Z:     azure-arm.vm: Found Windows update (2024-03-27; 18.08 MB): Update for Windows Security platform antimalware platform - KB5007651 (Version 1.0.2402.27001)
+2024-04-12T20:09:54Z:     azure-arm.vm: Found Windows update (2024-04-09; 12.21 MB): Update for Microsoft Defender Antivirus antimalware platform - KB4052623 (Version 4.18.24030.9) - Current Channel (Broad)
+2024-04-12T20:09:54Z:     azure-arm.vm: Downloading Windows updates (2 updates; 30.29 MB)...
+2024-04-12T20:09:54Z:     azure-arm.vm: Installing Windows updates...
+2024-04-12T20:10:19Z: ==> azure-arm.vm: Provisioning with Powershell...
+2024-04-12T20:10:19Z: ==> azure-arm.vm: Provisioning with powershell script: /tmp/powershell-provisioner3405758008
+2024-04-12T20:10:30Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:10:31Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:10:31Z:     azure-arm.vm: Apply DevDrive Filter
+2024-04-12T20:10:31Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:10:31Z:     azure-arm.vm: Apply DevDrive filters: bindFlt wcifs
+2024-04-12T20:10:31Z:     azure-arm.vm: | EXEC C:\Windows\System32> fsutil.exe devdrv setfiltersallowed "bindFlt wcifs"
+2024-04-12T20:10:31Z:     azure-arm.vm: The operation completed successfully.
+2024-04-12T20:10:31Z:     azure-arm.vm:
+2024-04-12T20:10:31Z:     azure-arm.vm: A reboot is required for this change to take effect.  Alternatively the volumes
+2024-04-12T20:10:31Z:     azure-arm.vm: of interest can be dismounted to have the change take effect on those volumes.
+2024-04-12T20:10:31Z:     azure-arm.vm:
+2024-04-12T20:10:32Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:10:32Z:     azure-arm.vm: Finished after 00:00:00.251 as packer (elevated)
+2024-04-12T20:10:32Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:10:32Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:10:32Z:     azure-arm.vm: Creating DevDrive
+2024-04-12T20:10:32Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:10:36Z:     azure-arm.vm: >>> Creating new DevDrive VHDX (C:\DevBox\DevDrive.vhdx)
+2024-04-12T20:10:38Z:     azure-arm.vm: >>> Initializing DevDrive Disk
+2024-04-12T20:10:40Z:     azure-arm.vm: >>> Initializing partition on DevDrive
+2024-04-12T20:10:40Z:     azure-arm.vm: >>> Formatting partition on DevDrive
+2024-04-12T20:10:45Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:10:45Z:     azure-arm.vm: Finished after 00:00:12.643 as packer (elevated)
+2024-04-12T20:10:45Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:10:45Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:10:45Z:     azure-arm.vm: Enable DevDrive AutoMount
+2024-04-12T20:10:45Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:10:45Z:     azure-arm.vm: done
+2024-04-12T20:10:45Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:10:45Z:     azure-arm.vm: Finished after 00:00:00.519 as packer (elevated)
+2024-04-12T20:10:45Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:10:49Z: ==> azure-arm.vm: Restarting Machine
+2024-04-12T20:10:49Z: ==> azure-arm.vm: Waiting for machine to restart...
+2024-04-12T20:10:49Z: ==> azure-arm.vm: A system shutdown is in progress.(1115)
+2024-04-12T20:11:21Z:     azure-arm.vm: pkrvmwchvl70cnt restarted.
+2024-04-12T20:11:23Z:     azure-arm.vm: False
+2024-04-12T20:11:24Z:     azure-arm.vm: False
+2024-04-12T20:11:25Z:     azure-arm.vm: False
+2024-04-12T20:11:25Z: ==> azure-arm.vm: Machine successfully restarted, moving on
+2024-04-12T20:11:25Z: ==> azure-arm.vm: Provisioning with Powershell...
+2024-04-12T20:11:25Z: ==> azure-arm.vm: Provisioning with powershell script: ../_scripts/pkgs/Install-Chocolatey.ps1
+2024-04-12T20:11:37Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:11:37Z:     azure-arm.vm: >>> Register ActiveSetup
+2024-04-12T20:11:37Z:     azure-arm.vm: - Register ActiveSetup Task: HKLM:SOFTWARE\Microsoft\Active Setup\Installed Components\devbox-1712952696597-3f1c0a94-2ce5-b108-3865-db33e5fc59ba
+2024-04-12T20:11:37Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:11:37Z:     azure-arm.vm: Installing Choco Package Manager
+2024-04-12T20:11:37Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:11:37Z:     azure-arm.vm: >>> Downloading Chocolatey ...
+2024-04-12T20:11:37Z:     azure-arm.vm: >>> Downloading https://chocolatey.org/install.ps1 > C:\Users\packer\AppData\Local\Temp\install.ps1
+2024-04-12T20:11:38Z:     azure-arm.vm: >>> Installing Chocolatey ...
+2024-04-12T20:11:40Z:     azure-arm.vm: Forcing web requests to allow TLS v1.2 (Required for requests to Chocolatey.org)
+2024-04-12T20:11:40Z:     azure-arm.vm: Getting latest version of the Chocolatey package for download.
+2024-04-12T20:11:40Z:     azure-arm.vm: Not using proxy.
+2024-04-12T20:11:40Z:     azure-arm.vm: Getting Chocolatey from https://community.chocolatey.org/api/v2/package/chocolatey/2.2.2.
+2024-04-12T20:11:40Z:     azure-arm.vm: Downloading https://community.chocolatey.org/api/v2/package/chocolatey/2.2.2 to C:\Users\packer\AppData\Local\Temp\chocolatey\chocoInstall\chocolatey.zip
+2024-04-12T20:11:40Z:     azure-arm.vm: Not using proxy.
+2024-04-12T20:11:40Z:     azure-arm.vm: Extracting C:\Users\packer\AppData\Local\Temp\chocolatey\chocoInstall\chocolatey.zip to C:\Users\packer\AppData\Local\Temp\chocolatey\chocoInstall
+2024-04-12T20:11:42Z:     azure-arm.vm: Installing Chocolatey on the local machine
+2024-04-12T20:11:44Z:     azure-arm.vm: WARNING: It's very likely you will need to close and reopen your shell
+2024-04-12T20:11:44Z:     azure-arm.vm:   before you can use choco.
+2024-04-12T20:11:44Z:     azure-arm.vm: PATH environment variable does not have C:\ProgramData\chocolatey\bin in it. Adding...
+2024-04-12T20:11:45Z:     azure-arm.vm: WARNING: Not setting tab completion: Profile file does not exist at
+2024-04-12T20:11:45Z:     azure-arm.vm: 'C:\Users\packer\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1'.
+2024-04-12T20:11:47Z:     azure-arm.vm: Ensuring Chocolatey commands are on the path
+2024-04-12T20:11:47Z:     azure-arm.vm: Ensuring chocolatey.nupkg is in the lib folder
+2024-04-12T20:11:47Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:11:47Z:     azure-arm.vm: Finished after 00:00:10.116 as packer (elevated)
+2024-04-12T20:11:47Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:11:47Z: ==> azure-arm.vm: Provisioning with powershell script: ../_scripts/pkgs/Install-WinGet.ps1
+2024-04-12T20:11:58Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:11:58Z:     azure-arm.vm: >>> Register ActiveSetup
+2024-04-12T20:11:58Z:     azure-arm.vm: - Register ActiveSetup Task: HKLM:SOFTWARE\Microsoft\Active Setup\Installed Components\devbox-1712952717693-ec163dc0-3807-222e-a36c-98bed6b6a140
+2024-04-12T20:11:58Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:11:58Z:     azure-arm.vm: Installing WinGet Package Manager
+2024-04-12T20:11:58Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:11:58Z:     azure-arm.vm: >>> Installing WinGet pre-requisites (x64) - Microsoft.VCLibs ...
+2024-04-12T20:11:58Z:     azure-arm.vm: >>> Downloading https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx > C:\Users\packer\AppData\Local\Temp\Microsoft.VCLibs.x64.14.00.Desktop.appx
+2024-04-12T20:12:13Z:     azure-arm.vm: >>> Installing WinGet pre-requisites (x64) - Microsoft.UI.Xaml ...
+2024-04-12T20:12:13Z:     azure-arm.vm: >>> Downloading https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6 > C:\Users\packer\AppData\Local\Temp\Microsoft.UI.Xaml.zip
+2024-04-12T20:12:44Z:     azure-arm.vm: >>> Expanding C:\Users\packer\AppData\Local\Temp\Microsoft.UI.Xaml.zip > C:\Users\packer\AppData\Local\Temp\Microsoft.UI.Xaml
+2024-04-12T20:12:47Z:     azure-arm.vm: >>> Installing WinGet CLI...
+2024-04-12T20:12:47Z:     azure-arm.vm: >>> Downloading https://github.com/microsoft/winget-cli/releases/download/v1.7.10861/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle > C:\Users\packer\AppData\Local\Temp\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
+2024-04-12T20:19:09Z:     azure-arm.vm: >>> Resetting WinGet Sources ...
+2024-04-12T20:19:09Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget source reset --force --disable-interactivity
+2024-04-12T20:19:10Z:     azure-arm.vm: Resetting all sources...Done
+2024-04-12T20:19:10Z:     azure-arm.vm:
+2024-04-12T20:19:10Z:     azure-arm.vm: >>> Adding WinGet Source Cache Package ...
+2024-04-12T20:19:10Z:     azure-arm.vm: >>> Downloading https://cdn.winget.microsoft.com/cache/source.msix > C:\Users\packer\AppData\Local\Temp\source.msix
+2024-04-12T20:19:19Z:     azure-arm.vm: >>> Patching WinGet Config ...
+2024-04-12T20:19:19Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:19:19Z:     azure-arm.vm: Finished after 00:07:21.818 as packer (elevated)
+2024-04-12T20:19:19Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:19:19Z: ==> azure-arm.vm: Provisioning with powershell script: /workspaces/demo-images/HipsterBox/../_scripts/core/NOOP.ps1
+2024-04-12T20:19:34Z: ==> azure-arm.vm: Restarting Machine
+2024-04-12T20:19:34Z: ==> azure-arm.vm: Waiting for machine to restart...
+2024-04-12T20:19:34Z: ==> azure-arm.vm: A system shutdown is in progress.(1115)
+2024-04-12T20:20:08Z:     azure-arm.vm: pkrvmwchvl70cnt restarted.
+2024-04-12T20:20:09Z:     azure-arm.vm: False
+2024-04-12T20:20:10Z:     azure-arm.vm: False
+2024-04-12T20:20:11Z:     azure-arm.vm: False
+2024-04-12T20:20:11Z: ==> azure-arm.vm: Machine successfully restarted, moving on
+2024-04-12T20:20:12Z: ==> azure-arm.vm: Provisioning with Powershell...
+2024-04-12T20:20:12Z: ==> azure-arm.vm: Provisioning with powershell script: /workspaces/demo-images/HipsterBox/../_scripts/core/NOOP.ps1
+2024-04-12T20:20:22Z: ==> azure-arm.vm: Provisioning with powershell script: /workspaces/demo-images/HipsterBox/../_scripts/Install-BGInfo.ps1
+2024-04-12T20:20:34Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:20:34Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:20:34Z:     azure-arm.vm: Installing BGInfo
+2024-04-12T20:20:34Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:20:34Z:     azure-arm.vm: >>> Installing BGInfo ...
+2024-04-12T20:20:34Z:     azure-arm.vm: >>> Downloading https://download.sysinternals.com/files/BGInfo.zip > C:\Users\packer\AppData\Local\Temp\BGInfo.zip
+2024-04-12T20:20:38Z:     azure-arm.vm: >>> Expanding C:\Users\packer\AppData\Local\Temp\BGInfo.zip > C:\Users\packer\AppData\Local\Temp\BGInfo
+2024-04-12T20:20:39Z:     azure-arm.vm: >>> Updating BGInfo ACLs ...
+2024-04-12T20:20:39Z:     azure-arm.vm: >>> Create BGInfo Shortcut ...
+2024-04-12T20:20:39Z:     azure-arm.vm: >>> Register BGInfo Scheduled Task ...
+2024-04-12T20:20:40Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:20:40Z:     azure-arm.vm: Finished after 00:00:06.210 as packer (elevated)
+2024-04-12T20:20:40Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:20:40Z: ==> azure-arm.vm: Provisioning with powershell script: /workspaces/demo-images/HipsterBox/../_scripts/Install-WSL2.ps1
+2024-04-12T20:20:51Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:20:51Z:     azure-arm.vm: >>> Register ActiveSetup
+2024-04-12T20:20:51Z:     azure-arm.vm: - Register ActiveSetup Task: HKLM:SOFTWARE\Microsoft\Active Setup\Installed Components\devbox-1712953250956-0a33c155-e51c-511f-cff6-8010ee7e009a
+2024-04-12T20:20:51Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:20:51Z:     azure-arm.vm: Installing WSL2
+2024-04-12T20:20:51Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:20:51Z:     azure-arm.vm: >>> Downloading WSL2 kernel update ...
+2024-04-12T20:20:51Z:     azure-arm.vm: >>> Downloading https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi > C:\Users\packer\AppData\Local\Temp\wsl_update_x64.msi
+2024-04-12T20:21:17Z:     azure-arm.vm: >>> Installing WSL2 kernel update ...
+2024-04-12T20:21:17Z:     azure-arm.vm: | EXEC C:\Windows\System32> msiexec /I C:\Users\packer\AppData\Local\Temp\wsl_update_x64.msi /quiet /norestart
+2024-04-12T20:21:19Z:     azure-arm.vm:
+2024-04-12T20:21:19Z:     azure-arm.vm: >>> Setting default WSL version to 2 ...
+2024-04-12T20:21:19Z:     azure-arm.vm: | EXEC C:\Windows\System32> wsl --set-default-version 2
+2024-04-12T20:21:19Z:     azure-arm.vm: F o r   i n f o r m a t i o n   o n   k e y   d i f f e r e n c e s   w i t h   W S L   2   p l e a s e   v i s i t   h t t p s : / / a k a . m s / w s l 2 
+2024-04-12T20:21:19Z:     azure-arm.vm:  
+2024-04-12T20:21:19Z:     azure-arm.vm:  
+2024-04-12T20:21:19Z:     azure-arm.vm:  T h e   o p e r a t i o n   c o m p l e t e d   s u c c e s s f u l l y . 
+2024-04-12T20:21:19Z:     azure-arm.vm:  
+2024-04-12T20:21:19Z:     azure-arm.vm:  
+2024-04-12T20:21:19Z:     azure-arm.vm:  
+2024-04-12T20:21:19Z:     azure-arm.vm: >>> Enforcing WSL Update ...
+2024-04-12T20:21:19Z:     azure-arm.vm: | EXEC C:\Windows\System32> wsl --update --web-download
+2024-04-12T20:21:29Z:     azure-arm.vm: D o w n l o a d i n g :   W i n d o w s   S u b s y s t e m   f o r   L i n u x 
+2024-04-12T20:21:29Z:     azure-arm.vm:  
+2024-04-12T20:21:29Z:     azure-arm.vm:  
+2024-04-12T20:21:29Z:     azure-arm.vm:  I n s t a l l i n g :   W i n d o w s   S u b s y s t e m   f o r   L i n u x 
+2024-04-12T20:21:29Z:     azure-arm.vm:  
+2024-04-12T20:21:29Z:     azure-arm.vm:  
+2024-04-12T20:21:29Z:     azure-arm.vm:  W i n d o w s   S u b s y s t e m   f o r   L i n u x   h a s   b e e n   i n s t a l l e d . 
+2024-04-12T20:21:29Z:     azure-arm.vm:  
+2024-04-12T20:21:29Z:     azure-arm.vm:  
+2024-04-12T20:21:29Z:     azure-arm.vm:  
+2024-04-12T20:21:29Z:     azure-arm.vm: >>> Installing WSL Default Distro (Ubuntu) ...
+2024-04-12T20:21:29Z:     azure-arm.vm: | EXEC C:\Windows\System32> wsl --status
+2024-04-12T20:21:29Z:     azure-arm.vm:
+2024-04-12T20:21:29Z:     azure-arm.vm: >>> Installing WSL Default Distro (Ubuntu) ...
+2024-04-12T20:21:29Z:     azure-arm.vm: | EXEC C:\Windows\System32> wsl --install --distribution ubuntu --no-launch
+2024-04-12T20:21:29Z:     azure-arm.vm:
+2024-04-12T20:21:29Z:     azure-arm.vm: >>> WSL Distro overview ...
+2024-04-12T20:21:29Z:     azure-arm.vm: | EXEC C:\Windows\System32> wsl --list --verbose
+2024-04-12T20:21:29Z:     azure-arm.vm:
+2024-04-12T20:21:29Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:21:29Z:     azure-arm.vm: Finished after 00:00:37.881 as packer (elevated)
+2024-04-12T20:21:29Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:21:33Z: ==> azure-arm.vm: Restarting Machine
+2024-04-12T20:21:33Z: ==> azure-arm.vm: Waiting for machine to restart...
+2024-04-12T20:21:33Z: ==> azure-arm.vm: A system shutdown is in progress.(1115)
+2024-04-12T20:21:43Z: ==> azure-arm.vm: A system shutdown is in progress.(1115)
+2024-04-12T20:22:16Z:     azure-arm.vm: pkrvmwchvl70cnt restarted.
+2024-04-12T20:22:19Z:     azure-arm.vm: False
+2024-04-12T20:22:20Z:     azure-arm.vm: False
+2024-04-12T20:22:21Z:     azure-arm.vm: False
+2024-04-12T20:22:21Z: ==> azure-arm.vm: Machine successfully restarted, moving on
+2024-04-12T20:22:21Z: ==> azure-arm.vm: Provisioning with Powershell...
+2024-04-12T20:22:21Z: ==> azure-arm.vm: Provisioning with powershell script: /tmp/powershell-provisioner2454178507
+2024-04-12T20:22:34Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:22:34Z:     azure-arm.vm: >>> Register ActiveSetup
+2024-04-12T20:22:34Z:     azure-arm.vm: - Register ActiveSetup Task: HKLM:SOFTWARE\Microsoft\Active Setup\Installed Components\devbox-1712953353431-0008b154-5824-7f2e-0eca-c0df51a7653f
+2024-04-12T20:22:34Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:34Z:     azure-arm.vm: Packages
+2024-04-12T20:22:34Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:34Z:     azure-arm.vm: [
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Microsoft.PowerShell",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Microsoft.WindowsAppRuntime.1.4",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Microsoft.DevHome",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "options":  [
+2024-04-12T20:22:34Z:     azure-arm.vm:                         "--skip-dependencies"
+2024-04-12T20:22:34Z:     azure-arm.vm:                     ],
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "user"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Microsoft.VisualStudio.Locator",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "all"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Microsoft.WindowsTerminal",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "user"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "GitHub.cli",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "GitHub.GitHubDesktop",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Postman.Postman",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "user"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Google.Chrome",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Mozilla.Firefox",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "configure":  [
+2024-04-12T20:22:34Z:     azure-arm.vm:                           "/workspaces/demo-images/HipsterBox/../_scripts/Configure-Git.ps1"
+2024-04-12T20:22:34Z:     azure-arm.vm:                       ],
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Git.Git",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "override":  [
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/VERYSILENT",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/SUPPRESSMSGBOXES",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/NORESTART",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/NOCANCEL",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/SP-",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/WindowsTerminal",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/WindowsTerminalProfile",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/DefaultBranchName:main",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/Editor:VisualStudioCode"
+2024-04-12T20:22:34Z:     azure-arm.vm:                      ],
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Microsoft.VisualStudioCode",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "override":  [
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/VERYSILENT",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/NORESTART",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/MERGETASKS=desktopicon,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath,!runcode"
+2024-04-12T20:22:34Z:     azure-arm.vm:                      ],
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:22:34Z:     azure-arm.vm:     },
+2024-04-12T20:22:34Z:     azure-arm.vm:     {
+2024-04-12T20:22:34Z:     azure-arm.vm:         "configure":  [
+2024-04-12T20:22:34Z:     azure-arm.vm:                           "/workspaces/demo-images/HipsterBox/../_scripts/Configure-Git.ps1"
+2024-04-12T20:22:34Z:     azure-arm.vm:                       ],
+2024-04-12T20:22:34Z:     azure-arm.vm:         "name":  "Git.Git",
+2024-04-12T20:22:34Z:     azure-arm.vm:         "override":  [
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/VERYSILENT",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/SUPPRESSMSGBOXES",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/NORESTART",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/NOCANCEL",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/SP-",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/WindowsTerminal",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/WindowsTerminalProfile",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/DefaultBranchName:main",
+2024-04-12T20:22:34Z:     azure-arm.vm:                          "/Editor:VisualStudioCode"
+2024-04-12T20:22:34Z:     azure-arm.vm:                      ],
+2024-04-12T20:22:34Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:22:34Z:     azure-arm.vm:     }
+2024-04-12T20:22:34Z:     azure-arm.vm: ]
+2024-04-12T20:22:34Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:34Z:     azure-arm.vm: Finished after 00:00:00.038 as packer (elevated)
+2024-04-12T20:22:34Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:34Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:34Z:     azure-arm.vm: Install Package
+2024-04-12T20:22:34Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:34Z:     azure-arm.vm: name  Microsoft.PowerShell
+2024-04-12T20:22:34Z:     azure-arm.vm: scope machine
+2024-04-12T20:22:34Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:34Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id Microsoft.PowerShell --exact --source winget --silent --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:22:36Z:     azure-arm.vm: Found an existing package already installed. Trying to upgrade the installed package...
+2024-04-12T20:22:36Z:     azure-arm.vm: No available upgrade found.
+2024-04-12T20:22:36Z:     azure-arm.vm: No newer package versions are available from the configured sources.
+2024-04-12T20:22:36Z:     azure-arm.vm:
+2024-04-12T20:22:36Z:     azure-arm.vm: Installing Microsoft.PowerShell failed with exit code '-1978335189' but was ignored (SUCCESS EXIT CODES: -1978335189, 0)
+2024-04-12T20:22:36Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:36Z:     azure-arm.vm: Finished after 00:00:01.777 as packer (elevated)
+2024-04-12T20:22:36Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:36Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:36Z:     azure-arm.vm: Install Package
+2024-04-12T20:22:36Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:36Z:     azure-arm.vm: name  Microsoft.WindowsAppRuntime.1.4
+2024-04-12T20:22:36Z:     azure-arm.vm: scope machine
+2024-04-12T20:22:36Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:36Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id Microsoft.WindowsAppRuntime.1.4 --exact --source winget --silent --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:22:55Z:     azure-arm.vm: Found Windows App Runtime [Microsoft.WindowsAppRuntime.1.4] Version 1.4.5
+2024-04-12T20:22:55Z:     azure-arm.vm: This application is licensed to you by its owner.
+2024-04-12T20:22:55Z:     azure-arm.vm: Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+2024-04-12T20:22:55Z:     azure-arm.vm: Downloading https://aka.ms/windowsappsdk/1.4/1.4.240211001/windowsappruntimeinstall-x64.exe
+2024-04-12T20:22:55Z:     azure-arm.vm:   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ  60.6 MB / 60.6 MB
+2024-04-12T20:22:55Z:     azure-arm.vm: Successfully verified installer hash
+2024-04-12T20:22:55Z:     azure-arm.vm: Starting package install...
+2024-04-12T20:22:55Z:     azure-arm.vm: Successfully installed
+2024-04-12T20:22:55Z:     azure-arm.vm:
+2024-04-12T20:22:55Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:55Z:     azure-arm.vm: Finished after 00:00:17.982 as packer (elevated)
+2024-04-12T20:22:55Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:55Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:55Z:     azure-arm.vm: Install Package
+2024-04-12T20:22:55Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:55Z:     azure-arm.vm: scope   user
+2024-04-12T20:22:55Z:     azure-arm.vm: name    Microsoft.DevHome
+2024-04-12T20:22:55Z:     azure-arm.vm: options --skip-dependencies
+2024-04-12T20:22:55Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:55Z:     azure-arm.vm: Installation skipped - package scope mismatch: user
+2024-04-12T20:22:55Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:55Z:     azure-arm.vm: Finished after 00:00:00.001 as packer (elevated)
+2024-04-12T20:22:55Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:55Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:55Z:     azure-arm.vm: Install Package
+2024-04-12T20:22:55Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:55Z:     azure-arm.vm: name  Microsoft.VisualStudio.Locator
+2024-04-12T20:22:55Z:     azure-arm.vm: scope all
+2024-04-12T20:22:55Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:55Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id Microsoft.VisualStudio.Locator --exact --source winget --silent --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:22:58Z:     azure-arm.vm: Found Visual Studio Locator [Microsoft.VisualStudio.Locator] Version 3.1.7
+2024-04-12T20:22:58Z:     azure-arm.vm: This application is licensed to you by its owner.
+2024-04-12T20:22:58Z:     azure-arm.vm: Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+2024-04-12T20:22:58Z:     azure-arm.vm: Downloading https://github.com/microsoft/vswhere/releases/download/3.1.7/vswhere.exe
+2024-04-12T20:22:58Z:     azure-arm.vm:   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ   458 KB /  458 KB
+2024-04-12T20:22:58Z:     azure-arm.vm: Successfully verified installer hash
+2024-04-12T20:22:58Z:     azure-arm.vm: Starting package install...
+2024-04-12T20:22:58Z:     azure-arm.vm: Command line alias added: "vswhere"
+2024-04-12T20:22:58Z:     azure-arm.vm: Path environment variable modified; restart your shell to use the new value.
+2024-04-12T20:22:58Z:     azure-arm.vm: Successfully installed
+2024-04-12T20:22:58Z:     azure-arm.vm:
+2024-04-12T20:22:58Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:58Z:     azure-arm.vm: Finished after 00:00:03.267 as packer (elevated)
+2024-04-12T20:22:58Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:58Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:58Z:     azure-arm.vm: Install Package
+2024-04-12T20:22:58Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:58Z:     azure-arm.vm: name  Microsoft.WindowsTerminal
+2024-04-12T20:22:58Z:     azure-arm.vm: scope user
+2024-04-12T20:22:58Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:58Z:     azure-arm.vm: Installation skipped - package scope mismatch: user
+2024-04-12T20:22:58Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:58Z:     azure-arm.vm: Finished after 00:00:00.001 as packer (elevated)
+2024-04-12T20:22:58Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:58Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:22:58Z:     azure-arm.vm: Install Package
+2024-04-12T20:22:58Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:58Z:     azure-arm.vm: name  GitHub.cli
+2024-04-12T20:22:58Z:     azure-arm.vm: scope machine
+2024-04-12T20:22:58Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:22:58Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id GitHub.cli --exact --source winget --silent --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:23:04Z:     azure-arm.vm: Found an existing package already installed. Trying to upgrade the installed package...
+2024-04-12T20:23:04Z:     azure-arm.vm: Found GitHub CLI [GitHub.cli] Version 2.47.0
+2024-04-12T20:23:04Z:     azure-arm.vm: This application is licensed to you by its owner.
+2024-04-12T20:23:04Z:     azure-arm.vm: Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+2024-04-12T20:23:04Z:     azure-arm.vm: Downloading https://github.com/cli/cli/releases/download/v2.47.0/gh_2.47.0_windows_amd64.msi
+2024-04-12T20:23:04Z:     azure-arm.vm:   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ  12.5 MB / 12.5 MB
+2024-04-12T20:23:04Z:     azure-arm.vm: Successfully verified installer hash
+2024-04-12T20:23:04Z:     azure-arm.vm: Starting package install...
+2024-04-12T20:23:04Z:     azure-arm.vm: Successfully installed
+2024-04-12T20:23:04Z:     azure-arm.vm:
+2024-04-12T20:23:04Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:23:04Z:     azure-arm.vm: Finished after 00:00:05.943 as packer (elevated)
+2024-04-12T20:23:04Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:23:04Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:23:04Z:     azure-arm.vm: Install Package
+2024-04-12T20:23:04Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:23:04Z:     azure-arm.vm: name  GitHub.GitHubDesktop
+2024-04-12T20:23:04Z:     azure-arm.vm: scope machine
+2024-04-12T20:23:04Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:23:04Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id GitHub.GitHubDesktop --exact --source winget --silent --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:23:33Z:     azure-arm.vm: Found GitHub Desktop [GitHub.GitHubDesktop] Version 3.3.13
+2024-04-12T20:23:33Z:     azure-arm.vm: This application is licensed to you by its owner.
+2024-04-12T20:23:33Z:     azure-arm.vm: Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+2024-04-12T20:23:33Z:     azure-arm.vm: Downloading https://desktop.githubusercontent.com/github-desktop/releases/3.3.13-1b0804db/GitHubDesktopSetup-x64.exe
+2024-04-12T20:23:33Z:     azure-arm.vm:   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ   146 MB /  146 MB
+2024-04-12T20:23:33Z:     azure-arm.vm: Successfully verified installer hash
+2024-04-12T20:23:33Z:     azure-arm.vm: Starting package install...
+2024-04-12T20:23:33Z:     azure-arm.vm: Successfully installed
+2024-04-12T20:23:33Z:     azure-arm.vm:
+2024-04-12T20:23:33Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:23:33Z:     azure-arm.vm: Finished after 00:00:28.629 as packer (elevated)
+2024-04-12T20:23:33Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:23:33Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:23:33Z:     azure-arm.vm: Install Package
+2024-04-12T20:23:33Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:23:33Z:     azure-arm.vm: name  Postman.Postman
+2024-04-12T20:23:33Z:     azure-arm.vm: scope user
+2024-04-12T20:23:33Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:23:33Z:     azure-arm.vm: Installation skipped - package scope mismatch: user
+2024-04-12T20:23:33Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:23:33Z:     azure-arm.vm: Finished after 00:00:00.001 as packer (elevated)
+2024-04-12T20:23:33Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:23:33Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:23:33Z:     azure-arm.vm: Install Package
+2024-04-12T20:23:33Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:23:33Z:     azure-arm.vm: name  Google.Chrome
+2024-04-12T20:23:33Z:     azure-arm.vm: scope machine
+2024-04-12T20:23:33Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:23:33Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id Google.Chrome --exact --source winget --silent --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:24:33Z:     azure-arm.vm: Found Google Chrome [Google.Chrome] Version 123.0.6312.122
+2024-04-12T20:24:33Z:     azure-arm.vm: This application is licensed to you by its owner.
+2024-04-12T20:24:33Z:     azure-arm.vm: Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+2024-04-12T20:24:33Z:     azure-arm.vm: Downloading https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi
+2024-04-12T20:24:33Z:     azure-arm.vm:   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ   112 MB /  112 MB
+2024-04-12T20:24:33Z:     azure-arm.vm: Successfully verified installer hash
+2024-04-12T20:24:33Z:     azure-arm.vm: Starting package install...
+2024-04-12T20:24:33Z:     azure-arm.vm: Successfully installed
+2024-04-12T20:24:33Z:     azure-arm.vm:
+2024-04-12T20:24:33Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:24:33Z:     azure-arm.vm: Finished after 00:00:59.474 as packer (elevated)
+2024-04-12T20:24:33Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:24:33Z:     azure-arm.vm: >>> Pending reboot detected after installing package Google.Chrome - restarting the machine ...
+2024-04-12T20:24:33Z: ==> azure-arm.vm: Provisioner failed with "Script exited with non-zero exit status: 3010. Allowed exit codes are: [0]", retrying with 5 trie(s) left
+2024-04-12T20:24:33Z: ==> azure-arm.vm: Provisioning with Powershell...
+2024-04-12T20:24:33Z: ==> azure-arm.vm: Provisioning with powershell script: /tmp/powershell-provisioner2331317206
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Register ActiveSetup
+2024-04-12T20:25:18Z:     azure-arm.vm: - Update ActiveSetup Task: @{ Split-Path -Path ($_.Name) -Leaf =devbox-1712953353431-0008b154-5824-7f2e-0eca-c0df51a7653f}
+2024-04-12T20:25:18Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:25:18Z:     azure-arm.vm: Packages
+2024-04-12T20:25:18Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:18Z:     azure-arm.vm: [
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Microsoft.PowerShell",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Microsoft.WindowsAppRuntime.1.4",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Microsoft.DevHome",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "options":  [
+2024-04-12T20:25:18Z:     azure-arm.vm:                         "--skip-dependencies"
+2024-04-12T20:25:18Z:     azure-arm.vm:                     ],
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "user"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Microsoft.VisualStudio.Locator",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "all"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Microsoft.WindowsTerminal",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "user"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "GitHub.cli",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "GitHub.GitHubDesktop",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Postman.Postman",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "user"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Google.Chrome",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Mozilla.Firefox",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "configure":  [
+2024-04-12T20:25:18Z:     azure-arm.vm:                           "/workspaces/demo-images/HipsterBox/../_scripts/Configure-Git.ps1"
+2024-04-12T20:25:18Z:     azure-arm.vm:                       ],
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Git.Git",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "override":  [
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/VERYSILENT",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/SUPPRESSMSGBOXES",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/NORESTART",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/NOCANCEL",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/SP-",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/WindowsTerminal",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/WindowsTerminalProfile",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/DefaultBranchName:main",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/Editor:VisualStudioCode"
+2024-04-12T20:25:18Z:     azure-arm.vm:                      ],
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Microsoft.VisualStudioCode",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "override":  [
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/VERYSILENT",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/NORESTART",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/MERGETASKS=desktopicon,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath,!runcode"
+2024-04-12T20:25:18Z:     azure-arm.vm:                      ],
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:25:18Z:     azure-arm.vm:     },
+2024-04-12T20:25:18Z:     azure-arm.vm:     {
+2024-04-12T20:25:18Z:     azure-arm.vm:         "configure":  [
+2024-04-12T20:25:18Z:     azure-arm.vm:                           "/workspaces/demo-images/HipsterBox/../_scripts/Configure-Git.ps1"
+2024-04-12T20:25:18Z:     azure-arm.vm:                       ],
+2024-04-12T20:25:18Z:     azure-arm.vm:         "name":  "Git.Git",
+2024-04-12T20:25:18Z:     azure-arm.vm:         "override":  [
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/VERYSILENT",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/SUPPRESSMSGBOXES",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/NORESTART",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/NOCANCEL",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/SP-",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/WindowsTerminal",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/WindowsTerminalProfile",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/DefaultBranchName:main",
+2024-04-12T20:25:18Z:     azure-arm.vm:                          "/Editor:VisualStudioCode"
+2024-04-12T20:25:18Z:     azure-arm.vm:                      ],
+2024-04-12T20:25:18Z:     azure-arm.vm:         "scope":  "machine"
+2024-04-12T20:25:18Z:     azure-arm.vm:     }
+2024-04-12T20:25:18Z:     azure-arm.vm: ]
+2024-04-12T20:25:18Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:18Z:     azure-arm.vm: Finished after 00:00:00.037 as packer (elevated)
+2024-04-12T20:25:18Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Skipping Microsoft.PowerShell - already installed
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Skipping Microsoft.WindowsAppRuntime.1.4 - already installed
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Skipping Microsoft.DevHome - already installed
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Skipping Microsoft.VisualStudio.Locator - already installed
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Skipping Microsoft.WindowsTerminal - already installed
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Skipping GitHub.cli - already installed
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Skipping GitHub.GitHubDesktop - already installed
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Skipping Postman.Postman - already installed
+2024-04-12T20:25:18Z:     azure-arm.vm: >>> Skipping Google.Chrome - already installed
+2024-04-12T20:25:18Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:25:18Z:     azure-arm.vm: Install Package
+2024-04-12T20:25:18Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:18Z:     azure-arm.vm: name  Mozilla.Firefox
+2024-04-12T20:25:18Z:     azure-arm.vm: scope machine
+2024-04-12T20:25:18Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:18Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id Mozilla.Firefox --exact --source winget --silent --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:25:40Z:     azure-arm.vm: Found Mozilla Firefox [Mozilla.Firefox] Version 124.0.2
+2024-04-12T20:25:40Z:     azure-arm.vm: This application is licensed to you by its owner.
+2024-04-12T20:25:40Z:     azure-arm.vm: Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+2024-04-12T20:25:40Z:     azure-arm.vm: Downloading https://download-installer.cdn.mozilla.net/pub/firefox/releases/124.0.2/win64/en-US/Firefox%20Setup%20124.0.2.exe
+2024-04-12T20:25:40Z:     azure-arm.vm:   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ  60.4 MB / 60.4 MB
+2024-04-12T20:25:40Z:     azure-arm.vm: Successfully verified installer hash
+2024-04-12T20:25:40Z:     azure-arm.vm: Starting package install...
+2024-04-12T20:25:40Z:     azure-arm.vm: Successfully installed
+2024-04-12T20:25:40Z:     azure-arm.vm:
+2024-04-12T20:25:40Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:40Z:     azure-arm.vm: Finished after 00:00:21.442 as packer (elevated)
+2024-04-12T20:25:40Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:25:40Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:25:40Z:     azure-arm.vm: Install Package
+2024-04-12T20:25:40Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:40Z:     azure-arm.vm: scope     machine
+2024-04-12T20:25:40Z:     azure-arm.vm: override  {/VERYSILENT, /SUPPRESSMSGBOXES, /NORESTART, /NOCANCEL...}
+2024-04-12T20:25:40Z:     azure-arm.vm: name      Git.Git
+2024-04-12T20:25:40Z:     azure-arm.vm: configure /workspaces/demo-images/HipsterBox/../_scripts/Configure-Git.ps1
+2024-04-12T20:25:40Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:40Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id Git.Git --exact --source winget --override "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /NOCANCEL /SP- /WindowsTerminal /WindowsTerminalProfile /DefaultBranchName:main /Editor:VisualStudioCode" --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:25:40Z:     azure-arm.vm: Found an existing package already installed. Trying to upgrade the installed package...
+2024-04-12T20:25:40Z:     azure-arm.vm: No available upgrade found.
+2024-04-12T20:25:40Z:     azure-arm.vm: No newer package versions are available from the configured sources.
+2024-04-12T20:25:40Z:     azure-arm.vm:
+2024-04-12T20:25:40Z:     azure-arm.vm: Installing Git.Git failed with exit code '-1978335189' but was ignored (SUCCESS EXIT CODES: -1978335189, 0)
+2024-04-12T20:25:40Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:40Z:     azure-arm.vm: Finished after 00:00:00.721 as packer (elevated)
+2024-04-12T20:25:40Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:25:40Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:25:40Z:     azure-arm.vm: Install Package
+2024-04-12T20:25:40Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:40Z:     azure-arm.vm: scope    machine
+2024-04-12T20:25:40Z:     azure-arm.vm: override {/VERYSILENT, /NORESTART,
+2024-04-12T20:25:40Z:     azure-arm.vm:          /MERGETASKS=desktopicon,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath,!runcode}
+2024-04-12T20:25:40Z:     azure-arm.vm: name     Microsoft.VisualStudioCode
+2024-04-12T20:25:40Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:25:40Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id Microsoft.VisualStudioCode --exact --source winget --override "/VERYSILENT /NORESTART /MERGETASKS=desktopicon,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath,!runcode" --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:26:07Z:     azure-arm.vm: Found Microsoft Visual Studio Code [Microsoft.VisualStudioCode] Version 1.88.1
+2024-04-12T20:26:07Z:     azure-arm.vm: This application is licensed to you by its owner.
+2024-04-12T20:26:07Z:     azure-arm.vm: Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+2024-04-12T20:26:07Z:     azure-arm.vm: Downloading https://vscode.download.prss.microsoft.com/dbazure/download/stable/e170252f762678dec6ca2cc69aba1570769a5d39/VSCodeUserSetup-x64-1.88.1.exe
+2024-04-12T20:26:07Z:     azure-arm.vm:   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ  94.8 MB / 94.8 MB
+2024-04-12T20:26:07Z:     azure-arm.vm: Successfully verified installer hash
+2024-04-12T20:26:07Z:     azure-arm.vm: Starting package install...
+2024-04-12T20:26:07Z:     azure-arm.vm: Successfully installed
+2024-04-12T20:26:07Z:     azure-arm.vm:
+2024-04-12T20:26:07Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:26:07Z:     azure-arm.vm: Finished after 00:00:26.639 as packer (elevated)
+2024-04-12T20:26:07Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:26:07Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:26:07Z:     azure-arm.vm: Install Package
+2024-04-12T20:26:07Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:26:07Z:     azure-arm.vm: scope     machine
+2024-04-12T20:26:07Z:     azure-arm.vm: override  {/VERYSILENT, /SUPPRESSMSGBOXES, /NORESTART, /NOCANCEL...}
+2024-04-12T20:26:07Z:     azure-arm.vm: name      Git.Git
+2024-04-12T20:26:07Z:     azure-arm.vm: configure /workspaces/demo-images/HipsterBox/../_scripts/Configure-Git.ps1
+2024-04-12T20:26:07Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:26:07Z:     azure-arm.vm: | EXEC C:\Windows\System32> winget.exe install --id Git.Git --exact --source winget --override "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /NOCANCEL /SP- /WindowsTerminal /WindowsTerminalProfile /DefaultBranchName:main /Editor:VisualStudioCode" --accept-package-agreements --accept-source-agreements --verbose-logs
+2024-04-12T20:26:08Z:     azure-arm.vm: Found an existing package already installed. Trying to upgrade the installed package...
+2024-04-12T20:26:08Z:     azure-arm.vm: No available upgrade found.
+2024-04-12T20:26:08Z:     azure-arm.vm: No newer package versions are available from the configured sources.
+2024-04-12T20:26:08Z:     azure-arm.vm:
+2024-04-12T20:26:08Z:     azure-arm.vm: Installing Git.Git failed with exit code '-1978335189' but was ignored (SUCCESS EXIT CODES: -1978335189, 0)
+2024-04-12T20:26:08Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:26:08Z:     azure-arm.vm: Finished after 00:00:00.733 as packer (elevated)
+2024-04-12T20:26:08Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:26:12Z: ==> azure-arm.vm: Restarting Machine
+2024-04-12T20:26:12Z: ==> azure-arm.vm: Waiting for machine to restart...
+2024-04-12T20:26:12Z: ==> azure-arm.vm: A system shutdown is in progress.(1115)
+2024-04-12T20:26:58Z:     azure-arm.vm: pkrvmwchvl70cnt restarted.
+2024-04-12T20:26:59Z:     azure-arm.vm: False
+2024-04-12T20:27:01Z:     azure-arm.vm: False
+2024-04-12T20:27:02Z:     azure-arm.vm: False
+2024-04-12T20:27:02Z: ==> azure-arm.vm: Machine successfully restarted, moving on
+2024-04-12T20:27:02Z: ==> azure-arm.vm: Provisioning with Powershell...
+2024-04-12T20:27:02Z: ==> azure-arm.vm: Provisioning with powershell script: /workspaces/demo-images/HipsterBox/../_scripts/core/NOOP.ps1
+2024-04-12T20:27:12Z: ==> azure-arm.vm: Provisioning with powershell script: /workspaces/demo-images/HipsterBox/../_scripts/Configure-VisualStudio.ps1
+2024-04-12T20:27:24Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:27:24Z:     azure-arm.vm: >>> Register ActiveSetup
+2024-04-12T20:27:24Z:     azure-arm.vm: - Register ActiveSetup Task: HKLM:SOFTWARE\Microsoft\Active Setup\Installed Components\devbox-1712953643924-87322997-8416-8301-b7e1-c1965bf55c45
+2024-04-12T20:27:24Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:27:24Z:     azure-arm.vm: Configure Visual Studio
+2024-04-12T20:27:24Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:27:24Z:     azure-arm.vm: | EXEC C:\Windows\System32> C:\Users\packer\AppData\Local\Microsoft\WinGet\Links\vswhere.exe -all -prerelease -utf8 -format json
+2024-04-12T20:27:24Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:27:24Z:     azure-arm.vm: Finished after 00:00:00.204 as packer (elevated)
+2024-04-12T20:27:24Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:27:24Z: ==> azure-arm.vm: Provisioning with powershell script: /workspaces/demo-images/HipsterBox/../_scripts/Configure-VisualStudioCode.ps1
+2024-04-12T20:27:35Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:27:35Z:     azure-arm.vm: >>> Register ActiveSetup
+2024-04-12T20:27:35Z:     azure-arm.vm: - Register ActiveSetup Task: HKLM:SOFTWARE\Microsoft\Active Setup\Installed Components\devbox-1712953655272-9fd1edb0-bf0b-d0fb-159f-7369358af49c
+2024-04-12T20:27:35Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:27:35Z:     azure-arm.vm: Configure Visual Studio Code
+2024-04-12T20:27:35Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:27:35Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:27:35Z:     azure-arm.vm: Finished after 00:00:00.008 as packer (elevated)
+2024-04-12T20:27:35Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:27:35Z: ==> azure-arm.vm: Provisioning with powershell script: /workspaces/demo-images/HipsterBox/../_scripts/Configure-Git.ps1
+2024-04-12T20:27:46Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:27:46Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:27:46Z:     azure-arm.vm: Configure Git (PACKER)
+2024-04-12T20:27:46Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:27:46Z:     azure-arm.vm: >>> Ensure git user name
+2024-04-12T20:27:46Z:     azure-arm.vm: | EXEC C:\Windows\System32> git config user.name
+2024-04-12T20:27:47Z:     azure-arm.vm: | EXEC C:\Windows\System32> git config --global user.name "Packer"
+2024-04-12T20:27:47Z:     azure-arm.vm:
+2024-04-12T20:27:47Z:     azure-arm.vm: >>> Ensure git user email
+2024-04-12T20:27:47Z:     azure-arm.vm: | EXEC C:\Windows\System32> git config user.email
+2024-04-12T20:27:47Z:     azure-arm.vm: | EXEC C:\Windows\System32> git config --global user.email "packer@microsoft.com"
+2024-04-12T20:27:47Z:     azure-arm.vm:
+2024-04-12T20:27:47Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:27:47Z:     azure-arm.vm: Finished after 00:00:00.818 as packer (elevated)
+2024-04-12T20:27:47Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:27:47Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:27:47Z:     azure-arm.vm: Configure Git (USER)
+2024-04-12T20:27:47Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:27:47Z:     azure-arm.vm: >>> Register scheduled task to configure git
+2024-04-12T20:27:48Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:27:48Z:     azure-arm.vm: Finished after 00:00:01.095 as packer (elevated)
+2024-04-12T20:27:48Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:27:52Z: ==> azure-arm.vm: Restarting Machine
+2024-04-12T20:27:52Z: ==> azure-arm.vm: Waiting for machine to restart...
+2024-04-12T20:27:52Z: ==> azure-arm.vm: A system shutdown is in progress.(1115)
+2024-04-12T20:28:25Z:     azure-arm.vm: pkrvmwchvl70cnt restarted.
+2024-04-12T20:28:26Z:     azure-arm.vm: False
+2024-04-12T20:28:27Z:     azure-arm.vm: False
+2024-04-12T20:28:29Z:     azure-arm.vm: False
+2024-04-12T20:28:29Z: ==> azure-arm.vm: Machine successfully restarted, moving on
+2024-04-12T20:28:29Z: ==> azure-arm.vm: Provisioning with Powershell...
+2024-04-12T20:28:29Z: ==> azure-arm.vm: Provisioning with powershell script: /tmp/powershell-provisioner216720384
+2024-04-12T20:28:40Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:28:41Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:28:41Z:     azure-arm.vm: Configure git
+2024-04-12T20:28:41Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:28:41Z:     azure-arm.vm: >>> Ensure git user name
+2024-04-12T20:28:41Z:     azure-arm.vm: | EXEC C:\Windows\System32> git config user.name
+2024-04-12T20:28:41Z:     azure-arm.vm: >>> Ensure git user email
+2024-04-12T20:28:41Z:     azure-arm.vm: | EXEC C:\Windows\System32> git config user.email
+2024-04-12T20:28:41Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:28:41Z:     azure-arm.vm: Finished after 00:00:00.321 as packer (elevated)
+2024-04-12T20:28:41Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:28:43Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:28:43Z:     azure-arm.vm: Cloning repositories
+2024-04-12T20:28:43Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:28:43Z:     azure-arm.vm: >>> Upgrading Powershell Module: Az.Accounts module
+2024-04-12T20:28:55Z:     azure-arm.vm: >>> Connect Azure
+2024-04-12T20:28:58Z:     azure-arm.vm: - Azure login succeeded
+2024-04-12T20:28:58Z:     azure-arm.vm: >>> Cloning https://github.com/kubernetes/kubernetes.git
+2024-04-12T20:28:58Z:     azure-arm.vm: | EXEC D:\repositories> git clone --quiet https://github.com/kubernetes/kubernetes.git
+2024-04-12T20:30:18Z:     azure-arm.vm:
+2024-04-12T20:30:18Z:     azure-arm.vm: >>> Cloning https://github.com/dotnet-architecture/eShopOnWeb.git
+2024-04-12T20:30:18Z:     azure-arm.vm: | EXEC D:\repositories> git clone --quiet https://github.com/dotnet-architecture/eShopOnWeb.git
+2024-04-12T20:30:28Z:     azure-arm.vm:
+2024-04-12T20:30:28Z:     azure-arm.vm: >>> Cloning https://github.com/markusheiliger/courier.git
+2024-04-12T20:30:29Z:     azure-arm.vm: | EXEC D:\repositories> git clone --quiet https://github:****************************************@github.com/markusheiliger/courier.git
+2024-04-12T20:30:45Z:     azure-arm.vm:
+2024-04-12T20:30:45Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:30:45Z:     azure-arm.vm: Finished after 00:02:02.289 as packer (elevated)
+2024-04-12T20:30:45Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:30:49Z: ==> azure-arm.vm: Provisioning with Powershell...
+2024-04-12T20:30:49Z: ==> azure-arm.vm: Provisioning with powershell script: /tmp/powershell-provisioner48030806
+2024-04-12T20:31:01Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:31:01Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:31:01Z:     azure-arm.vm: Generate Capabilities Document
+2024-04-12T20:31:01Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:31:08Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:31:08Z:     azure-arm.vm: Finished after 00:00:07.392 as packer (elevated)
+2024-04-12T20:31:08Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:31:12Z: ==> azure-arm.vm: Uploading the Windows update elevated script...
+2024-04-12T20:31:14Z: ==> azure-arm.vm: Uploading the Windows update check for reboot required elevated script...
+2024-04-12T20:31:17Z: ==> azure-arm.vm: Uploading the Windows update script...
+2024-04-12T20:31:20Z: ==> azure-arm.vm: Running Windows update...
+2024-04-12T20:31:27Z:     azure-arm.vm: Searching for Windows updates...
+2024-04-12T20:31:47Z:     azure-arm.vm: Found Windows update (2024-03-27; 18.08 MB): Update for Windows Security platform antimalware platform - KB5007651 (Version 1.0.2402.27001)
+2024-04-12T20:31:47Z:     azure-arm.vm: Downloading Windows updates (1 updates; 18.08 MB)...
+2024-04-12T20:31:47Z:     azure-arm.vm: Installing Windows updates...
+2024-04-12T20:31:47Z: ==> azure-arm.vm: Setting a 1h0m0s timeout for the next provisioner...
+2024-04-12T20:31:47Z: ==> azure-arm.vm: Provisioning with Powershell...
+2024-04-12T20:31:47Z: ==> azure-arm.vm: Provisioning with powershell script: /workspaces/demo-images/HipsterBox/../_scripts/core/Generalize-VM.ps1
+2024-04-12T20:31:58Z:     azure-arm.vm: >>> Importing PowerShell Module: C:\DevBox\Modules\DevBox
+2024-04-12T20:31:58Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:31:58Z:     azure-arm.vm: Disable reserved storage
+2024-04-12T20:31:58Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:31:58Z:     azure-arm.vm: | EXEC C:\Windows\System32> dism /Online /Set-ReservedStorageState /State:Disabled
+2024-04-12T20:32:01Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:32:01Z:     azure-arm.vm: Finished after 00:00:01.548 as packer (elevated)
+2024-04-12T20:32:01Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:32:01Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:32:01Z:     azure-arm.vm: Enable Active Setup Tasks
+2024-04-12T20:32:01Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:32:01Z:     azure-arm.vm: - Enabling ActiveSetup Task: devbox-1712952696597-3f1c0a94-2ce5-b108-3865-db33e5fc59ba
+2024-04-12T20:32:01Z:     azure-arm.vm: - Enabling ActiveSetup Task: devbox-1712952717693-ec163dc0-3807-222e-a36c-98bed6b6a140
+2024-04-12T20:32:01Z:     azure-arm.vm: - Enabling ActiveSetup Task: devbox-1712953250956-0a33c155-e51c-511f-cff6-8010ee7e009a
+2024-04-12T20:32:01Z:     azure-arm.vm: - Enabling ActiveSetup Task: devbox-1712953353431-0008b154-5824-7f2e-0eca-c0df51a7653f
+2024-04-12T20:32:01Z:     azure-arm.vm: - Enabling ActiveSetup Task: devbox-1712953643924-87322997-8416-8301-b7e1-c1965bf55c45
+2024-04-12T20:32:01Z:     azure-arm.vm: - Enabling ActiveSetup Task: devbox-1712953655272-9fd1edb0-bf0b-d0fb-159f-7369358af49c
+2024-04-12T20:32:01Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:32:01Z:     azure-arm.vm: Finished after 00:00:00.099 as packer (elevated)
+2024-04-12T20:32:01Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:32:01Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:32:01Z:     azure-arm.vm: Remove APPX packages
+2024-04-12T20:32:01Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.OOBENetworkConnectionFlow_10.0.21302.1000_neutral__cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.OOBENetworkCaptivePortal_10.0.21302.1000_neutral__cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - MicrosoftWindows.UndockedDevKit_10.0.22621.1_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.UI.Xaml.CBS_8.2305.16002.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:01Z:     azure-arm.vm: - MicrosoftWindows.Client.Core_1000.22653.1000.0_x64__cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - 1527c705-839a-4832-9118-54d4Bd6a0c89_10.0.19640.1000_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - c5e2524a-ea46-4f67-841f-6a9465d9d515_10.0.22621.1_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - E2A4F912-2574-4A75-9BB0-0D023378592B_10.0.19640.1000_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - F46D4000-FD22-4DB4-AC8E-4E1DDDE828FE_10.0.22621.1_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.AccountsControl_10.0.22621.1_neutral__cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.AsyncTextService_10.0.22621.1_neutral__8wekyb3d8bbwe
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.CredDialogHost_10.0.19595.1001_neutral__cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.ECApp_10.0.22621.3085_neutral__8wekyb3d8bbwe
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.LockApp_10.0.22621.3235_neutral__cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.MicrosoftEdgeDevToolsClient_1000.22621.1.0_neutral_neutral_8wekyb3d8bbwe
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Win32WebViewHost_10.0.22621.1_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.Apprep.ChxApp_1000.22621.1.0_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.AssignedAccessLockApp_1000.22621.1.0_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.CallingShellApp_1000.22621.1.0_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.CapturePicker_10.0.19580.1000_neutral__cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.NarratorQuickStart_10.0.22621.1_neutral_neutral_8wekyb3d8bbwe
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.ParentalControls_1000.22621.1.0_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.PeopleExperienceHost_10.0.22621.1_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.PinningConfirmationDialog_1000.22621.1.0_neutral__cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.PrintQueueActionCenter_1.0.1.0_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.SecureAssessmentBrowser_10.0.22621.2506_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.Windows.XGpuEjectDialog_10.0.22621.1_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:01Z:     azure-arm.vm: - Microsoft.WindowsAppRuntime.CBS_4000.1054.1457.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:02Z:     azure-arm.vm: - Microsoft.XboxGameCallableUI_1000.22621.1.0_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:02Z:     azure-arm.vm: - NcsiUwpApp_1000.22621.1.0_neutral_neutral_8wekyb3d8bbwe
+2024-04-12T20:32:02Z:     azure-arm.vm: - Windows.CBSPreview_10.0.19580.1000_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:02Z:     azure-arm.vm: - Windows.PrintDialog_6.2.2.0_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:02Z:     azure-arm.vm: - Clipchamp.Clipchamp_2.2.8.0_neutral__yxz26nhyzhsrt
+2024-04-12T20:32:03Z:     azure-arm.vm: - Microsoft.BingWeather_1.0.6.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:05Z:     azure-arm.vm: - Microsoft.GamingApp_2105.900.24.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:05Z:     azure-arm.vm: - Microsoft.GetHelp_10.2201.421.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:05Z:     azure-arm.vm: - Microsoft.HEIFImageExtension_1.0.43012.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:05Z:     azure-arm.vm: - Microsoft.HEVCVideoExtension_1.0.50361.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:05Z:     azure-arm.vm: - Microsoft.MicrosoftEdge.Stable_123.0.2420.97_neutral__8wekyb3d8bbwe
+2024-04-12T20:32:06Z:     azure-arm.vm: - Microsoft.MicrosoftOfficeHub_18.2204.1141.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:06Z:     azure-arm.vm: - Microsoft.MicrosoftStickyNotes_4.0.422.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:07Z:     azure-arm.vm: - Microsoft.Paint_11.2201.22.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:07Z:     azure-arm.vm: - Microsoft.People_10.1909.12456.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:08Z:     azure-arm.vm: - Microsoft.PowerAutomateDesktop_1.0.219.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:08Z:     azure-arm.vm: - Microsoft.RawImageExtension_2.1.30391.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:09Z:     azure-arm.vm: - Microsoft.ScreenSketch_11.2201.12.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:09Z:     azure-arm.vm: - Microsoft.SecHealthUI_1000.22621.1.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:09Z:     azure-arm.vm: - Microsoft.StorePurchaseApp_12008.1001.1.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:10Z:     azure-arm.vm: - Microsoft.Todos_0.54.42772.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:10Z:     azure-arm.vm: - Microsoft.VP9VideoExtensions_1.0.50901.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:12Z:     azure-arm.vm: - Microsoft.WebMediaExtensions_1.0.42192.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:12Z:     azure-arm.vm: - Microsoft.WebpImageExtension_1.0.42351.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:13Z:     azure-arm.vm: - Microsoft.Windows.Ai.Copilot.Provider_1.0.3.0_neutral__8wekyb3d8bbwe
+2024-04-12T20:32:13Z:     azure-arm.vm: - Microsoft.Windows.Photos_21.21030.25003.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:14Z:     azure-arm.vm: - Microsoft.WindowsAlarms_1.0.75.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:14Z:     azure-arm.vm: - Microsoft.WindowsCalculator_10.2103.8.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:15Z:     azure-arm.vm: - Microsoft.WindowsCamera_2022.2201.4.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:16Z:     azure-arm.vm: - microsoft.windowscommunicationsapps_16005.14326.20544.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:17Z:     azure-arm.vm: - Microsoft.WindowsFeedbackHub_1.2201.61.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:19Z:     azure-arm.vm: - Microsoft.WindowsMaps_1.0.39.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:20Z:     azure-arm.vm: - Microsoft.WindowsNotepad_11.2112.32.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:23Z:     azure-arm.vm: - Microsoft.WindowsTerminal_1.12.10983.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:23Z:     azure-arm.vm: - Microsoft.Xbox.TCUI_1.23.28004.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:23Z:     azure-arm.vm: - Microsoft.XboxGameOverlay_1.47.2385.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:24Z:     azure-arm.vm: - Microsoft.XboxSpeechToTextOverlay_1.17.29001.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:24Z:     azure-arm.vm: - Microsoft.YourPhone_0.22022.147.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:25Z:     azure-arm.vm: - Microsoft.ZuneMusic_11.2202.46.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:25Z:     azure-arm.vm: - Microsoft.ZuneVideo_10.22020.10021.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:25Z:     azure-arm.vm: - MicrosoftCorporationII.QuickAssist_2.0.5.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.Windows.CloudExperienceHost_10.0.22621.2506_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.BioEnrollment_10.0.19587.1000_neutral__cw5n1h2txyewy
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.AAD.BrokerPlugin_1000.19580.1000.0_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.Windows.StartMenuExperienceHost_10.0.22621.2506_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.Windows.ShellExperienceHost_10.0.22621.3085_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:27Z:     azure-arm.vm: - windows.immersivecontrolpanel_10.0.6.1000_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.549981C3F5F10_3.2204.14815.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.NET.Native.Framework.2.2_2.2.29512.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.NET.Native.Runtime.2.2_2.2.28604.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.Windows.ContentDeliveryManager_10.0.22621.2506_neutral_neutral_cw5n1h2txyewy
+2024-04-12T20:32:27Z:     azure-arm.vm: - Microsoft.Getstarted_10.2204.1.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:28Z:     azure-arm.vm: - Microsoft.UI.Xaml.2.7_7.2203.17001.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:28Z:     azure-arm.vm: - Microsoft.VCLibs.140.00_14.0.30704.0_x64__8wekyb3d8bbwe
+2024-04-12T20:32:28Z:     azure-arm.vm: - MicrosoftWindows.Client.WebExperience_421.20070.195.0_x64__cw5n1h2txyewy
+2024-04-12T20:33:01Z:     azure-arm.vm: - MicrosoftWindows.Client.FileExp_1000.22653.1000.0_x64__cw5n1h2txyewy
+2024-04-12T20:33:01Z:     azure-arm.vm: - Microsoft.XboxIdentityProvider_12.50.6001.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:02Z:     azure-arm.vm: - Microsoft.WindowsStore_22204.1400.4.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:03Z:     azure-arm.vm: - MicrosoftWindows.Client.CBS_1000.22688.1000.0_x64__cw5n1h2txyewy
+2024-04-12T20:33:03Z:     azure-arm.vm: - Microsoft.VCLibs.140.00.UWPDesktop_14.0.33321.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:06Z:     azure-arm.vm: - Microsoft.UI.Xaml.2.8_8.2310.30001.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:06Z:     azure-arm.vm: - Microsoft.DesktopAppInstaller_1.22.10861.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:06Z:     azure-arm.vm: - Microsoft.Winget.Source_2024.412.2035.414_neutral__8wekyb3d8bbwe
+2024-04-12T20:33:06Z:     azure-arm.vm: - MicrosoftCorporationII.WindowsSubsystemForLinux_2.1.5.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:08Z:     azure-arm.vm: - Microsoft.WindowsAppRuntime.1.4_4000.1136.2333.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:08Z:     azure-arm.vm: - Microsoft.WindowsAppRuntime.1.4_4000.1136.2333.0_x86__8wekyb3d8bbwe
+2024-04-12T20:33:09Z:     azure-arm.vm: - MicrosoftCorporationII.WinAppRuntime.Main.1.4_4000.1136.2333.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:09Z:     azure-arm.vm: - MicrosoftCorporationII.WinAppRuntime.Singleton_4000.1136.2333.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:10Z:     azure-arm.vm: - Microsoft.WinAppRuntime.DDLM.4000.1136.2333.0-x6_4000.1136.2333.0_x64__8wekyb3d8bbwe
+2024-04-12T20:33:11Z:     azure-arm.vm: - Microsoft.WinAppRuntime.DDLM.4000.1136.2333.0-x8_4000.1136.2333.0_x86__8wekyb3d8bbwe
+2024-04-12T20:33:11Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:33:11Z:     azure-arm.vm: Finished after 00:01:11.623 as packer (elevated)
+2024-04-12T20:33:11Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:33:11Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:33:11Z:     azure-arm.vm: Cleanup Event Logs
+2024-04-12T20:33:11Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:33:11Z:     azure-arm.vm: >>> Enforce 'OverwriteAsNeeded' as OverflowAction for all logs
+2024-04-12T20:33:11Z:     azure-arm.vm: >>> Clear all logs
+2024-04-12T20:33:12Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:33:12Z:     azure-arm.vm: Finished after 00:00:00.538 as packer (elevated)
+2024-04-12T20:33:12Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:33:12Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:33:12Z:     azure-arm.vm: Cleanup Volumne Caches
+2024-04-12T20:33:12Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Active Setup Temp Folders
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: BranchCache
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Content Indexer Cleaner
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: D3D Shader Cache
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Delivery Optimization Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Device Driver Packages
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Diagnostic Data Viewer database files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Downloaded Program Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: DownloadsFolder
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Feedback Hub Archive log files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Internet Cache Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Language Pack
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Offline Pages Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Old ChkDsk Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Previous Installations
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Recycle Bin
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: RetailDemo Offline Content
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Setup Log Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: System error memory dump files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: System error minidump files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Temporary Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Temporary Setup Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Temporary Sync Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Thumbnail Cache
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Update Cleanup
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Upgrade Discarded Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: User file versions
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Windows Defender
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Windows Error Reporting Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Windows ESD installation files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Windows Reset Log Files
+2024-04-12T20:33:12Z:     azure-arm.vm: - Register Volumne Cache for clean up: Windows Upgrade Log Files
+2024-04-12T20:33:12Z:     azure-arm.vm: >>> Run Disk Cleanup Utility
+2024-04-12T20:33:12Z:     azure-arm.vm: | EXEC C:\Windows\System32> cleanmgr /sagerun:42
+2024-04-12T20:33:31Z:     azure-arm.vm:
+2024-04-12T20:33:31Z:     azure-arm.vm: >>> Remove Volumne Cache Registrations
+2024-04-12T20:33:31Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:33:31Z:     azure-arm.vm: Finished after 00:00:18.774 as packer (elevated)
+2024-04-12T20:33:31Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:33:31Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:33:31Z:     azure-arm.vm: Defrag Windows Partition
+2024-04-12T20:33:31Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:33:31Z:     azure-arm.vm: >>> Run free space consolidation
+2024-04-12T20:33:31Z:     azure-arm.vm: | EXEC C:\Windows\System32> defrag c: /FreespaceConsolidate /Verbose
+2024-04-12T20:34:16Z:     azure-arm.vm: >>> Run boot optimization
+2024-04-12T20:34:16Z:     azure-arm.vm: | EXEC C:\Windows\System32> defrag c: /BootOptimize /Verbose
+2024-04-12T20:34:16Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:16Z:     azure-arm.vm: Finished after 00:00:45.750 as packer (elevated)
+2024-04-12T20:34:16Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:16Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:16Z:     azure-arm.vm: Enable Defrag Schedule
+2024-04-12T20:34:16Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:19Z:     azure-arm.vm:
+2024-04-12T20:34:19Z:     azure-arm.vm: TaskPath                                       TaskName                          State
+2024-04-12T20:34:19Z:     azure-arm.vm: --------                                       --------                          -----
+2024-04-12T20:34:19Z:     azure-arm.vm: \Microsoft\Windows\Defrag\                     ScheduledDefrag                   Ready
+2024-04-12T20:34:19Z:     azure-arm.vm:
+2024-04-12T20:34:19Z:     azure-arm.vm:
+2024-04-12T20:34:19Z:     azure-arm.vm:
+2024-04-12T20:34:19Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:19Z:     azure-arm.vm: Finished after 00:00:02.444 as packer (elevated)
+2024-04-12T20:34:19Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:19Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:19Z:     azure-arm.vm: Shrink System Partition
+2024-04-12T20:34:19Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:22Z:     azure-arm.vm: >>> Resizing System Partition to 512 GB
+2024-04-12T20:34:23Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:23Z:     azure-arm.vm: Finished after 00:00:04.521 as packer (elevated)
+2024-04-12T20:34:23Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:23Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:23Z:     azure-arm.vm: Disable AutoLogon
+2024-04-12T20:34:23Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:23Z:     azure-arm.vm: - Removing key 'AutoAdminLogon' at HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon
+2024-04-12T20:34:23Z:     azure-arm.vm: - Removing key 'DefaultUsername' at HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon
+2024-04-12T20:34:23Z:     azure-arm.vm: - Removing key 'DefaultPassword' at HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon
+2024-04-12T20:34:23Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:23Z:     azure-arm.vm: Finished after 00:00:00.024 as packer (elevated)
+2024-04-12T20:34:23Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:23Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:23Z:     azure-arm.vm: Enable User Access Control
+2024-04-12T20:34:23Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:23Z:     azure-arm.vm: - Setting 'EnableLUA' at HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System to 1
+2024-04-12T20:34:23Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:23Z:     azure-arm.vm: Finished after 00:00:00.011 as packer (elevated)
+2024-04-12T20:34:23Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:23Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:23Z:     azure-arm.vm: Waiting for Windows Services
+2024-04-12T20:34:23Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:23Z:     azure-arm.vm: >>> RdAgent ...
+2024-04-12T20:34:25Z:     azure-arm.vm: >>> WindowsAzureTelemetryService ...
+2024-04-12T20:34:25Z:     azure-arm.vm: >>> WindowsAzureGuestAgent ...
+2024-04-12T20:34:25Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:25Z:     azure-arm.vm: Finished after 00:00:01.220 as packer (elevated)
+2024-04-12T20:34:25Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:25Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:34:25Z:     azure-arm.vm: Generalizing System
+2024-04-12T20:34:25Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:34:25Z:     azure-arm.vm: >>> Waiting for generalized state ...
+2024-04-12T20:34:25Z:     azure-arm.vm: IMAGE_STATE_COMPLETE
+2024-04-12T20:34:35Z:     azure-arm.vm: IMAGE_STATE_UNDEPLOYABLE
+2024-04-12T20:34:45Z:     azure-arm.vm: IMAGE_STATE_UNDEPLOYABLE
+2024-04-12T20:34:55Z:     azure-arm.vm: IMAGE_STATE_UNDEPLOYABLE
+2024-04-12T20:35:05Z:     azure-arm.vm: IMAGE_STATE_UNDEPLOYABLE
+2024-04-12T20:35:14Z:     azure-arm.vm: IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE
+2024-04-12T20:35:14Z:     azure-arm.vm: ----------------------------------------------------------------------------------------------------------
+2024-04-12T20:35:14Z:     azure-arm.vm: Finished after 00:00:50.113 as packer (elevated)
+2024-04-12T20:35:14Z:     azure-arm.vm: ==========================================================================================================
+2024-04-12T20:36:15Z: ==> azure-arm.vm: Querying the machine's properties ...
+2024-04-12T20:36:15Z: ==> azure-arm.vm:  -> ResourceGroupName : 'PKR-HIPSTERBOX-VSCODE-2024.0412.1938-CODESPACES-9DC3F4'
+2024-04-12T20:36:15Z: ==> azure-arm.vm:  -> ComputeName       : 'pkrvmwchvl70cnt'
+2024-04-12T20:36:16Z: ==> azure-arm.vm:  -> Managed OS Disk   : '/subscriptions/f9fcf631-fa8d-4ea2-8298-61b43220a3d1/resourceGroups/PKR-HIPSTERBOX-VSCODE-2024.0412.1938-CODESPACES-9DC3F4/providers/Microsoft.Compute/disks/pkroswchvl70cnt'
+2024-04-12T20:36:16Z: ==> azure-arm.vm: Querying the machine's additional disks properties ...
+2024-04-12T20:36:16Z: ==> azure-arm.vm:  -> ResourceGroupName : 'PKR-HIPSTERBOX-VSCODE-2024.0412.1938-CODESPACES-9DC3F4'
+2024-04-12T20:36:16Z: ==> azure-arm.vm:  -> ComputeName       : 'pkrvmwchvl70cnt'
+2024-04-12T20:36:16Z: ==> azure-arm.vm: Powering off machine ...
+2024-04-12T20:36:16Z: ==> azure-arm.vm:  -> ResourceGroupName : 'PKR-HIPSTERBOX-VSCODE-2024.0412.1938-CODESPACES-9DC3F4'
+2024-04-12T20:36:16Z: ==> azure-arm.vm:  -> ComputeName       : 'pkrvmwchvl70cnt'
+2024-04-12T20:37:56Z: ==> azure-arm.vm:  -> Compute ResourceGroupName : 'PKR-HIPSTERBOX-VSCODE-2024.0412.1938-CODESPACES-9DC3F4'
+2024-04-12T20:37:56Z: ==> azure-arm.vm:  -> Compute Name              : 'pkrvmwchvl70cnt'
+2024-04-12T20:37:56Z: ==> azure-arm.vm:  -> Compute Location          : 'West Europe'
+2024-04-12T20:37:56Z: ==> azure-arm.vm: Generalizing machine ...
+2024-04-12T20:37:57Z: ==> azure-arm.vm: Publishing to Shared Image Gallery ...
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> Source ID used for SIG publish        : '/subscriptions/f9fcf631-fa8d-4ea2-8298-61b43220a3d1/resourceGroups/PKR-HIPSTERBOX-VSCODE-2024.0412.1938-CODESPACES-9DC3F4/providers/Microsoft.Compute/virtualMachines/pkrvmwchvl70cnt'
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> SIG publish resource group            : 'ORG-CarmadaRnD'
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> SIG gallery name                      : 'CarmadaRnD'
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> SIG image name                        : 'HipsterBox-VSCODE'
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> SIG image version                     : '2024.0412.1938'
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> SIG replication regions               : '[West Europe]'
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> SIG storage account type              : 'Premium_LRS'
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> SIG image version endoflife date      : ''
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> SIG image version exclude from latest : 'true'
+2024-04-12T20:37:57Z: ==> azure-arm.vm:  -> SIG replica count [1, 100]            : '1'
+2024-04-12T20:49:58Z: ==> azure-arm.vm:  -> Shared Gallery Image Version ID : '/subscriptions/f9fcf631-fa8d-4ea2-8298-61b43220a3d1/resourceGroups/ORG-CarmadaRnD/providers/Microsoft.Compute/galleries/CarmadaRnD/images/HipsterBox-VSCODE/versions/2024.0412.1938'
+2024-04-12T20:49:58Z: ==> azure-arm.vm: 
+==> azure-arm.vm: Deleting Virtual Machine deployment and its attatched resources...
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Adding to deletion queue -> Microsoft.Compute/virtualMachines : 'pkrvmwchvl70cnt'
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Adding to deletion queue -> Microsoft.Network/networkInterfaces : 'pkrniwchvl70cnt'
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Adding to deletion queue -> Microsoft.Network/publicIPAddresses : 'pkripwchvl70cnt'
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Adding to deletion queue -> Microsoft.Network/virtualNetworks : 'pkrvnwchvl70cnt'
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/virtualNetworks : 'pkrvnwchvl70cnt'
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Waiting for deletion of all resources...
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Compute/virtualMachines : 'pkrvmwchvl70cnt'
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/networkInterfaces : 'pkrniwchvl70cnt'
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/publicIPAddresses : 'pkripwchvl70cnt'
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Couldn't delete Microsoft.Network/networkInterfaces resource. Will retry.
+==> azure-arm.vm: Name: pkrniwchvl70cnt
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Couldn't delete Microsoft.Network/virtualNetworks resource. Will retry.
+==> azure-arm.vm: Name: pkrvnwchvl70cnt
+2024-04-12T20:49:58Z: ==> azure-arm.vm: Couldn't delete Microsoft.Network/publicIPAddresses resource. Will retry.
+==> azure-arm.vm: Name: pkripwchvl70cnt
+2024-04-12T20:50:03Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/networkInterfaces : 'pkrniwchvl70cnt'
+2024-04-12T20:50:03Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/virtualNetworks : 'pkrvnwchvl70cnt'
+2024-04-12T20:50:03Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/publicIPAddresses : 'pkripwchvl70cnt'
+2024-04-12T20:50:04Z: ==> azure-arm.vm: Couldn't delete Microsoft.Network/virtualNetworks resource. Will retry.
+==> azure-arm.vm: Name: pkrvnwchvl70cnt
+2024-04-12T20:50:04Z: ==> azure-arm.vm: Couldn't delete Microsoft.Network/publicIPAddresses resource. Will retry.
+==> azure-arm.vm: Name: pkripwchvl70cnt
+2024-04-12T20:50:11Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/virtualNetworks : 'pkrvnwchvl70cnt'
+2024-04-12T20:50:11Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/publicIPAddresses : 'pkripwchvl70cnt'
+2024-04-12T20:50:11Z: ==> azure-arm.vm: Couldn't delete Microsoft.Network/virtualNetworks resource. Will retry.
+==> azure-arm.vm: Name: pkrvnwchvl70cnt
+2024-04-12T20:50:11Z: ==> azure-arm.vm: Couldn't delete Microsoft.Network/publicIPAddresses resource. Will retry.
+==> azure-arm.vm: Name: pkripwchvl70cnt
+2024-04-12T20:50:23Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/virtualNetworks : 'pkrvnwchvl70cnt'
+2024-04-12T20:50:23Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.Network/publicIPAddresses : 'pkripwchvl70cnt'
+2024-04-12T20:50:33Z: ==> azure-arm.vm:  Deleting -> Microsoft.Compute/disks : '/subscriptions/f9fcf631-fa8d-4ea2-8298-61b43220a3d1/resourceGroups/PKR-HIPSTERBOX-VSCODE-2024.0412.1938-CODESPACES-9DC3F4/providers/Microsoft.Compute/disks/pkroswchvl70cnt'
+2024-04-12T20:51:03Z: ==> azure-arm.vm: Removing the created Deployment object: 'pkrdpwchvl70cnt'
+2024-04-12T20:51:19Z: ==> azure-arm.vm: 
+==> azure-arm.vm: Deleting KeyVault created during build
+2024-04-12T20:51:19Z: ==> azure-arm.vm: Adding to deletion queue -> Microsoft.KeyVault/vaults/secrets : 'pkrkvwchvl70cnt/packerKeyVaultSecret'
+2024-04-12T20:51:19Z: ==> azure-arm.vm: Adding to deletion queue -> Microsoft.KeyVault/vaults : 'pkrkvwchvl70cnt'
+2024-04-12T20:51:19Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.KeyVault/vaults : 'pkrkvwchvl70cnt'
+2024-04-12T20:51:19Z: ==> azure-arm.vm: Waiting for deletion of all resources...
+2024-04-12T20:51:19Z: ==> azure-arm.vm: Attempting deletion -> Microsoft.KeyVault/vaults/secrets : 'pkrkvwchvl70cnt/packerKeyVaultSecret'
+2024-04-12T20:51:20Z: ==> azure-arm.vm: Removing the created Deployment object: 'kvpkrdpwchvl70cnt'
+2024-04-12T20:51:35Z: ==> azure-arm.vm: 
+==> azure-arm.vm: Cleanup requested, deleting resource group ...
+2024-04-12T20:51:35Z: ==> azure-arm.vm: 
+==> azure-arm.vm:  Not waiting for Resource Group delete as requested by user. Resource Group Name is PKR-HIPSTERBOX-VSCODE-2024.0412.1938-CODESPACES-9DC3F4
+2024-04-12T20:51:35Z: Build 'azure-arm.vm' finished after 1 hour 13 minutes.
+
+==> Wait completed after 1 hour 13 minutes
+
+==> Builds finished. The artifacts of successful builds are:
+--> azure-arm.vm: Azure.ResourceManagement.VMImage:
+
+OSType: Windows
+ManagedImageSharedImageGalleryId: /subscriptions/f9fcf631-fa8d-4ea2-8298-61b43220a3d1/resourceGroups/ORG-CarmadaRnD/providers/Microsoft.Compute/galleries/CarmadaRnD/images/HipsterBox-VSCODE/versions/2024.0412.1938
+SharedImageGalleryResourceGroup: ORG-CarmadaRnD
+SharedImageGalleryName: CarmadaRnD
+SharedImageGalleryImageName: HipsterBox-VSCODE
+SharedImageGalleryImageVersion: 2024.0412.1938
+SharedImageGalleryReplicatedRegions: West Europe
+
+
+======================================================================================
+Updating DevBox Definition (./HipsterBox/image.json)
+======================================================================================
+
+{
+  "activeImageReference": {
+    "exactVersion": "2024.0412.1938",
+    "id": "/subscriptions/f9fcf631-fa8d-4ea2-8298-61b43220a3d1/resourceGroups/ORG-CarmadaRnD/providers/Microsoft.DevCenter/devcenters/CarmadaRnD/galleries/CarmadaRnD/images/HipsterBox-VSCODE/versions/2024.0412.1938",
+    "resourceGroup": "ORG-CarmadaRnD"
+  },
+  "id": "/subscriptions/f9fcf631-fa8d-4ea2-8298-61b43220a3d1/resourceGroups/ORG-CarmadaRnD/providers/Microsoft.DevCenter/devcenters/CarmadaRnD/devboxdefinitions/HipsterBox-VSCODE",
+  "imageReference": {
+    "exactVersion": "2024.0412.1938",
+    "id": "/subscriptions/f9fcf631-fa8d-4ea2-8298-61b43220a3d1/resourceGroups/ORG-CarmadaRnD/providers/Microsoft.DevCenter/devcenters/CarmadaRnD/galleries/CarmadaRnD/images/HipsterBox-VSCODE/versions/2024.0412.1938",
+    "resourceGroup": "ORG-CarmadaRnD"
+  },
+  "imageValidationStatus": "Succeeded",
+  "location": "westeurope",
+  "name": "HipsterBox-VSCODE",
+  "osStorageType": "ssd_1024gb",
+  "provisioningState": "Succeeded",
+  "resourceGroup": "ORG-CarmadaRnD",
+  "sku": {
+    "name": "general_i_8c32gb1024ssd_v2"
+  },
+  "systemData": {
+    "createdAt": "2024-04-12T17:49:36.9459548Z",
+    "createdBy": "markus.heiliger@microsoft.com",
+    "createdByType": "User",
+    "lastModifiedAt": "2024-04-12T20:51:39.1173315Z",
+    "lastModifiedBy": "markus.heiliger@microsoft.com",
+    "lastModifiedByType": "User"
+  },
+  "type": "microsoft.devcenter/devcenters/devboxdefinitions"
+}

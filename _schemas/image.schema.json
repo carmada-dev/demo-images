@@ -88,21 +88,17 @@
 					"description": "Filters to apply to the DevDrive",
 					"default": [
 						"bindFlt",
-						"wcifs"
+						"wcifs",
+						"PrjFlt",
+						"MsSecFlt",
+						"WdFilter",
+						"FileInfo",
+						"ProcMon24",
+						"WinSetupMon"
 					],
 					"items": {
 						"type": "string",
-						"description": "The name of a filter to apply",
-						"enum" : [
-							"bindFlt",
-							"wcifs",
-							"PrjFlt",
-							"MsSecFlt",
-							"WdFilter",
-							"FileInfo",
-							"ProcMon24",
-							"WinSetupMon"
-						]
+						"description": "The name of a filter to apply"
 					}
 				},
 				"repositories": {

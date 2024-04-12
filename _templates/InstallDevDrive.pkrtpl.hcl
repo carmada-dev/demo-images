@@ -62,19 +62,13 @@ if ((Test-IsPacker) -and ($driveSizeGB -gt 0)) {
     
     Invoke-ScriptSection -Title "Apply DevDrive Filter" -ScriptBlock {
         
-        $filters = $driveConfig | Get-PropertyValue -Name "filters"
+        $filters = $driveConfig | Get-PropertyArray -Name "filters"
 
         if ($filters) {
-
-            $filtersString = $filters -join ','
-            Write-Host "Apply DevDrive filters: $filtersString"
-
-            Invoke-CommandLine -Command "fsutil.exe" -Arguments "devdrv setfiltersallowed `"$filtersString`"" | Select-Object -ExpandProperty Output | Write-Host
-
+            Invoke-CommandLine -Command "fsutil.exe" -Arguments "devdrv setfiltersallowed `"$($filters -join ', ')`"" | Select-Object -ExpandProperty Output | Write-Host
         } else {
-            Write-Host "Skip"         
+            Write-Host "Skip - no filters defined (find common filters to apply here https://learn.microsoft.com/en-us/windows/dev-drive/#filters-for-common-scenarios)"         
         }
-
     }
 
     Invoke-ScriptSection -Title "Creating DevDrive" -ScriptBlock {
