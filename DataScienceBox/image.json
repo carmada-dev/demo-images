@@ -35,6 +35,7 @@
 	
 	"devDrive": {
 		"sizeGB": 0,
+		"filters": [],
 		"repositories": []
 	},
 

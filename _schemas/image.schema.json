@@ -83,6 +83,28 @@
 					"minimum": 0,
 					"default": 0
 				},
+				"filters": {
+					"type": "array",
+					"description": "Filters to apply to the DevDrive",
+					"default": [
+						"bindFlt",
+						"wcifs"
+					],
+					"items": {
+						"type": "string",
+						"description": "The name of a filter to apply",
+						"enum" : [
+							"bindFlt",
+							"wcifs",
+							"PrjFlt",
+							"MsSecFlt",
+							"WdFilter",
+							"FileInfo",
+							"ProcMon24",
+							"WinSetupMon"
+						]
+					}
+				},
 				"repositories": {
 					"type": "array",
 					"description": "List of repositories to clone into the DevDrive",
@@ -104,7 +126,7 @@
 					}
 				}
 			},
-			"required": [ "sizeGB", "repositories" ],
+			"required": [ "sizeGB", "filters", "repositories" ],
 			"additionalProperties": false		
 		}
 	},

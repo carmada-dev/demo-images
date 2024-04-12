@@ -4,6 +4,7 @@
 
 	"title": "Packages",
 	"description": "Alias packages for all images",
+
 	"patternProperties": {
 		"^\\w+$": {
 			"$ref": "./_definitions.schema.json#/$defs/package"

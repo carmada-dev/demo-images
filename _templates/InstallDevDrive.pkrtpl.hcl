@@ -29,12 +29,54 @@ function Get-PropertyValue {
 	return $value
 }
 
+function Get-PropertyArray {
+
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object] $InputObject,
+        [Parameter(Mandatory = $true)]
+        [string] $Name
+    )
+
+    $value = ($InputObject | Select -ExpandProperty $Name -ErrorAction SilentlyContinue)
+
+    if ($value) {
+        
+        if ($value -is [array]) {
+            Write-Output -NoEnumerate $value
+        } else {
+            Write-Output -NoEnumerate @($value)
+        }
+    
+    } else {
+
+        Write-Output -NoEnumerate @()    
+    }
+}
+
 $driveConfig = '${jsonencode(devDrive)}' | ConvertFrom-Json
 $driveSizeGB = [int]($driveConfig | Get-PropertyValue -Name "sizeGB" -DefaultValue "0")
 $drivePath = $null
 
 if ((Test-IsPacker) -and ($driveSizeGB -gt 0)) {
     
+    Invoke-ScriptSection -Title "Apply DevDrive Filter" -ScriptBlock {
+        
+        $filters = $driveConfig | Get-PropertyValue -Name "filters"
+
+        if ($filters) {
+
+            $filtersString = $filters -join ','
+            Write-Host "Apply DevDrive filters: $filtersString"
+
+            Invoke-CommandLine -Command "fsutil.exe" -Arguments "devdrv setfiltersallowed `"$filtersString`"" | Select-Object -ExpandProperty Output | Write-Host
+
+        } else {
+            Write-Host "Skip"         
+        }
+
+    }
+
     Invoke-ScriptSection -Title "Creating DevDrive" -ScriptBlock {
 
         if ($driveSizeGB -lt 50) {

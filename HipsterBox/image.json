@@ -31,6 +31,10 @@
 	},
 	"devDrive": {
 		"sizeGB": 250,
+		"filters": [
+			"bindFlt",
+			"wcifs"
+		],
 		"repositories": [
 			{
 				"repoUrl": "https://github.com/kubernetes/kubernetes.git"
