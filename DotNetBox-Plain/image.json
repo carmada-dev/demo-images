@@ -25,7 +25,7 @@
 	"devCenter": {
 		"subscription": "261a4972-a913-4301-a6b3-805f497816ab",
 		"resourceGroup": "DevCenter-DevCompass-prod",
-		"name": "Win11-Dotnet",
+		"name": "DevCompass-prod",
 		"compute": "general_i_8c32gb512ssd_v2",
 		"storage": "ssd_512gb"
 	},
