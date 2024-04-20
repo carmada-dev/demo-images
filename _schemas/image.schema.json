@@ -151,6 +151,12 @@
 				"type": "string"
 			}
 		},
+		"updates": {
+			"type": "string",
+			"description": "Windows updates that should be installed on the image",
+			"enum": [ "all", "none", "recommended", "important" ],
+			"default": "all"
+		},
 		"base": {
 			"type": "object",
 			"description": "The base image",

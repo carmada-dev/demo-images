@@ -26,9 +26,9 @@ function Register-ActiveSetup {
     $activeSetupKeyEnabled = [int]$Enabled.ToBool()
     
     $activeSetupKey = Get-ChildItem -Path $activeSetupKeyPath `
-        | Select-Object { Split-Path -Path ($_.Name) -Leaf } `
+        | ForEach-Object { Split-Path -Path ($_.Name) -Leaf } `
         | Where-Object { $_ -match "devbox-\d+-$activeSetupId" } `
-        | Select-Object -First 1
+        | Select-Object -First 1 -ErrorAction SilentlyContinue
 
     if ($activeSetupKey) {
 

@@ -5,6 +5,7 @@
 	"offer": "CarmadaDev",
 	"sku": "win11-dockerdesktop-wsl-devbox",
 	"regions": [ "West Europe" ],
+	"updates": "all",
 
 	"base": {
 		"publisher": "MicrosoftVisualStudio",

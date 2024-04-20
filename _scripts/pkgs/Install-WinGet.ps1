@@ -54,14 +54,24 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Write-Host ">>> Adding WinGet Source Cache Package ..."
 	$path = Invoke-FileDownload -Url "https://cdn.winget.microsoft.com/cache/source.msix" -Retries 5
 	Add-AppxPackage -Path $path -ErrorAction Stop
+}
 
-	if (Test-IsPacker) {
+if (Test-IsPacker) {
+	Invoke-ScriptSection -Title "Patching WinGet Config for Packer Mode" -ScriptBlock {
 
-		$settingsInfo = @(winget --info) | Where-Object { $_.StartsWith('User Settings') } | Select-Object -First 1
-		$settingsPath = $settingsInfo.Split(' ') | Select-Object -Last 1 
-		$settingsPath = [Environment]::ExpandEnvironmentVariables($settingsPath.Trim())
+		$wingetPackageFamilyName = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty PackageFamilyName
 
-		Write-Host ">>> Patching WinGet Config ..."
-		$adminWinGetConfig | Out-File $settingsPath -Encoding ASCII
+		$settingsPaths = @(
+
+			"%LOCALAPPDATA%\Packages\$wingetPackageFamilyName\LocalState\settings.json",
+			"%LOCALAPPDATA%\Microsoft\WinGet\Settings\settings.json"
+
+		) | ForEach-Object { [System.Environment]::ExpandEnvironmentVariables($_) } | Where-Object { Test-Path (Split-Path -Path $_ -Parent) -PathType Container } | ForEach-Object { 
+
+			Write-Host ">>> Patching WinGet Settings: $_"
+			$adminWinGetConfig | Out-File $_ -Encoding ASCII -Force 
+			
+		}
+
 	}
 }

@@ -5,7 +5,8 @@
 	"offer": "CarmadaDev",
 	"sku": "win11-datascience-devbox",
 	"regions": [ "West Europe" ],
-
+	"updates": "all",
+	
 	"base": {
 		"publisher": "MicrosoftVisualStudio",
 		"offer": "windowsplustools",

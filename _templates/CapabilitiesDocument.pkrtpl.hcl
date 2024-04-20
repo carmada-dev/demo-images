@@ -56,13 +56,13 @@ function Convert-Markdown2HTML() {
 
 	return @"
 <!doctype html>
-<html lang=\"en\">
+<html lang=`"en`">
 	<head>
-		<meta charset=\"utf-8\">
-		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, minimal-ui\">
+		<meta charset=`"utf-8`">
+		<meta name=`"viewport`" content=`"width=device-width, initial-scale=1, minimal-ui`">
 		<title>Microsoft DevBox Capabilities</title>
-		<meta name=\"color-scheme\" content=\"light dark\">
-		<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown.css\">
+		<meta name=`"color-scheme`" content=`"light dark`">
+		<link rel=`"stylesheet`" href=`"https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown.css`">
 		<style>
 			body {
 				box-sizing: border-box;
@@ -71,7 +71,6 @@ function Convert-Markdown2HTML() {
 				margin: 0 auto;
 				padding: 45px;
 			}
-
 			@media (prefers-color-scheme: dark) {
 				body {
 					background-color: #0d1117;
@@ -80,22 +79,11 @@ function Convert-Markdown2HTML() {
 		</style>
 	</head>
 	<body>
-		<article class=\"markdown-body\">$($response.Content | Out-String)</article>
+		<article class=`"markdown-body`">$($response.Content | Out-String)</article>
 	</body>
 </html>
 "@ | Out-String
 
-}
-
-function Extract-OutputValue() {
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [object] $InputObject,
-        [Parameter(Mandatory = $true)]
-        [string] $Header
-    )
-
-	$InputObject | Select-String -Pattern ("^(?:{0}) (.*)" -f $Header) | Select-Object -First 1 -ExpandProperty Matches | Select-Object -ExpandProperty Groups | Select-Object -Last 1 | Select-Object -ExpandProperty Value | % Trim | Write-Output
 }
 
 function Parse-WinGetPackage() {
@@ -104,83 +92,166 @@ function Parse-WinGetPackage() {
 		[object] $Package
     )
 
-	$arguments = ("show", ("--id {0}" -f $Package.name), "--exact")
+	$arguments = @(
+		"show", 
+		("--id {0}" -f $Package.name),
+		("--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")), 
+		"--exact",
+		"--disable-interactivity"
+	)
 
 	if ($Package | Has-Property -Name "version") { 	
 		$arguments += "--version {0}" -f $Package.version
 	}
 	
-	$arguments += "--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")
-	$arguments += "--accept-package-agreements"
-	$arguments += "--accept-source-agreements"
+	$output = (Invoke-CommandLine -Command 'winget' -Arguments ($arguments -join ' ') | Select-Object -ExpandProperty Output | Out-String) -split [Environment]::NewLine
 
-	$output = winget ($arguments -join ' ')
+    if ($output) {
 
-	if ($output) {
+        $packageResult = $null 
+        [string] $propertyName = $null
+        [string[]] $propertyValue = $null
 
-		return [PSCustomObject]@{
-			Title   	= $output | Extract-OutputValue -Header 'Found'
-			Version 	= $output | Extract-OutputValue -Header 'Version:'
-			Publisher   = $output | Extract-OutputValue -Header 'Publisher:'
-			Description = $output | Extract-OutputValue -Header 'Description:'
-			Homepage	= $output | Extract-OutputValue -Header 'Homepage:'
-		}
+        foreach ($line in $output) {
 
-	}
+            if ($line.Trim().Length -eq 0) { 
+                
+                # ignore empty lines
+                continue 
+            }
+        
+            if ($line.StartsWith("Found ")) {
+            
+                $packageResult = [PSCustomObject]@{
+                    Title = $line.Substring($line.IndexOf(' ')).Trim()
+                }
+
+            } elseif ($packageResult) {
+
+                if ($line.StartsWith('  ')) {
+
+                    if ($propertyValue) {
+                        $propertyValue += ( $line.Trim() )
+                    } else {
+                        $propertyValue = @( $line.Trim() )
+                    }
+            
+                } else {
+            
+                    if ($propertyName) {
+                                         
+                        if ($propertyValue.Length -eq 1) {
+                            $packageResult | Add-Member -MemberType NoteProperty -TypeName String -Name $propertyName -Value $propertyValue[0]
+                        } else {
+                            $packageResult | Add-Member -MemberType NoteProperty -TypeName String[] -Name $propertyName -Value $propertyValue
+                        }
+
+                        $propertyName = $null
+                        $propertyValue = $null
+                    }
+
+                    if ($line.EndsWith(':')) {
+            
+                        $propertyName = $line.TrimEnd(':').Replace(' ', '')
+                
+                    } elseif ($line.Contains(':')) {
+
+                        $segments = $line -split ':', 2
+                        $propertyName = $segments[0].Trim().Replace(' ', '')
+                        $propertyValue = $segments[1].Trim()
+                    }
+                }
+            }
+        }
+
+        if ($packageResult -and $propertyName) {
+            $packageResult | Add-Member -MemberType NoteProperty -Name $propertyName -Value $propertyValue
+        }
+
+        $packageResult | Write-Output
+    }
 }
+
+function Render-HeaderMarkdown() {
+	param(
+		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[string] $FilePath
+	)
+
+@"
+# DevBox Capabilities
+
+* Image Name:    $($env:DEVBOX_IMAGENAME)
+* Image Version: $($env:DEVBOX_IMAGEVERSION)
+
+---
+"@ | Out-File -FilePath $FilePath -Encoding utf8 -Force
+
+}
+
+function Render-PackageMarkdown() {
+	param(
+		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[string] $FilePath,
+		[Parameter(Mandatory = $true)]
+		[object] $Package
+	)
+
+@"
+
+## [$($Package.Title)]($($Package.Homepage)) 
+
+* Publisher: $($Package.Publisher)
+* Version:   $($Package.Version)
+
+$($Package.Description)
+
+"@ | Out-File -FilePath $FilePath -Encoding utf8 -Append
+
+}
+
+[array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json
 
 if (Test-IsPacker) { 
     Invoke-ScriptSection -Title "Generate Capabilities Document" -ScriptBlock {
 
-		$capabilitiesMarkdown = @()
-		$capabilitiesMarkdown += @"
+		$capabilitiesMarkdown = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.md"
+		$capabilitiesMarkdown | Render-HeaderMarkdown
 
-# DevBox Capabilities
----
+		$packageInfos = @()
 
-Image Name: $($DEVBOX_IMAGENAME)
-Image Name: $($DEVBOX_IMAGEVERSION)
+		foreach ($package in $packages) { 
 
----
-"@
-
-		[array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json 
-
-		$packages | ForEach-Object { 
-
-			$source = $_ | Get-PropertyValue -Name "source" -DefaultValue "winget"
+			$source = $package | Get-PropertyValue -Name "source" -DefaultValue "winget"
+			$packageInfo = $null
 
 			switch -exact ($source.ToLowerInvariant()) {
 
 				'winget' {
-					$_ | Parse-WinGetPackage
+					$packageInfo = $package | Parse-WinGetPackage
 					Break
 				}
 
 				'msstore' {
-					$_ | Parse-WinGetPackage
+					$packageInfo = $package | Parse-WinGetPackage
 					Break
 				}
+
 			}
 
-		} | Where-Object { $_ } | Sort-Object Version | Sort-Object Title | ForEach-Object {
+			if ($packageInfo) { $packageInfos += $packageInfo }
+		} 
+		
+		$packageInfos `
+			| Where-Object { $_ } `
+			| Sort-Object Version `
+			| Sort-Object Title `
+			| ForEach-Object { $capabilitiesMarkdown | Render-PackageMarkdown -Package $_ }
 
-			$capabilitiesMarkdown += @"
+		$capabilitiesHtml = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.html"
+		Get-Content -Path $capabilitiesMarkdown | Out-String | Convert-Markdown2HTML | Out-File -FilePath $capabilitiesHtml -Encoding utf8 -Force
 
-## [$($_.Title)]($($_.Homepage)) 
-
-Publisher: $($_.Publisher)
-Version:   $($_.Version)
-
-$($_.Description)
-"@
-
-} 
-
-		$capabilitiesFile = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.html"
 		$capabilitiesLink = Join-Path ([Environment]::GetFolderPath("CommonDesktopDirectory")) -ChildPath "Capabilities.lnk"
-
-		$capabilitiesMarkdown -join '' | Convert-Markdown2HTML | Out-File -FilePath $capabilitiesFile -Encoding utf8 -Force
-		New-Shortcut -Path $capabilitiesLink -Target $capabilitiesFile | Out-Null
+		New-Shortcut -Path $capabilitiesLink -Target $capabilitiesHtml | Out-Null
 	}
 }

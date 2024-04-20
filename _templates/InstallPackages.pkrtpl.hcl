@@ -81,23 +81,36 @@ function Install-WinGetPackage {
 		[object] $Package
     )
 
-	$arguments = ("install", ("--id {0}" -f $Package.name),	"--exact")
+	$arguments = @(
+		"install", 
+		("--id {0}" -f $Package.name),
+		("--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")),
+		"--exact",
+		"--disable-interactivity",
+		"--accept-package-agreements",
+		"--accept-source-agreements",
+		"--verbose-logs"
+	)
+
+	if (Test-IsPacker) {
+		# CAUTION - THIS DOESN'T WORK !!!
+		# passing a scope via argument enforces using this scope. as not every
+		# package manifest supports scopes yet, this leads to a winget error.
+		# instead rely on the install behaviour defined in the winget settings.
+		# this should define machine as the preferredScope which means winget
+		# falls back to user scope if the package doesn't support machine!
+		# $arguments += "--scope machine"
+	}
 
 	if ($Package | Has-Property -Name "version") { 	
 		$arguments += "--version {0}" -f $Package.version
 	}
 	
-	$arguments += "--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")
-
 	if ($Package | Has-Property -Name "override") { 
 		$arguments += "--override `"{0}`"" -f (($Package | Get-PropertyArray -Name "override") -join ' ' )
 	} else { 
 		$arguments += "--silent" 
 	} 
-
-	$arguments += "--accept-package-agreements"
-	$arguments += "--accept-source-agreements"
-	$arguments += "--verbose-logs"
 
 	if ($Package | Has-Property -Name "options") { 
 		$Package | Get-PropertyArray -Name "options" | ForEach-Object { $arguments += "$_" }
@@ -120,14 +133,14 @@ function Install-ChocoPackage {
 		[object] $Package
     )
 
-	$arguments = (
+	$arguments = @(
 		"install", 
 		$Package.name,	
 		"--yes",
 		"--acceptlicense",
 		"--nocolor",
 		"--no-progress"
-		)
+	)
 
 	$result = Invoke-CommandLine -Command "choco" -Arguments ($arguments -join ' ')
 	

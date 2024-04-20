@@ -18,41 +18,43 @@ locals {
 		imageDefinition = "${abspath(var.imageDefinition)}"
 	}
 
-	update = {
-		# Configuration values for Windows Update -> more https://github.com/rgl/packer-plugin-windows-update
-		
-		# Important
-		# ----------------------------------------------
-		# search = "AutoSelectOnWebSites=1 and IsInstalled=0" 
-		# filters = [
-		# 	"exclude:$_.Title -like '*Preview*'",
-		# 	"include:$true"
-		# ]
-
-		# Recommended
-		# ----------------------------------------------
-		# search = "BrowseOnly=0 and IsInstalled=0" 
-		# filters = [
-		# 	"exclude:$_.Title -like '*Preview*'",
-		# 	"include:$true"
-		# ]
-
-		# All Updates
-		# ----------------------------------------------
+	# Configuration values for Windows Update -> more https://github.com/rgl/packer-plugin-windows-update
+	# By default all available updates are installed. You can change this behavior by setting the updates 
+	# variable in the image.json file. The following options are available:
+	# - none: No updates are installed.
+	# - recommended: Only recommended updates are installed.
+	# - important: Only important updates are installed.
+	update = lookup({
+		none = {
+			search = "BrowseOnly=0 and IsInstalled=0" 
+			filters = [
+				"exclude:$true",
+				"include:$false"
+			]
+		}	
+		recommended = {
+			search = "BrowseOnly=0 and IsInstalled=0" 
+			filters = [
+				"exclude:$_.Title -like '*Preview*'",
+				"include:$true"
+			]
+		}
+		important = {
+			search = "AutoSelectOnWebSites=1 and IsInstalled=0" 
+			filters = [
+				"exclude:$_.Title -like '*Preview*'",
+				"include:$true"
+			]
+		}
+	},
+	try(local.image.updates, "all"),
+	{
 		search = "BrowseOnly=0 and IsInstalled=0" 
 		filters = [
 			"exclude:$_.Title -like '*Preview*'",
 			"include:$true"
 		]
-
-		# None Updates
-		# ----------------------------------------------
-		# search = "BrowseOnly=0 and IsInstalled=0" 
-		# filters = [
-		# 	"exclude:$true",
-		# 	"include:$false"
-		# ]
-	}
+	})		
 
 	path = {
 		# The folder that is created in each image to persist DevBox scripts and other artifacts.
