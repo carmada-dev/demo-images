@@ -29,15 +29,12 @@ jobs:
 
     steps:
 
-      - uses: azure/login@v1
+      - uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Download Source
-        uses: actions/checkout@v3
-
-      # - name: Prepare Image Folder
-      #   run: cp -f ${{ github.workspace }}/_core/*.pkr.hcl ./ && ls -l
+        uses: actions/checkout@v4
 
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
@@ -71,7 +68,7 @@ jobs:
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
       - name: Ensure Image Definition
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript:	|
             az sig image-definition create \
@@ -90,7 +87,7 @@ jobs:
 
       - name: Delete Image PreReleases
         continue-on-error: true
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript:	| 
             for IMAGEVERSION in $(az sig image-version list --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --gallery-image-definition ${{ inputs.imageName }} --query "[?publishingProfile.excludeFromLatest].id" --output tsv 2>/dev/null); do
@@ -99,7 +96,7 @@ jobs:
             done; wait
               
       - name: Delete Packer ResourceGroups        
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
@@ -111,7 +108,7 @@ jobs:
   
       - name: Delete Packer KeyVaults
         continue-on-error: true
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript:	| 
             RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
@@ -130,7 +127,7 @@ jobs:
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
       - name: Upload Image Info
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.imageName }}
           path: |
@@ -138,7 +135,7 @@ jobs:
             ${{ runner.temp }}/image.json
 
       - name: Create or Update DevBox Definition
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
@@ -178,18 +175,18 @@ jobs:
     steps:
 
       - name: Download Image Info
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Load Image Info
         id: image
         run: cat ./image.info >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
 
-      - uses: azure/login@v1
+      - uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
   
       - name: Promote Image to Latest
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript:	|
             az sig image-version update \
@@ -203,7 +200,7 @@ jobs:
 
       - name: Determine Image Reference ID & Type
         id: reference
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
@@ -220,7 +217,7 @@ jobs:
             cat $GITHUB_OUTPUT
 
       - name: Create or Update DevBox Definition
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript:	|
             az extension add --name devcenter --upgrade --yes
@@ -254,19 +251,19 @@ jobs:
     steps:
 
       - name: Download Image Info
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Load Image Info
         id: image
         run: cat ./image.info >> $GITHUB_OUTPUT && cat $GITHUB_OUTPUT
 
-      - uses: azure/login@v1
+      - uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
                     
       - name: Create Archive Disk
         id: archiveDisk
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             apt-get install uuid-runtime -y > /dev/null
@@ -297,7 +294,7 @@ jobs:
               cat $GITHUB_OUTPUT
 
       - name: Upload Archive Disk
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             GALLERY_ID=$(az sig show --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --query id --output tsv)
@@ -331,7 +328,7 @@ jobs:
             azcopy copy "${{ steps.archiveDisk.outputs.resourceUrl }}" "$CONTAINER_URL" --blob-type PageBlob
 
       - name: Delete Archive Disk
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             az disk delete --ids ${{ steps.archiveDisk.outputs.resourceId }} --no-wait --yes
