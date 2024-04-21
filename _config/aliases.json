@@ -182,7 +182,7 @@
 			"install",
 			"--quiet",
 			"--accept-license",
-			"--backend=hyperv",
+			"--backend=hyper-v",
 			"--always-run-service"
 		],
 		"features": [
