@@ -39,22 +39,15 @@ function Get-PropertyValue() {
 	return $value
 }
 
-function Convert-Markdown2HTML() {
+function Convert-CapabilitiesMD2HTML() {
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string] $Markdown
+        [Parameter(Mandatory = $true)]
+        [string] $Source,
+		[Parameter(Mandatory = $true)]
+		[string] $Destination
     )
 
-	$payload = [PSCustomObject]@{
-
-		text = $Markdown
-		mode = "markdown"
-
-	} | ConvertTo-Json -Compress | Out-String
-
-	$response = Invoke-WebRequest -Method Post -Uri 'https://api.github.com/markdown' -Body $payload 
-
-	return @"
+	@"
 <!doctype html>
 <html lang=`"en`">
 	<head>
@@ -79,10 +72,10 @@ function Convert-Markdown2HTML() {
 		</style>
 	</head>
 	<body>
-		<article class=`"markdown-body`">$($response.Content | Out-String)</article>
+		<article class=`"markdown-body`">$( (Get-Item $Source | Convert-MarkdownToHTMLFragment).HtmlFragment | Out-String)</article>
 	</body>
 </html>
-"@ | Out-String
+"@ | Out-File -FilePath $Destination -Encoding utf8 -Force
 
 }
 
@@ -213,6 +206,11 @@ $($Package.Description)
 [array] $packages = '${jsonencode(packages)}' | ConvertFrom-Json
 
 if (Test-IsPacker) { 
+	
+	Invoke-ScriptSection -Title "Installing Markdown Converter" -ScriptBlock {
+		Install-Module -Name MarkdownToHTML -Force
+	}
+
     Invoke-ScriptSection -Title "Generate Capabilities Document" -ScriptBlock {
 
 		$capabilitiesMarkdown = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.md"
@@ -248,8 +246,8 @@ if (Test-IsPacker) {
 			| Sort-Object Title `
 			| ForEach-Object { $capabilitiesMarkdown | Render-PackageMarkdown -Package $_ }
 
-		$capabilitiesHtml = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Capabilities.html"
-		Get-Content -Path $capabilitiesMarkdown | Out-String | Convert-Markdown2HTML | Out-File -FilePath $capabilitiesHtml -Encoding utf8 -Force
+		$capabilitiesHtml = [System.IO.Path]::ChangeExtension($capabilitiesMarkdown, ".html")
+		Convert-CapabilitiesMD2HTML -Source $capabilitiesMarkdown -Destination $capabilitiesHtml
 
 		$capabilitiesLink = Join-Path ([Environment]::GetFolderPath("CommonDesktopDirectory")) -ChildPath "Capabilities.lnk"
 		New-Shortcut -Path $capabilitiesLink -Target $capabilitiesHtml | Out-Null
