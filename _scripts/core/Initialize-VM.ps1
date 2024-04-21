@@ -26,7 +26,7 @@ $downloadKeyVaultArtifact = {
 	param([string] $Source, [string] $Destination, [string] $TokenEndpoint)
 
 	Write-Host ">>> Acquire KeyVault Access Token"
-	Connect-AzureRmAccount -Identity -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-Null
+	Connect-AzAccount -Identity -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-Null
 	$KeyVaultToken = Get-AzAccessToken -ResourceUrl $TokenEndpoint -ErrorAction Stop -WarningAction SilentlyContinue
 
 	Write-Host ">>> Downloading KeyVault Artifact $Source"
