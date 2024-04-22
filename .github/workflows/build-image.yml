@@ -250,6 +250,9 @@ jobs:
 
     steps:
 
+      - name: Install Tools
+        run: sudo apt-get install uuid-runtime -y 
+
       - name: Download Image Info
         uses: actions/download-artifact@v4
 
@@ -266,8 +269,6 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
-            apt-get install uuid-runtime -y > /dev/null
-
             DISK_NAME=$(uuidgen --md5 --namespace $(az account show --query tenantId --output tsv) --name ${{ steps.image.outputs.gallery_imageid }})
             DISK_LOCATION=$(az sig show --subscription ${{ steps.image.outputs.gallery_subscription }} --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} --gallery-name ${{ steps.image.outputs.gallery_name }} --query location --output tsv)
             
