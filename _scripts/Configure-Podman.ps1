@@ -29,7 +29,6 @@ Invoke-ScriptSection -Title "Configure Podman" -ScriptBlock {
 		$dockerExe = Get-Command 'docker.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
 
 		if ($dockerExe) {
-			
 			Write-Host "Podman and Docker Desktop installed -> skip registering docker alias for podman"
 
 		} else {
@@ -43,7 +42,9 @@ Invoke-ScriptSection -Title "Configure Podman" -ScriptBlock {
 
 	} else {
 
+		$result = Invoke-Commandline -Command "$podmanExe" -Arguments "machine init --cpus 2 --disk-size 100 --memory 8192 --now"
+		$result.Output | Write-Host
 
-
+		exit $result.ExitCode
 	}
 }

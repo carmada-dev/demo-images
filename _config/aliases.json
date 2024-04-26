@@ -200,13 +200,8 @@
 	},
 
 	"podman": {
-		"name": "RedHat.Podman-Desktop",
+		"name": "RedHat.Podman",
 		"scope": "machine",
-		"override": [
-			"install",
-			"--silent",
-			"--accept-package-agreements"
-		],
 		"features": [
 			"Microsoft-Windows-Subsystem-Linux",
 			"VirtualMachinePlatform",
@@ -218,5 +213,10 @@
 		"configure": [
 			"[IMAGEROOT]/../_scripts/Configure-Podman.ps1"
 		]
+	},
+
+	"podman-desktop": {
+		"name": "RedHat.Podman-Desktop",
+		"scope": "machine"
 	}
 }
