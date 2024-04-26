@@ -4,6 +4,7 @@
 	"offer": "CarmadaDev",
 	"sku": "win11-sitecore-1003C-devbox",
 	"regions": [ "West Europe" ],
+	"updates": "all",
 
 	"base": {
 		"publisher": "MicrosoftVisualStudio",
@@ -34,6 +35,7 @@
 	
 	"devDrive": {
 		"sizeGB": 0,
+		"filters": [],
 		"repositories": []
 	},
 

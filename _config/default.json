@@ -29,7 +29,6 @@
 	],
 
 	"configure": [
-		"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1",
-		"[IMAGEROOT]/../_scripts/Configure-VisualStudioCode.ps1"
+
 	]
 }

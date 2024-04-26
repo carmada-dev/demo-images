@@ -25,8 +25,11 @@ function Get-ShortcutTargetPath() {
 $downloadKeyVaultArtifact = {
 	param([string] $Source, [string] $Destination, [string] $TokenEndpoint)
 
-	Write-Host ">>> Downloading KeyVault Artifact $Source"
+	Write-Host ">>> Acquire KeyVault Access Token"
+	Connect-AzAccount -Identity -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-Null
 	$KeyVaultToken = Get-AzAccessToken -ResourceUrl $TokenEndpoint -ErrorAction Stop -WarningAction SilentlyContinue
+
+	Write-Host ">>> Downloading KeyVault Artifact $Source"
 	$KeyVaultHeaders = @{"Authorization" = "Bearer $($KeyVaultToken.Token)"}
 	$KeyVaultResponse = Invoke-RestMethod -Uri "$($Source)?api-version=7.1" -Headers $KeyVaultHeaders -ErrorAction Stop
 		
@@ -47,7 +50,8 @@ $downloadArtifact = {
 		Import-Module -Name $_
 	} 
 
-	Move-Item -Path (Invoke-FileDownload -Url $Source -Name ([System.IO.Path]::GetFileName($Destination))) -Destination $Destination -Force
+	$Temp = Invoke-FileDownload -Url $Source -Name ([System.IO.Path]::GetFileName($Destination))
+	Move-Item -Path $Temp -Destination $Destination -Force
 
 	if (Test-Path -Path $Destination -PathType Leaf) { 
 		Write-Host ">>> Resolved Artifact $Destination" 

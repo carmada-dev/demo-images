@@ -27,6 +27,128 @@
 			"/VERYSILENT",
 			"/NORESTART",
 			"/MERGETASKS=desktopicon,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath,!runcode"
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-VisualStudioCode.ps1"
+		]
+	},
+
+	"vs2022EntInstallerOnly": {
+		"name": "Microsoft.VisualStudio.2022.Enterprise",
+		"scope": "machine",
+		"override": [
+			"--quiet",
+			"--norestart",
+			"--force",
+			"--wait",
+			"--nocache",
+			"--installerOnly"
+		]
+	},
+
+	"vs2022EntWithConfig": {
+		"name": "Microsoft.VisualStudio.2022.Enterprise",
+		"scope": "machine",
+		"override": [
+			"--quiet",
+			"--norestart",
+			"--force",
+			"--wait",
+			"--nocache",
+			"--config \"%DEVBOX_HOME%\\artifacts\\VS2022Ent.vsconfig\""
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1"			
+		]
+	},
+
+	"vs2022ProInstallerOnly": {
+		"name": "Microsoft.VisualStudio.2022.Professional",
+		"scope": "machine",
+		"override": [
+			"--quiet",
+			"--norestart",
+			"--force",
+			"--wait",
+			"--nocache",
+			"--installerOnly"
+		]
+	},
+
+	"vs2022ProWithConfig": {
+		"name": "Microsoft.VisualStudio.2022.Professional",
+		"scope": "machine",
+		"override": [
+			"--quiet",
+			"--norestart",
+			"--force",
+			"--wait",
+			"--nocache",
+			"--config \"%DEVBOX_HOME%\\artifacts\\VS2022Pro.vsconfig\""
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1"			
+		]
+	},
+
+	"vs2019EntInstallerOnly": {
+		"name": "Microsoft.VisualStudio.2019.Enterprise",
+		"scope": "machine",
+		"override": [
+			"--quiet",
+			"--norestart",
+			"--force",
+			"--wait",
+			"--nocache",
+			"--installerOnly"
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1"			
+		]
+	},
+
+	"vs2019EntWithConfig": {
+		"name": "Microsoft.VisualStudio.2019.Enterprise",
+		"scope": "machine",
+		"override": [
+			"--quiet",
+			"--norestart",
+			"--force",
+			"--wait",
+			"--nocache",
+			"--config \"%DEVBOX_HOME%\\artifacts\\VS2019Ent.vsconfig\""
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1"			
+		]
+	},
+
+	"vs2019ProInstallerOnly": {
+		"name": "Microsoft.VisualStudio.2019.Professional",
+		"scope": "machine",
+		"override": [
+			"--quiet",
+			"--norestart",
+			"--force",
+			"--wait",
+			"--nocache",
+			"--installerOnly"
+		]
+	},
+
+	"vs2019ProWithConfig": {
+		"name": "Microsoft.VisualStudio.2019.Professional",
+		"scope": "machine",
+		"override": [
+			"--quiet",
+			"--norestart",
+			"--force",
+			"--wait",
+			"--nocache",
+			"--config \"%DEVBOX_HOME%\\artifacts\\VS2019Pro.vsconfig\""
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1"			
 		]
 	},
 
@@ -60,7 +182,7 @@
 			"install",
 			"--quiet",
 			"--accept-license",
-			"--backend=hyperv",
+			"--backend=hyper-v",
 			"--always-run-service"
 		],
 		"features": [

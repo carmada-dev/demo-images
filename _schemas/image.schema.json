@@ -83,6 +83,24 @@
 					"minimum": 0,
 					"default": 0
 				},
+				"filters": {
+					"type": "array",
+					"description": "Filters to apply to the DevDrive",
+					"default": [
+						"bindFlt",
+						"wcifs",
+						"PrjFlt",
+						"MsSecFlt",
+						"WdFilter",
+						"FileInfo",
+						"ProcMon24",
+						"WinSetupMon"
+					],
+					"items": {
+						"type": "string",
+						"description": "The name of a filter to apply"
+					}
+				},
 				"repositories": {
 					"type": "array",
 					"description": "List of repositories to clone into the DevDrive",
@@ -104,7 +122,7 @@
 					}
 				}
 			},
-			"required": [ "sizeGB", "repositories" ],
+			"required": [ "sizeGB", "filters", "repositories" ],
 			"additionalProperties": false		
 		}
 	},
@@ -132,6 +150,12 @@
 			"items": {
 				"type": "string"
 			}
+		},
+		"updates": {
+			"type": "string",
+			"description": "Windows updates that should be installed on the image",
+			"enum": [ "all", "none", "recommended", "important" ],
+			"default": "all"
 		},
 		"base": {
 			"type": "object",
