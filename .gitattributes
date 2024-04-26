@@ -1,1 +1,4 @@
 *.bgi binary
+
+* text=auto
+* text eol=lf
