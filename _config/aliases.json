@@ -204,9 +204,8 @@
 		"scope": "machine",
 		"override": [
 			"install",
-			"--quiet",
-			"--accept-license",
-			"--always-run-service"
+			"--silent",
+			"--accept-package-agreements"
 		],
 		"features": [
 			"Microsoft-Windows-Subsystem-Linux",
