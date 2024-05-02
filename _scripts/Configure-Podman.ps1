@@ -33,11 +33,11 @@ Invoke-ScriptSection -Title "Configure Podman" -ScriptBlock {
 
 		} else {
 
-			$macroDir = New-Item -Path (Join-Path $env:PUBLIC 'Macros') -PathType Directory -Force -PassThru | Select-Object -ExpandProperty Fullname
-			$macroFile = New-Item -Path (Join-Path $macroDir 'macros.cmd') -PathType File -Force | Select-Object -ExpandProperty Fullname
+			$path = New-Item -ItemType Directory -Path "C:\Program Files\docker\bin" -Force | Select-Object -ExpandProperty FullName
+			"@echo off && podman %*" | Out-File -FilePath "$path\docker.bat" -Force -Encoding ascii
 
-			Add-Content -Path $macroFile -Value 'docker=podman $*' -Encoding UTF8 | Out-Null
-			New-Item -Path 'HKEY_LOCAL_MACHINE\Software\Microsoft\Command Processor' -Name 'AutoRun' -Value "doskey /macrofile=`"$macroFile`"" | Out-Null
+			$MACHINE_PATH = [System.Environment]::GetEnvironmentVariable("PATH", [System.EnvironmentVariableTarget]::Machine)
+			[System.Environment]::SetEnvironmentVariable('PATH', "$MACHINE_PATH;$path", [System.EnvironmentVariableTarget]::Machine)
 		}
 
 	} else {
