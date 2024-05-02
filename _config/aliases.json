@@ -217,6 +217,6 @@
 
 	"podman-desktop": {
 		"name": "RedHat.Podman-Desktop",
-		"scope": "machine"
+		"scope": "user"
 	}
 }
