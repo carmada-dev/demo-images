@@ -13,6 +13,7 @@ source "azure-arm" "vm" {
   communicator                        = "winrm"
   winrm_username                      = "packer"
   winrm_insecure                      = true
+  winrm_timeout                       = "15m"
   winrm_use_ssl                       = true
 
   # os settings

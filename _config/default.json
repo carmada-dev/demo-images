@@ -19,7 +19,8 @@
 			"source": "alias"
 		},
 		{
-			"name": "Microsoft.WindowsAppRuntime.1.4",
+			"name": "Microsoft.WindowsAppRuntime.1.5",
+			"version": "1.5.2",
 			"scope": "machine"
 		},
 		{

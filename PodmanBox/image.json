@@ -3,7 +3,7 @@
 
 	"publisher": "CarmadaRnD",
 	"offer": "CarmadaDev",
-	"sku": "win11-vs2022pro-devbox",
+	"sku": "win11-podman-devbox",
 	"regions": [ "West Europe" ],
 	"updates": "all",
 
@@ -50,8 +50,20 @@
 
 	"packages": [
 
+		{
+			"name": "podman",
+			"source": "alias"
+		},
 
+		{
+			"name": "podman-desktop",
+			"source": "alias"
+		},
 
+		{
+			"name": "Docker.DockerCompose",
+			"scope": "user"
+		}
 	],
 
 	"configure": [

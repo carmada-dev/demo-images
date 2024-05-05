@@ -236,7 +236,7 @@ foreach ($package in $packages) {
 	# store the last successful package hash
 	$currentPackageHash | Set-Content -Path $lastSuccessPackageFile -Force
 
-	if (Test-PendingReboot) {
+	if ((Test-IsPacker) -and (Test-PendingReboot)) {
 		Write-ErrorMessage ">>> Pending reboot detected after installing package $($package.name) - restarting the machine ..."
 		Restart-Computer -Force; exit 3010
 	}
