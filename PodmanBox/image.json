@@ -63,7 +63,18 @@
 		{
 			"name": "Docker.DockerCompose",
 			"scope": "user"
+		},
+
+		{
+			"name": "Kubernetes.kind",
+			"scope": "user"
+		},
+
+		{
+			"name": "Kubernetes.kubectl",
+			"scope": "user"
 		}
+
 	],
 
 	"configure": [
