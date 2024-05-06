@@ -19,14 +19,8 @@
 			"source": "alias"
 		},
 		{
-			"name": "Microsoft.WindowsAppRuntime.1.5",
-			"version": "1.5.2",
-			"scope": "machine"
-		},
-		{
-			"name": "Microsoft.DevHome",
-			"scope": "user",
-			"options": [ "--skip-dependencies" ]
+			"name": "devHome",
+			"source": "alias"
 		},
 		{
 			"name": "Microsoft.VisualStudio.Locator",

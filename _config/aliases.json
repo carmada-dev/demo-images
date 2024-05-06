@@ -215,6 +215,19 @@
         ]
     },
 
+	"devHome": [
+		{
+			"name": "Microsoft.WindowsAppRuntime.1.5",
+			"version": "1.5.2",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DevHome",
+			"scope": "user",
+			"options": [ "--skip-dependencies" ]
+		}
+	],
+
 	"podman-desktop": [
 
 		{
@@ -232,22 +245,18 @@
 				"[IMAGEROOT]/../_scripts/Configure-Podman.ps1"
 			]
 		},
-
 		{
 			"name": "RedHat.Podman-Desktop",
 			"scope": "user"
 		},
-
 		{
 			"name": "Docker.DockerCompose",
 			"scope": "user"
 		},
-
 		{
 			"name": "Kubernetes.kind",
 			"scope": "user"
 		},
-
 		{
 			"name": "Kubernetes.kubectl",
 			"scope": "user"
