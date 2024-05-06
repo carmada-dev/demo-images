@@ -77,20 +77,20 @@ locals {
 		# Get a list of all packages to install. This includes packages definied in the image definition, 
 		# but also those form the main configuration. Furthermore; alias packages are resolved and replaced
 		# by their real definition.
-		packages = concat(
+		packages = flatten(concat(
 			[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
 			[ for p in concat(local.default.packages, local.image.packages): lookup(local.aliases, p.name, p) if try(p.source == "alias", false) ]
-		)
+		))
 
 		# Get a list of all features to enable. This includes features definied in the default configuration, 
 		# the image definition, and all resolved packages.
 		features = distinct(concat(
 			try(local.default.features, []),
 			try(local.image.devDrive.sizeGB, 0) == 0 ? [] : ["Microsoft-Hyper-V-All"],
-			flatten([ for p in concat(
-				[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
-				[ for p in concat(local.default.packages, local.image.packages): lookup(local.aliases, p.name, p) if try(p.source == "alias", false) ]
-			): try(p.features, []) ]),
+				flatten([ for p in flatten(concat(
+					[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
+					[ for p in concat(local.default.packages, local.image.packages): lookup(local.aliases, p.name, p) if try(p.source == "alias", false) ]
+				)): try(p.features, []) ]),
 			try(local.image.features, [])
 		))
 
@@ -99,10 +99,10 @@ locals {
 		prepare = distinct(concat(
 			["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
 			try(local.default.prepare, []),
-			flatten([ for p in concat(
-				[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
-				[ for p in concat(local.default.packages, local.image.packages): lookup(local.aliases, p.name, p) if try(p.source == "alias", false) ]
-			): try(p.prepare, []) ]),
+				flatten([ for p in flatten(concat(
+					[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
+					[ for p in concat(local.default.packages, local.image.packages): lookup(local.aliases, p.name, p) if try(p.source == "alias", false) ]
+				)): try(p.prepare, []) ]),
 			try(local.image.prepare, [])
 		))
 
@@ -111,10 +111,10 @@ locals {
 		configure = distinct(concat(
 			["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
 			try(local.default.configure, []),
-			flatten([ for p in concat(
-				[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
-				[ for p in concat(local.default.packages, local.image.packages): lookup(local.aliases, p.name, p) if try(p.source == "alias", false) ]
-			): try(p.configure, []) ]),
+				flatten([ for p in flatten(concat(
+					[ for p in concat(local.default.packages, local.image.packages): p if try(p.source != "alias", true) ], 
+					[ for p in concat(local.default.packages, local.image.packages): lookup(local.aliases, p.name, p) if try(p.source == "alias", false) ]
+				)): try(p.configure, []) ]),
 			try(local.image.configure, [])
 		))
 	}

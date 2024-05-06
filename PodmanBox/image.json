@@ -51,28 +51,8 @@
 	"packages": [
 
 		{
-			"name": "podman",
-			"source": "alias"
-		},
-
-		{
 			"name": "podman-desktop",
 			"source": "alias"
-		},
-
-		{
-			"name": "Docker.DockerCompose",
-			"scope": "user"
-		},
-
-		{
-			"name": "Kubernetes.kind",
-			"scope": "user"
-		},
-
-		{
-			"name": "Kubernetes.kubectl",
-			"scope": "user"
 		}
 
 	],

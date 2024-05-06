@@ -214,9 +214,43 @@
             "[IMAGEROOT]/../_scripts/Configure-Podman.ps1"
         ]
     },
- 
-    "podman-desktop": {
-        "name": "RedHat.Podman-Desktop",
-        "scope": "user"
-    }
+
+	"podman-desktop": [
+
+		{
+			"name": "RedHat.Podman",
+			"scope": "machine",
+			"features": [
+				"Microsoft-Windows-Subsystem-Linux",
+				"VirtualMachinePlatform",
+				"Containers"
+			],
+			"prepare": [
+				"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
+			],
+			"configure": [
+				"[IMAGEROOT]/../_scripts/Configure-Podman.ps1"
+			]
+		},
+
+		{
+			"name": "RedHat.Podman-Desktop",
+			"scope": "user"
+		},
+
+		{
+			"name": "Docker.DockerCompose",
+			"scope": "user"
+		},
+
+		{
+			"name": "Kubernetes.kind",
+			"scope": "user"
+		},
+
+		{
+			"name": "Kubernetes.kubectl",
+			"scope": "user"
+		}
+	]
 }

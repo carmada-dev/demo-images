@@ -7,7 +7,18 @@
 
 	"patternProperties": {
 		"^\\w+$": {
-			"$ref": "./_definitions.schema.json#/$defs/package"
+			"anyOf": [
+				{
+					"$ref": "./_definitions.schema.json#/$defs/package"
+				},
+				{
+					"type": "array",
+					"items": {
+						"$ref": "./_definitions.schema.json#/$defs/package"
+					},
+					"minItems": 1
+				}
+			]			
 		}
 	}
 }
