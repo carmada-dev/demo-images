@@ -32,28 +32,64 @@ $adminWinGetConfig = @"
 
 Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
+	$offlineDirectory =	New-Item -Path (Join-Path $env:DEVBOX_HOME 'Offline\WinGet') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
+	Write-Host "- Offline directory: $offlineDirectory"
+
 	$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
+	Write-Host "- OS Type: $osType"
+	
+	$url = "https://aka.ms/Microsoft.VCLibs.$osType.14.00.Desktop.appx"
+	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
+
+	if (-not (Test-Path $loc -PathType Leaf)) {
+		Write-Host ">>> Downloading WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
+		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc))
+		Move-Item -Path $path -Destination $loc -Force | Out-Null
+	}
 
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
-	$path = Invoke-FileDownload -Url "https://aka.ms/Microsoft.VCLibs.$osType.14.00.Desktop.appx"
-	Add-AppxPackage -Path $path -ErrorAction Stop
-	
+	Add-AppxPackage -Path $loc -ErrorAction Stop
+
+	$url = "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6"
+	$loc = Join-Path $offlineDirectory 'Microsoft.UI.Xaml.2.8.appx'
+
+	if (-not (Test-Path $loc -PathType Leaf)) {
+		Write-Host ">>> Downloading WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
+		$path = Invoke-FileDownload -Url $url -Name 'Microsoft.UI.Xaml.zip' -Expand $true
+		Move-Item -Path (Join-Path $path "tools\AppX\$osType\Release\Microsoft.UI.Xaml.2.8.appx") -Destination $loc -Force | Out-Null
+	}
+
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
-	$path = Invoke-FileDownload -Url "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6" -Name 'Microsoft.UI.Xaml.zip' -Expand $true
-	Add-AppxPackage -Path (Join-Path -path $path -ChildPath "tools\AppX\$osType\Release\Microsoft.UI.Xaml.2.8.appx") -ErrorAction Stop
+	Add-AppxPackage -Path $loc -ErrorAction Stop
+
+	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
+	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
+
+	if (-not (Test-Path $loc -PathType Leaf)) {
+		Write-Host ">>> Downloading WinGet CLI ..."
+		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc))
+		Move-Item -Path $path -Destination $loc -Force | Out-Null
+	}
 
 	Write-Host ">>> Installing WinGet CLI..."
-	$path = Invoke-FileDownload -Url "$(Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle')"
-	Add-AppxPackage -Path $path -ErrorAction Stop
+	Add-AppxPackage -Path $loc -ErrorAction Stop
 
 	if (Test-IsElevated) {
 		Write-Host ">>> Resetting WinGet Sources ..."
 		Invoke-CommandLine -Command 'winget' -Arguments "source reset --force --disable-interactivity" | Select-Object -ExpandProperty Output | Write-Host
 	}
 
-	Write-Host ">>> Adding WinGet Source Cache Package ..."
-	$path = Invoke-FileDownload -Url "https://cdn.winget.microsoft.com/cache/source.msix" -Retries 5
-	Add-AppxPackage -Path $path -ErrorAction Stop
+	$url = "https://cdn.winget.microsoft.com/cache/source.msix"
+	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
+
+	if (-not (Test-Path $loc -PathType Leaf)) {
+		Write-Host ">>> Downloading WinGet Source Cache Package ..."
+		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc)) -Retries 5
+		Move-Item -Path $path -Destination $loc -Force | Out-Null
+	}
+
+	Write-Host ">>> Installing WinGet Source Cache Package ..."	
+	Add-AppxPackage -Path $loc -ErrorAction Stop
 }
 
 if (Test-IsPacker) {
@@ -72,6 +108,5 @@ if (Test-IsPacker) {
 			$adminWinGetConfig | Out-File $_ -Encoding ASCII -Force 
 			
 		}
-
 	}
 }

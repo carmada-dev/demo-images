@@ -6,6 +6,20 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 	Import-Module -Name $_
 } 
 
+Invoke-ScriptSection -Title 'Set DevBox access permissions' -ScriptBlock {
+	if (-not(Get-Module -ListAvailable -Name NTFSSecurity))
+	{
+		Write-Host ">>> Installing NTFSSecurity Module"
+		Install-Module -Name NTFSSecurity -Force
+	}
+
+	Write-Host ">>> Installing NTFSSecurity Module"
+	Import-Module -Name NTFSSecurity
+
+	Write-Host ">>> Enable NTFS access inheritance on '$($env:DEVBOX_HOME)' (recursive)"
+	Get-ChildItem -Path $env:DEVBOX_HOME -Recurse | Enable-NTFSAccessInheritance
+}
+
 Invoke-ScriptSection -Title 'Disable reserved storage' -ScriptBlock {
 	Invoke-CommandLine -Command 'dism' -Arguments '/Online /Set-ReservedStorageState /State:Disabled'
 }
