@@ -49,22 +49,22 @@ jobs:
         run: |
           HCLJSON="$(echo "jsonencode(local)" | packer console ../_packer/)"
           echo $HCLJSON | jq .
-          echo "factory_subscription=$(echo $HCLJSON | jq --raw-output '.factory.subscription')" >> $GITHUB_OUTPUT
-          echo "factory_region=$(echo $HCLJSON | jq --raw-output '.factory.region')" >> $GITHUB_OUTPUT
-          echo "image_publisher=$(echo $HCLJSON | jq --raw-output '.image.publisher')" >> $GITHUB_OUTPUT
-          echo "image_offer=$(echo $HCLJSON | jq --raw-output '.image.offer')" >> $GITHUB_OUTPUT
-          echo "image_sku=$(echo $HCLJSON | jq --raw-output '.image.sku')" >> $GITHUB_OUTPUT
-          echo "gallery_subscription=$(echo $HCLJSON | jq --raw-output '.image.gallery.subscription')" >> $GITHUB_OUTPUT
-          echo "gallery_resourcegroup=$(echo $HCLJSON | jq --raw-output '.image.gallery.resourceGroup')" >> $GITHUB_OUTPUT
-          echo "gallery_name=$(echo $HCLJSON | jq --raw-output '.image.gallery.name')" >> $GITHUB_OUTPUT
-          echo "archive_subscription=$(echo $HCLJSON | jq --raw-output '.image.archive.subscription')" >> $GITHUB_OUTPUT
-          echo "archive_resourcegroup=$(echo $HCLJSON | jq --raw-output '.image.archive.resourceGroup')" >> $GITHUB_OUTPUT
-          echo "archive_name=$(echo $HCLJSON | jq --raw-output '.image.archive.name')" >> $GITHUB_OUTPUT
-          echo "devcenter_subscription=$(echo $HCLJSON | jq --raw-output '.image.devCenter.subscription')" >> $GITHUB_OUTPUT
-          echo "devcenter_resourcegroup=$(echo $HCLJSON | jq --raw-output '.image.devCenter.resourceGroup')" >> $GITHUB_OUTPUT
-          echo "devcenter_name=$(echo $HCLJSON | jq --raw-output '.image.devCenter.name')" >> $GITHUB_OUTPUT          
-          echo "devcenter_storage=$(echo $HCLJSON | jq --raw-output '.image.devCenter.storage')" >> $GITHUB_OUTPUT          
-          echo "devcenter_compute=$(echo $HCLJSON | jq --raw-output '.image.devCenter.compute')" >> $GITHUB_OUTPUT          
+          echo "factory_subscription=$(echo $HCLJSON | jq --raw-output '.factory.subscription // empty')" >> $GITHUB_OUTPUT
+          echo "factory_region=$(echo $HCLJSON | jq --raw-output '.factory.region // empty')" >> $GITHUB_OUTPUT
+          echo "image_publisher=$(echo $HCLJSON | jq --raw-output '.image.publisher // empty')" >> $GITHUB_OUTPUT
+          echo "image_offer=$(echo $HCLJSON | jq --raw-output '.image.offer // empty')" >> $GITHUB_OUTPUT
+          echo "image_sku=$(echo $HCLJSON | jq --raw-output '.image.sku // empty')" >> $GITHUB_OUTPUT
+          echo "gallery_subscription=$(echo $HCLJSON | jq --raw-output '.image.gallery.subscription // empty')" >> $GITHUB_OUTPUT
+          echo "gallery_resourcegroup=$(echo $HCLJSON | jq --raw-output '.image.gallery.resourceGroup // empty')" >> $GITHUB_OUTPUT
+          echo "gallery_name=$(echo $HCLJSON | jq --raw-output '.image.gallery.name // empty')" >> $GITHUB_OUTPUT
+          echo "archive_subscription=$(echo $HCLJSON | jq --raw-output '.image.archive.subscription // empty')" >> $GITHUB_OUTPUT
+          echo "archive_resourcegroup=$(echo $HCLJSON | jq --raw-output '.image.archive.resourceGroup // empty')" >> $GITHUB_OUTPUT
+          echo "archive_name=$(echo $HCLJSON | jq --raw-output '.image.archive.name // empty')" >> $GITHUB_OUTPUT
+          echo "devcenter_subscription=$(echo $HCLJSON | jq --raw-output '.image.devCenter.subscription // empty')" >> $GITHUB_OUTPUT
+          echo "devcenter_resourcegroup=$(echo $HCLJSON | jq --raw-output '.image.devCenter.resourceGroup // empty')" >> $GITHUB_OUTPUT
+          echo "devcenter_name=$(echo $HCLJSON | jq --raw-output '.image.devCenter.name // empty')" >> $GITHUB_OUTPUT          
+          echo "devcenter_storage=$(echo $HCLJSON | jq --raw-output '.image.devCenter.storage // empty')" >> $GITHUB_OUTPUT          
+          echo "devcenter_compute=$(echo $HCLJSON | jq --raw-output '.image.devCenter.compute // empty')" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
       - name: Ensure Image Definition
@@ -241,7 +241,7 @@ jobs:
   archive:
     needs: release
     runs-on: ubuntu-latest    
-    if: ${{ needs.release.outputs.archive }}
+    if: ${{ needs.release.outputs.archive == 'true' }}
 
     defaults:
       run:
