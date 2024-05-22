@@ -1,0 +1,60 @@
+{   
+	"$schema": "../_schemas/image.schema.json", 
+
+	"publisher": "<name of the publisher - e.g. CarmadaRnD>",
+	"offer": "<offer name - e.g. CarmadaDev>",
+	"sku": "<sku of the image - e.g. win11-vs2022pro-devbox>",
+	"regions": [ "the azure region(s)", "- e.g.", "West Europe", "East US" ],
+	"updates": "<windows updates that should be installed - all, none, recommended or important>",
+
+	"base": {
+		"publisher": "MicrosoftVisualStudio",
+		"offer": "windowsplustools",
+		"sku": "base-win11-gen2",
+		"version": "latest"
+	},
+	
+	"gallery": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": "CarmadaRnD"
+	},
+	
+	"archive": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": ""
+	},
+	
+	"devCenter": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": "CarmadaRnD",
+		"compute": "general_i_8c32gb1024ssd_v2",
+		"storage": "ssd_1024gb"
+	},
+	
+	"devDrive": {
+		"sizeGB": 0,
+		"filters": [],
+		"repositories": []
+	},
+
+	"features": [
+
+	],
+
+	"prepare": [
+
+	],
+
+	"packages": [
+
+
+
+	],
+
+	"configure": [
+
+	]
+}
