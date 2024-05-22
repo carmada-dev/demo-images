@@ -4,8 +4,9 @@ This repository contains examples and CI/CD pipelines to build custom images for
 
 ## Structure
 
-[Images](#images)
+[Images](#-images)
 - [image.json](#imagejson)
+    - [DevDrive](#devdrive)
 - [Image specific artifacts](#image-specific-artifacts)
   - [Large size artifacts](#large-size-artifacts)
   - [Downloading secrets for KeyVault](#downloading-secrets-for-keyvault)
@@ -25,16 +26,15 @@ This repository contains examples and CI/CD pipelines to build custom images for
 [Local Development & Build](#local-development--build)
 
 
-## Images
+## 📷 Images
 
 Every folder named xxxBox represents a custom image for Microsoft DevBox. The folder contains the following files:
 
 ### image.json
+The `image.json` file is the main configuration file for the image. [Here](./TemplateBox/image.json) you can find an example or template for the `image.json` file.
 
-
-
-
-
+#### DevDrive
+A DevDrive can be mounted into a DevBox. It uses not NTFS but ReFS to improve performance. [click for more information](https://devblogs.microsoft.com/visualstudio/devdrive/)
 
 ### Image specific artifacts
 
