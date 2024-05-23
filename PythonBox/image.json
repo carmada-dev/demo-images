@@ -52,7 +52,7 @@
 
 		{
 			"name": "moniker:python3",
-			"scope": "user"
+			"scope": "machine"
 		}
 
 	],
