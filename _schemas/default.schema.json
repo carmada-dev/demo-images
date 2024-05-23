@@ -18,6 +18,10 @@
 				"type": "string"
 			}
 		},
+		"language": {
+			"type": "object",
+			"ref": "./_definitions.schema.json#/$defs/language"
+		},
 		"prepare": {
 			"type": "array",
 			"description": "List of scripts to run to prepare the image before installing packages",

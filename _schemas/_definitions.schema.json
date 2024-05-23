@@ -4,13 +4,16 @@
 
 
 	"$defs":{
+
 		"resourceId_ManagedIdentity": {
 			"type": "string"
 		},
+
 		"guid": {
 			"type": "string",
 			"pattern":"^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$"
 		},
+
 		"region":{
 			"type": "string",
 			"enum": [
@@ -29,6 +32,7 @@
 				"Korea Central"
 			]
 		},
+
 		"package": {
 			"type": "object",
 			"description": "A package to install in the image",
@@ -104,6 +108,7 @@
 			"required": [ "name", "scope" ],
 			"additionalProperties": false
 		},
+
 		"packageRef": {
 			"type": "object",
 			"description": "A package to install in the image by reference (using the 'alias' source)",
@@ -120,6 +125,33 @@
 			},
 			"required": [ "name", "source" ],
 			"additionalProperties": false
+		},
+
+		"languageId": {
+			"type": "string",
+			"description": "A language ID following the xx-XX format (e.g. en-US)",
+			"pattern": "^[a-z]-[A-Z]$"
+		},
+
+		"language": {
+			"type": "object",
+			"description": "The prefered and additonal language to install in the image",
+			"properties": {
+				"preferred": {
+					"$ref": "#/$defs/languageId",
+					"description": "The prefered language to install in the image",
+					"default": "en-US"
+				},
+				"additional": {
+					"type": "array",
+					"description": "List of additional languages to install in the image",
+					"default": [],
+					"items": {
+						"$ref": "#/$defs/languageId"
+					}
+				}
+			},
+			"required": [ "preferred" ]
 		}
 
 	}

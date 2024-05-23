@@ -1,6 +1,11 @@
 {
 	"$schema": "../_schemas/default.schema.json",
 
+	"language": {
+		"prefered": "en-US",
+		"additional": [ "en-GB", "de-DE", "zh-CN" ]
+	},
+
 	"features": [
 
 	],

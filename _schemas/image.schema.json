@@ -198,6 +198,10 @@
 			"type": "object",
 			"$ref": "#/$defs/devDrive"
 		},
+		"language": {
+			"type": "object",
+			"ref": "./_definitions.schema.json#/$defs/language"
+		},
 		"features": {
 			"type": "array",
 			"description": "List of features to enable in the image",

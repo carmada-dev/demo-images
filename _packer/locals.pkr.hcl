@@ -117,5 +117,7 @@ locals {
 				)): try(p.configure, []) ]),
 			try(local.image.configure, [])
 		))
+
+		language = merge(try(local.default.language, {}), try(local.image.language, {}))
 	}
 }
