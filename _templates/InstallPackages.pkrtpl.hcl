@@ -91,9 +91,14 @@ function Install-WinGetPackage {
 		'name' {
 			$identifier = ("--name {0}" -f ($nameTokens | Select-Object -Last 1))
 		}
-		// 'tag' {
-		// 	$identifier = ("--tag {0}" -f ($nameTokens | Select-Object -Last 1))
-		// }
+		# 'tag' {
+		#   
+		# 	CAUTION - THIS DOESN'T WORK !!!
+		#	Tag is not supported by winget when installing packages. Need some 
+		#	more investigation on how to work around this limitation.
+		#
+		# 	$identifier = ("--tag {0}" -f ($nameTokens | Select-Object -Last 1))
+		# }
 	}
 
 	$arguments = @(
