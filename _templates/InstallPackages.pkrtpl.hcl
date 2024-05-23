@@ -81,9 +81,29 @@ function Install-WinGetPackage {
 		[object] $Package
     )
 
+	$nameTokens = $Package.name -split ':'
+	$identifier = ("--id {0}" -f ($nameTokens | Select-Object -Last 1)) 
+
+	switch (($nameTokens | Select-Object -First 1).ToLowerInvariant()) {
+		'moniker' {
+			$identifier = ("--moniker {0}" -f ($nameTokens | Select-Object -Last 1))
+		}
+		'name' {
+			$identifier = ("--name {0}" -f ($nameTokens | Select-Object -Last 1))
+		}
+		# 'tag' {
+		#   
+		# 	CAUTION - THIS DOESN'T WORK !!!
+		#	Tag is not supported by winget when installing packages. Need some 
+		#	more investigation on how to work around this limitation.
+		#
+		# 	$identifier = ("--tag {0}" -f ($nameTokens | Select-Object -Last 1))
+		# }
+	}
+
 	$arguments = @(
 		"install", 
-		("--id {0}" -f $Package.name),
+		$identifier,
 		("--source {0}" -f ($Package | Get-PropertyValue -Name "source" -DefaultValue "winget")),
 		"--exact",
 		"--disable-interactivity",
