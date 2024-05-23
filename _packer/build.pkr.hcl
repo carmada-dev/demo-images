@@ -62,7 +62,7 @@ build {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.environment
-    inline            = [templatefile("${local.path.imageRoot}/../_templates/InstallLanguage.pkrtpl.hcl", { language = local.language })]
+    inline            = [templatefile("${local.path.imageRoot}/../_templates/InstallLanguage.pkrtpl.hcl", { language = local.resolved.language })]
   }
 
   provisioner "windows-restart" {
