@@ -53,11 +53,6 @@
 		{
 			"name": "moniker:python3",
 			"scope": "machine"
-		},
-
-		{
-			"name": "tag:openssl",
-			"scope": "machine"
 		}
 
 	],
