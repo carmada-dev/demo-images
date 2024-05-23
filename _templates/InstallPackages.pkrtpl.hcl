@@ -88,9 +88,12 @@ function Install-WinGetPackage {
 		'moniker' {
 			$identifier = ("--moniker {0}" -f ($nameTokens | Select-Object -Last 1))
 		}
-		'tag' {
-			$identifier = ("--tag {0}" -f ($nameTokens | Select-Object -Last 1))
+		'name' {
+			$identifier = ("--name {0}" -f ($nameTokens | Select-Object -Last 1))
 		}
+		// 'tag' {
+		// 	$identifier = ("--tag {0}" -f ($nameTokens | Select-Object -Last 1))
+		// }
 	}
 
 	$arguments = @(
