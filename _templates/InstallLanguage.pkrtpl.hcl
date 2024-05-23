@@ -81,26 +81,26 @@ if ($languagePreferred) {
 
 if ($languageAdditional) {
 
-	Invoke-ScriptSection -Title "Downloading language pack repository" -ScriptBlock {
+	# Invoke-ScriptSection -Title "Downloading language pack repository" -ScriptBlock {
 
-		[string] $languagePackUrl
+	# 	[string] $languagePackUrl
 
-		if ((Get-WmiObject Win32_OperatingSystem).Caption -match 11) {
-			$languagePackUrl = 'https://software-static.download.prss.microsoft.com/dbazure/988969d5-f34g-4e03-ac9d-1f9786c66749/22621.1.220506-1250.ni_release_amd64fre_CLIENT_LOF_PACKAGES_OEM.iso'
-		} else {
-			$languagePackUrl = 'https://software-download.microsoft.com/download/pr/19041.1.191206-1406.vb_release_CLIENTLANGPACKDVD_OEM_MULTI.iso'
-		}
+	# 	if ((Get-WmiObject Win32_OperatingSystem).Caption -match 11) {
+	# 		$languagePackUrl = 'https://software-static.download.prss.microsoft.com/dbazure/988969d5-f34g-4e03-ac9d-1f9786c66749/22621.1.220506-1250.ni_release_amd64fre_CLIENT_LOF_PACKAGES_OEM.iso'
+	# 	} else {
+	# 		$languagePackUrl = 'https://software-download.microsoft.com/download/pr/19041.1.191206-1406.vb_release_CLIENTLANGPACKDVD_OEM_MULTI.iso'
+	# 	}
 
-		Write-Host ">>> Downloading Language Pack ..."
-		$languagePackPath = Invoke-FileDownload -Url $languagePackUrl -Name "LanguagePack.iso"
+	# 	Write-Host ">>> Downloading Language Pack ..."
+	# 	$languagePackPath = Invoke-FileDownload -Url $languagePackUrl -Name "LanguagePack.iso"
 
-		Write-Host ">>> Mounting Language Pack ..."
-		$languagePackDrive = Mount-DiskImage -ImagePath $languagePackPath -PassThru
-		$languagePackDriveLetter = ($languagePackDrive | Get-Volume).DriveLetter
+	# 	Write-Host ">>> Mounting Language Pack ..."
+	# 	$languagePackDrive = Mount-DiskImage -ImagePath $languagePackPath -PassThru
+	# 	$languagePackDriveLetter = ($languagePackDrive | Get-Volume).DriveLetter
 
-		Write-Host ">>> Available Language Packs:"
-		Get-ChildItem -Path "$($languagePackDriveLetter):\" -Filter "*.*" -Recurse | Select-Object -ExpandProperty FullName
-	}
+	# 	Write-Host ">>> Available Language Packs:"
+	# 	Get-ChildItem -Path "$($languagePackDriveLetter):\" -Filter "*.*" -Recurse | Select-Object -ExpandProperty FullName
+	# }
 
 	Invoke-ScriptSection -Title "Installing addtional language packs" -ScriptBlock {
 
