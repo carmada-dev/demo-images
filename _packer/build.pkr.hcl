@@ -55,6 +55,22 @@ build {
   }
 
   # =============================================================================================
+  # Install Language Packs 
+  # =============================================================================================
+
+  provisioner "powershell" {
+    elevated_user     = build.User
+    elevated_password = build.Password
+    environment_vars  = local.environment
+    inline            = [templatefile("${local.path.imageRoot}/../_templates/InstallLanguage.pkrtpl.hcl", { language = local.resolved.language })]
+  }
+
+  provisioner "windows-restart" {
+    check_registry    = true
+    restart_timeout   = "30m"
+  }
+
+  # =============================================================================================
   # Install Windows Updates (1/2)
   # =============================================================================================
 
