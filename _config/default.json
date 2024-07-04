@@ -3,7 +3,13 @@
 
 	"language": {
 		"prefered": "en-US",
-		"additional": [ "de-DE" ]
+		"additional": [ "de-DE" ],
+		"formats": {
+			"shortDate": "dd.MM.yyyy",
+			"longDate": "dddd, d. MMMM yyyy",
+			"shortTime": "HH:mm",
+			"longTime": "HH:mm:ss"
+		}		
 	},
 
 	"features": [
