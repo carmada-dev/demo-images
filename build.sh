@@ -63,6 +63,7 @@ buildImage() {
 
 	displayHeader "Initializing Image ($1)" | tee -a ./image.log
 	packer init ../_packer/ 2>&1 | tee -a ./image.log
+	packer init --upgrade ../_packer/ 2>&1 | tee -a ./image.log
 
 	displayHeader "Building Image ($1)" | tee -a ./image.log
 	packer build \
