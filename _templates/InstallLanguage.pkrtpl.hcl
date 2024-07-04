@@ -135,3 +135,4 @@ if ($languageFormats) {
         Set-ItemProperty -Path "registry::HKEY_USERS\.DEFAULT\Control Panel\International" -Name sTimeFormat -Value $longTime -ErrorAction SilentlyContinue | Out-Null
         Write-Host ">>> Long Time Format: $longTime"
     }
+}
