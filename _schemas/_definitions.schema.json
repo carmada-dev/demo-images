@@ -156,33 +156,6 @@
 					"items": {
 						"$ref": "#/$defs/languageId"
 					}
-				},
-				"formats": {
-					"type": "object",
-					"description": "Define the default date and time formats",
-					"properties": {
-						"shortDate": {
-							"type": "string",
-							"description": "The default short date format",
-							"default": "M/d/yyyy"
-						},
-						"longDate": {
-							"type": "string",
-							"description": "The default long date format",
-							"default": "dddd, MMMM d, yyyy"
-						},
-						"shortTime": {
-							"type": "string",
-							"description": "The default short time format",
-							"default": "h:mm tt"
-						},
-						"longTime": {
-							"type": "string",
-							"description": "The default long time format",
-							"default": "h:mm:ss tt"
-						}
-					},
-					"additionalProperties": false
 				}
 			},
 			"required": [ "preferred" ],
