@@ -92,8 +92,8 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Add-AppxPackage -Path $loc -ErrorAction Stop
 
 	Write-Host ">>> Ensure WinGet is in Path ..."
-	$wingetHome = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps'
-	$wingetHome | Write-Host
+	$wingetHome = '%LOCALAPPDATA%\Microsoft\WindowsApps'
+	Write-Host "$wingetHome >> $([System.Environment]::ExpandEnvironmentVariables($wingetHome))"
 	[Environment]::SetEnvironmentVariable('Path', "$env:Path;$wingetHome", [EnvironmentVariableTarget]::User)
 }
 
