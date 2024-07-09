@@ -90,6 +90,11 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
 	Write-Host ">>> Installing WinGet Source Cache Package ..."	
 	Add-AppxPackage -Path $loc -ErrorAction Stop
+
+	Write-Host ">>> Ensure WinGet is in Path ..."
+	$wingetHome = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps'
+	$wingetHome | Write-Host
+	[Environment]::SetEnvironmentVariable('Path', "$env:Path;$wingetHome", [EnvironmentVariableTarget]::User)
 }
 
 if (Test-IsPacker) {
