@@ -5,6 +5,8 @@
 		"prefered": "en-US",
 		"additional": [ "de-DE" ]
 	},
+	
+	"updates": "all",
 
 	"features": [
 

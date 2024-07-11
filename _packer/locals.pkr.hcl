@@ -47,7 +47,7 @@ locals {
 			]
 		}
 	},
-	try(local.image.updates, "all"),
+	try(local.image.updates, try(local.default.updates, "all")),
 	{
 		search = "BrowseOnly=0 and IsInstalled=0" 
 		filters = [

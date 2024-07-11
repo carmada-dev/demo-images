@@ -22,6 +22,12 @@
 			"type": "object",
 			"ref": "./_definitions.schema.json#/$defs/language"
 		},
+		"updates": {
+			"type": "string",
+			"description": "Windows updates that should be installed on all images by default",
+			"enum": [ "all", "none", "recommended", "important" ],
+			"default": "all"
+		},
 		"prepare": {
 			"type": "array",
 			"description": "List of scripts to run to prepare the image before installing packages",
