@@ -1,0 +1,96 @@
+{
+	"$schema": "../_schemas/image.schema.json",
+	"publisher": "CarmadaRnD",
+	"offer": "CarmadaDev",
+	"sku": "win11-hipster-devbox",
+	"regions": [
+		"West Europe"
+	],
+	"updates": "all",
+
+	"base": {
+		"publisher": "MicrosoftVisualStudio",
+		"offer": "windowsplustools",
+		"sku": "base-win11-gen2",
+		"version": "latest"
+	},
+
+	"gallery": {
+		"subscription": "86793b09-a011-4618-8a95-7e65767c622f",
+		"resourceGroup": "rg-devbox-vwfs",
+		"name": "VWFSComputeGallery"
+	},
+
+	"archive": {
+		"subscription": "86793b09-a011-4618-8a95-7e65767c622f",
+		"resourceGroup": "rg-devbox-vwfs",
+		"name": "imagearchivevwfstest"
+	},
+
+	"devCenter": {
+		"subscription": "86793b09-a011-4618-8a95-7e65767c622f",
+		"resourceGroup": "rg-devbox-vwfs",
+		"name": "dc-devbox-vwfs",
+		"compute": "general_i_8c32gb1024ssd_v2",
+		"storage": "ssd_1024gb"
+	},
+
+	"devDrive": {
+		"sizeGB": 250,
+		"filters": [
+			"bindFlt",
+			"wcifs"
+		],
+		"repositories": [
+			{
+				"repoUrl": "https://github.com/kubernetes/kubernetes.git"
+			},
+			{
+				"repoUrl": "https://github.com/dotnet-architecture/eShopOnWeb.git"
+			}
+		]
+	},
+
+	"features": [
+
+	],
+
+	"prepare": [
+		"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
+	],
+
+	"packages": [
+		{
+			"name": "vscode",
+			"source": "alias"			
+		},
+		{
+			"name": "git",
+			"source": "alias"
+		},
+		{
+			"name": "GitHub.cli",
+			"scope": "machine"
+		},
+		{
+			"name": "GitHub.GitHubDesktop",
+			"scope": "machine"
+		},
+		{
+			"name": "Postman.Postman",
+			"scope": "user"
+		},
+		{
+			"name": "Google.Chrome",
+			"scope": "machine"
+		},
+		{
+			"name": "Mozilla.Firefox",
+			"scope": "machine"
+		}
+	],
+
+	"configure": [
+
+	]
+}

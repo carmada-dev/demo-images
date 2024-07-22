@@ -1,0 +1,83 @@
+# Azure Pipelines YAML
+trigger:
+  branches:
+    include:
+    - main
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight build
+  branches:
+    include:
+    - main
+  always: true
+
+stages:
+- stage: Prepare
+  jobs:
+  - job: Prepare
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+    - script: |
+        echo "##vso[task.setvariable variable=imageMatrix]$(find . -type f -name 'image.json' | sed -r 's|/[^/]+$||' | sort -u | jq -R -s -c 'split("\n")[:-1]')"
+      displayName: 'Generate Image Name'
+    - script: |
+        echo "##vso[task.setvariable variable=imageVersion;]$(date -u +'%Y.%m.%d')"
+      displayName: 'Generate Image Version'
+      
+    - bash: |
+        declare -A imageMatrix
+        dirs=$(imageMatrix)
+        dirs="${dirs#[}"
+        dirs="${dirs%]}"
+        IFS=',' read -ra dirArray <<< "$dirs"
+        for dir in "${dirArray[@]}"; do
+          imageName=${dir:2}
+          imageVersion=$(imageVersion)
+          imageMatrix["$imageName"]="\"$imageName\":{\"imageName\": \"$imageName\", \"imageVersion\": \"$imageVersion\"}"
+        done
+        imageMatrixString=$(printf ",%s" "${imageMatrix[@]}")
+        imageMatrixString=${imageMatrixString:1}
+        imageMatrixString="{${imageMatrixString}}"
+        echo "{$imageMatrixString}"
+        echo "##vso[task.setvariable variable=matrix;isOutput=true]$imageMatrixString"
+      displayName: 'Generate matrix'
+      name: matrix
+    - script: echo $(matrix.matrix)
+      displayName: 'showMatrix'
+
+  - job: BuildImage
+    dependsOn: Prepare
+    strategy:
+      matrix: $[ dependencies.Prepare.outputs['matrix.matrix'] ]
+    steps:
+    - task: PowerShell@2
+      displayName: "via REST API"
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      inputs:
+        targetType: 'inline'
+        script: |
+          #url
+          $url = 'https://dev.azure.com/dhallerbach/DevBoxVWFS/_apis/build/builds?api-version=5.0'
+          #header
+          $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+          $headers.Add("Content-Type", "application/json")
+          $headers.Add("Authorization","Bearer $env:SYSTEM_ACCESSTOKEN");
+          #body
+          $body = "    {
+          `n        `"definition`": {
+          `n            `"id`": {PipelineID}
+          `n        },
+          `n        `"templateParameters`": {
+          `n            `"imageName`": `"$(imageName)`",
+          `n            `"imageVersion`": `"$(imageVersion)`"
+          `n        }
+          `n    }"
+          #call rest api
+          $response = Invoke-RestMethod $url -Method 'POST' -Headers $headers -Body $body
+          #output
+          $response | ConvertTo-Json
+        failOnStderr: true
+        pwsh: true
