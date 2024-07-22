@@ -205,10 +205,10 @@ stages:
     steps: 
 
       - task: AzureCLI@2
+        displayName: 'Update Image Version'
         inputs:
           azureSubscription: 'PipelineSP'
           scriptType: 'bash'
-          displayName: 'Update Image Version'
           scriptLocation: 'inlineScript'
           inlineScript: |
             az sig image-version update \
@@ -220,10 +220,10 @@ stages:
               --set publishingProfile.excludeFromLatest=false \
 
       - task: AzureCLI@2
+        displayName: Determine Image Reference ID & Type
         inputs:
           azureSubscription: 'PipelineSP'
           scriptType: 'bash'
-          displayName: Determine Image Reference ID & Type
           scriptLocation: 'inlineScript'
           inlineScript: |
             az extension add --name devcenter --upgrade --yes
@@ -240,10 +240,10 @@ stages:
 
 
       - task: AzureCLI@2
+        displayName: 'Create or Update Devbox Definition'
         inputs:
           azureSubscription: 'PipelineSP'
           scriptType: 'bash'
-          displayName: 'Create or Update Devbox Definition'
           scriptLocation: 'inlineScript'
           inlineScript: |
             az extension add --name devcenter --upgrade --yes
