@@ -2,7 +2,7 @@
 	"$schema": "../_schemas/image.schema.json",
 	"publisher": "CarmadaRnD",
 	"offer": "CarmadaDev",
-	"sku": "win11-hipster-devbox",
+	"sku": "win11-simple-devbox",
 	"regions": [
 		"West Europe"
 	],
