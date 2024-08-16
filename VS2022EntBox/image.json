@@ -3,7 +3,7 @@
 
 	"publisher": "CarmadaRnD",
 	"offer": "CarmadaDev",
-	"sku": "win11-vs2022pro-devbox",
+	"sku": "win11-vs2022ent-devbox",
 	"regions": [ "West Europe" ],
 	"updates": "all",
 
@@ -50,7 +50,7 @@
 
 	"packages": [
 		{
-			"name": "vs2022ProWithConfig",
+			"name": "vs2022EntWithConfig",
 			"source": "alias"
 		}
 	],

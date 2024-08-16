@@ -198,7 +198,7 @@ foreach ($package in $packages) {
 	# calculate the hash of the current package
 	$currentPackageHash = $package | ConvertTo-Json -Compress | ConvertTo-GUID
 
-	if ($lastSuccessPackageHash) {
+	if ((Test-IsPacker) -and ($lastSuccessPackageHash)) {
 
 		if ($currentPackageHash -eq $lastSuccessPackageHash) {
 			# reset last package hash to enable install of the next package again
