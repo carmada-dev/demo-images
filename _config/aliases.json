@@ -52,8 +52,10 @@
 		"override": [
 			"--quiet",
 			"--norestart",
+			"--force",
 			"--wait",
-			"--config C:\\DevBox\\Artifacts\\VS2022Ent.vsconfig"
+			"--nocache",
+			"--config \"%DEVBOX_HOME%\\Artifacts\\VS2022Ent.vsconfig"
 		],
 		"configure": [
 			"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1"			
