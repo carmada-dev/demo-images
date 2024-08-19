@@ -127,7 +127,7 @@ function Install-WinGetPackage {
 	}
 	
 	if ($Package | Has-Property -Name "override") { 
-		$arguments += "--override `"{0}`"" -f ((($Package | Get-PropertyArray -Name "override") | Select-Object { [System.Environment]::ExpandEnvironmentVariables($_) }) -join ' ' )
+		$arguments += [System.Environment]::ExpandEnvironmentVariables("--override `"{0}`"" -f (($Package | Get-PropertyArray -Name "override") -join ' ')) 
 	} else { 
 		$arguments += "--silent" 
 	} 
