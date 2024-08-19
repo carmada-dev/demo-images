@@ -50,7 +50,7 @@
 
 	"packages": [
 		{
-			"name": "vs2022EntWithConfig",
+			"name": "vs2022EntInstallerOnly",
 			"source": "alias"
 		}
 	],
