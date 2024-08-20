@@ -218,6 +218,6 @@
 	],
 
 	"configure": [
-
+		"[IMAGEROOT]/../_scripts/Install-NVM.ps1"
 	]
 }
