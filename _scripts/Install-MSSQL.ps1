@@ -87,8 +87,8 @@ if (Test-IsPacker) {
 					Write-Host ">>> Complete MSSQL Server ..."
 					# $result = Invoke-CommandLine -Command $setupPath -Arguments "/QUIET /ACTION=Install /IACCEPTSQLSERVERLICENSETERMS /CONFIGURATIONFILE=$configPath"
 
-					$result.Output | Write-Host
-					if ($result.ExitCode -ne 0) { Throw "Prepare MSSQL Server failed: $($result.ExitCode)" } 
+					# $result.Output | Write-Host
+					# if ($result.ExitCode -ne 0) { Throw "Prepare MSSQL Server failed: $($result.ExitCode)" } 
 
 				} finally {
 
