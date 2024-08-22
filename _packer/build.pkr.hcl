@@ -28,7 +28,9 @@ build {
   provisioner "powershell" {
     environment_vars = setunion(local.environment, [
       "ADMIN_USERNAME=${build.User}",
-      "ADMIN_PASSWORD=${build.Password}"
+      "ADMIN_PASSWORD=${build.Password}",
+      "AZCOPY_AUTO_LOGIN_TYPE=MSI",
+      "AZCOPY_MSI_RESOURCE_STRING=${local.factory.identity}",
     ])
     script            = "${local.path.imageRoot}/../_scripts/core/Initialize-VM.ps1"
   }

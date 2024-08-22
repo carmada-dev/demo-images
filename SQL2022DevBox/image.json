@@ -46,21 +46,14 @@
 	],
 
 	"prepare": [
+
 	],
 
 	"packages": [
-		{
-			"name": "Microsoft.SQLServer.2022.Developer",
-			"scope": "machine",
-			"override": [
-				"/IACCEPTSQLSERVERLICENSETERMS",
-				"/QUIET",
-				"/CONFIGURATIONFILE=%DEVBOX_HOME%\\Artifacts\\MSSQL2022Dev.ini"
-			]
-		}
+
 	],
 
 	"configure": [
-
+		"[IMAGEROOT]/../_scripts/Install-MSSQL.ps1"
 	]
 }
