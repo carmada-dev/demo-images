@@ -159,6 +159,7 @@ jobs:
               --image-reference id="$DEVCENTERGALLERY_IMAGEID" \
               --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
               --sku name="${{ steps.image.outputs.devcenter_compute }}" \
+              --hibernate-support Enabled \
               --only-show-errors 2>&1
 
   release:
@@ -237,6 +238,7 @@ jobs:
                 --image-reference id="${{ steps.reference.outputs.referenceVersion == 'true' && steps.reference.outputs.referenceId_version || steps.reference.outputs.referenceId_latest }}" \
                 --os-storage-type ${{ steps.image.outputs.devcenter_storage }} \
                 --sku name="${{ steps.image.outputs.devcenter_compute }}" \
+                --hibernate-support Enabled \
                 --only-show-errors && break || echo "DevBox definition '${{ inputs.imageName }}' can't be created or updated because of a pending gallery update - retry in 60 sec"
             done 
 

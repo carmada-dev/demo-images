@@ -168,6 +168,7 @@ stages:
             --image-reference id=$DEVCENTERGALLERY_IMAGEID \
             --os-storage-type $(imageInfo.devcenter_storage) \
             --sku name="$(imageInfo.devcenter_compute)" \
+            --hibernate-support Enabled \
             --only-show-errors 2>&1
 - stage: QA
   dependsOn: Build
@@ -266,5 +267,6 @@ stages:
                 --image-reference id="$ID" \
                 --os-storage-type $(devcenter_storage) \
                 --sku name="$(devcenter_compute)" \
+                --hibernate-support Enabled \
                 --only-show-errors && break || echo "DevBox definition '${{parameters.imageName}}' can't be created or updated because of a pending gallery update - retry in 60 sec"
             done
