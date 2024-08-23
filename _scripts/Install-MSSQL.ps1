@@ -49,16 +49,6 @@ function Split-Configuration() {
 
 if (Test-IsPacker) {
 
-	Invoke-ScriptSection -Title "Prepare Windows Firewall" -ScriptBlock {
-
-		New-NetFirewallRule -DisplayName "SQLServer default instance" -Direction Inbound -LocalPort 1433 -Protocol TCP -Action Allow
-		New-NetFirewallRule -DisplayName "SQLServer Browser service" -Direction Inbound -LocalPort 1434 -Protocol UDP -Action Allow
-	}
-
-	Invoke-ScriptSection -Title "Prepare MSSQL Configuration" -ScriptBlock {
-
-	}
-
 	Invoke-ScriptSection -Title "Prepare MSSQL Server" -ScriptBlock {
 
 		Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Artifacts') -Filter "MSSQL*.iso" | 
@@ -95,6 +85,12 @@ if (Test-IsPacker) {
 			}
 		}
 	}
+	
+	Invoke-ScriptSection -Title "Prepare Windows Firewall" -ScriptBlock {
+
+		New-NetFirewallRule -DisplayName "SQLServer default instance" -Direction Inbound -LocalPort 1433 -Protocol TCP -Action Allow
+		New-NetFirewallRule -DisplayName "SQLServer Browser service" -Direction Inbound -LocalPort 1434 -Protocol UDP -Action Allow
+	}
 
 } else {
 
@@ -108,15 +104,15 @@ if (Test-IsPacker) {
 			$configPath = [System.IO.Path]::ChangeExtension($_, ".ini") | Split-Configuration
 			$completePath = [System.IO.Path]::ChangeExtension($configPath, ".complete.ini")
 
-			Write-Host ">>> Mounting ISO: $isoPath ..."
-			Mount-DiskImage -ImagePath $isoPath -PassThru | ForEach-Object {
+			Write-Host ">>> Mounting ISO: $_ ..."
+			Mount-DiskImage -ImagePath $_ -PassThru | ForEach-Object {
 
 				$setupPath = "$($_ | Get-Volume | Select-Object -ExpandProperty DriveLetter)`:\setup.exe"
 
 				try {
 
 					Write-Host ">>> Complete MSSQL Server ..."
-					$result = Invoke-CommandLine -Command $setupPath -Arguments "/QUIET /ACTION=PrepareImage /IACCEPTSQLSERVERLICENSETERMS /CONFIGURATIONFILE=`"$completePath`""
+					$result = Invoke-CommandLine -Command $setupPath -Arguments "/QUIET /ACTION=CompleteImage /IACCEPTSQLSERVERLICENSETERMS /CONFIGURATIONFILE=`"$completePath`""
 					$result.Output | Write-Host
 
 					$installPath = "$($config | Where-Object { "$_".StartsWith('INSTANCEDIR=') } | Select-Object -First 1)".Split('=') | Select-Object -Last 1
