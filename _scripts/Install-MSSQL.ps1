@@ -78,19 +78,16 @@ if (Test-IsPacker) {
 
 					Write-Host ">>> Prepare MSSQL Server ..."
 					$result = Invoke-CommandLine -Command $setupPath -Arguments "/QUIET /ACTION=PrepareImage /IACCEPTSQLSERVERLICENSETERMS /CONFIGURATIONFILE=`"$preparePath`"" 
-					
 					$result.Output | Write-Host
-					if ($result.ExitCode -ne 0) { 
 					
-						$installPath = "$($config | Where-Object { "$_".StartsWith('INSTANCEDIR=') } | Select-Object -First 1)".Split('=') | Select-Object -Last 1
-						$installPath = "$installPath".Trim().Trim('"')
-						
-						Get-ChildItem -Path $installPath -Filter 'Summary.txt' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 | Get-Content | Write-Host
-
-						Throw "Prepare MSSQL Server failed: $($result.ExitCode)" 
-					} 
+					$installPath = "$($config | Where-Object { "$_".StartsWith('INSTANCEDIR=') } | Select-Object -First 1)".Split('=') | Select-Object -Last 1
+					$installPath = "$installPath".Trim().Trim('"')
+					
+					Get-ChildItem -Path $installPath -Filter 'Summary.txt' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 | Get-Content | Write-Host
+					if ($result.ExitCode -ne 0) { Throw "Prepare MSSQL Server failed: $($result.ExitCode)" } 
 
 				} finally {
+
 
 					Write-Host ">>> Unmounting ISO: $($_ | Select-Object -ExpandProperty ImagePath) ..."
 					Dismount-DiskImage -ImagePath $_.ImagePath
@@ -120,17 +117,14 @@ if (Test-IsPacker) {
 
 					Write-Host ">>> Complete MSSQL Server ..."
 					$result = Invoke-CommandLine -Command $setupPath -Arguments "/QUIET /ACTION=PrepareImage /IACCEPTSQLSERVERLICENSETERMS /CONFIGURATIONFILE=`"$completePath`""
-
 					$result.Output | Write-Host
-					if ($result.ExitCode -ne 0) { 
-					
-						$installPath = "$($config | Where-Object { "$_".StartsWith('INSTANCEDIR=') } | Select-Object -First 1)".Split('=') | Select-Object -Last 1
-						$installPath = "$installPath".Trim().Trim('"')
-						
-						Get-ChildItem -Path $installPath -Filter 'Summary.txt' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 | Get-Content | Write-Host
 
-						Throw "Prepare MSSQL Server failed: $($result.ExitCode)" 
-					} 
+					$installPath = "$($config | Where-Object { "$_".StartsWith('INSTANCEDIR=') } | Select-Object -First 1)".Split('=') | Select-Object -Last 1
+					$installPath = "$installPath".Trim().Trim('"')
+					
+					Get-ChildItem -Path $installPath -Filter 'Summary.txt' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 | Get-Content | Write-Host
+
+					if ($result.ExitCode -ne 0) { Throw "Prepare MSSQL Server failed: $($result.ExitCode)" } 
 
 				} finally {
 
