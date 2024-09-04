@@ -2,7 +2,7 @@
 	"$schema": "../_schemas/image.schema.json",
 	"publisher": "CarmadaRnD",
 	"offer": "CarmadaDev",
-	"sku": "win11-sql2022dev-devbox",
+	"sku": "win11-sql2022exp-devbox",
 	"regions": [
 		"West Europe"
 	],

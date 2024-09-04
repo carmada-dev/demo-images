@@ -7,13 +7,14 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 } 
 
 Invoke-ScriptSection -Title 'Set DevBox access permissions' -ScriptBlock {
+	
 	if (-not(Get-Module -ListAvailable -Name NTFSSecurity))
 	{
 		Write-Host ">>> Installing NTFSSecurity Module"
 		Install-Module -Name NTFSSecurity -Force
 	}
 
-	Write-Host ">>> Installing NTFSSecurity Module"
+	Write-Host ">>> Importing NTFSSecurity Module"
 	Import-Module -Name NTFSSecurity
 
 	Write-Host ">>> Enable NTFS access inheritance on '$($env:DEVBOX_HOME)' (recursive)"

@@ -5,7 +5,7 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 
 if (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
-	Register-ActiveSetup -Path $MyInvocation.MyCommand.Path -Name 'Install-Packages.ps1' -Elevate
+	Register-ActiveSetup -Path $MyInvocation.MyCommand.Path -Name 'Install-Packages.ps1'
 } else { 
     Write-Host ">>> Initializing transcript"
     Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 
@@ -261,6 +261,17 @@ foreach ($package in $packages) {
 		shutdown /r /t 1 /f /d p:4:1 /c "Pending reboot after installing package $($package.name)"
 		exit 3010
 	}
+}
+
+# allow read/execute access for machine scope winget packages
+$wingetHome = join-path $env:ProgramFiles 'WinGet'
+if ((Test-IsPacker) -and (Test-Path -Path $wingetHome -PathType Container)) {
+	Write-Host ">>> Updating WinGet Package ACLs ..."
+	$wingetUSR = New-Object -TypeName 'System.Security.Principal.SecurityIdentifier' -ArgumentList @([System.Security.Principal.WellKnownSidType]::AuthenticatedUserSid, $null)
+	$wingetACR = New-Object System.Security.AccessControl.FileSystemAccessRule($wingetUSR, 'ReadAndExecute', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+	$wingetACL = Get-Acl -Path $wingetHome
+	$wingetACL.SetAccessRule($wingetACR)
+	$wingetACL | Set-Acl -Path $wingetHome
 }
 
 # remove the last successful package file

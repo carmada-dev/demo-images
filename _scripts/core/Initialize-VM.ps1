@@ -135,12 +135,20 @@ Invoke-ScriptSection -Title 'Enable Windows Developer Mode' -ScriptBlock {
 	Write-Host "done"
 }
 
-Invoke-ScriptSection -Title 'Enable Hibernate Support' -ScriptBlock {
+Invoke-ScriptSection -Title 'Prepare Hibernate Support' -ScriptBlock {
 
+	Write-Host ">>> Enable Virtual Machine Platform feature ..." 
 	Enable-WindowsOptionalFeature -FeatureName "VirtualMachinePlatform" -Online -All -NoRestart | Out-null
+
+	Write-Host ">>> Disable Hypervisor Enforced Code Integrity ..."
 	$HypervisorEnforcedCodeIntegrityPath = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
 	if (-not(Test-Path -Path $HypervisorEnforcedCodeIntegrityPath)) { New-Item -Path $HypervisorEnforcedCodeIntegrityPath -ItemType Directory -Force | Out-Null }
 	New-ItemProperty -Path $HypervisorEnforcedCodeIntegrityPath -Name Enabled -PropertyType DWORD -Value 0 -Force | Out-Null
+}
+
+Invoke-ScriptSection -Title 'Enable Hibernate Support' -ScriptBlock {
+
+	Invoke-CommandLine -Command 'powercfg' -Arguments '/hibernate on' | Select-Object -ExpandProperty Output | Write-Host   
 	Write-Host "done"
 }
 
