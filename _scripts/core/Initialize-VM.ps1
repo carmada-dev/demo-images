@@ -127,6 +127,12 @@ Invoke-ScriptSection -Title 'Disable OneDrive Folder Backup' -ScriptBlock {
 	Write-Host "done"
 }
 
+Invoke-ScriptSection -Title 'Enable Teredo support' -ScriptBlock {
+	
+	Set-NetTeredoConfiguration -Type Enterpriseclient -ErrorAction SilentlyContinue
+	Write-Host "done"
+}
+
 Invoke-ScriptSection -Title 'Enable Windows Developer Mode' -ScriptBlock {
 
 	$DevModeRegKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
