@@ -5,6 +5,7 @@ source "azure-arm" "vm" {
   async_resourcegroup_delete          = true
   secure_boot_enabled                 = true
   use_azure_cli_auth                  = true
+  vtpm_enabled                        = true
   security_type                       = "TrustedLaunch"
   vm_size                             = "Standard_D8s_v5"
   license_type                        = "Windows_Client"
@@ -32,7 +33,7 @@ source "azure-arm" "vm" {
   user_assigned_managed_identities    = [ local.factory.identity ]
   temp_resource_group_name            = "PKR-${upper(local.variables.imageName)}-${upper(local.variables.imageVersion)}${upper(local.variables.imageSuffix)}"
   public_ip_sku                       = "Standard"
-  
+
   # publish image to gallery
   shared_image_gallery_destination {
     subscription                      = local.image.gallery.subscription
@@ -42,6 +43,11 @@ source "azure-arm" "vm" {
     image_version                     = local.variables.imageVersion
     replication_regions               = local.image.regions
     storage_account_type              = "Premium_LRS" # default is Standard_LRS
+  }
+
+  spot {
+      eviction_policy                 = "Delete"
+      max_price                       = "-1" # -1 means the current on-demand price
   }
 
   # new image version are excluded from latest to support staging
