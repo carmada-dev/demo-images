@@ -68,6 +68,12 @@ jobs:
           echo "devcenter_storage=$(echo $HCLJSON | jq --raw-output '.image.devCenter.storage // empty')" >> $GITHUB_OUTPUT          
           echo "devcenter_compute=$(echo $HCLJSON | jq --raw-output '.image.devCenter.compute // empty')" >> $GITHUB_OUTPUT          
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
+      
+      - name: Resolve Packer Source Information
+        id: packer_source
+        run: |
+          echo "packer_skip_create_build_key_vault=$(sed -nr 's/^\s*skip_create_build_key_vault\s*=\s*(\w+)/\1/p' ../_packer/source.pkr.hcl | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
 
       - name: Ensure Image Definition
         uses: azure/CLI@v2
@@ -99,21 +105,18 @@ jobs:
             done; wait
   
       - name: Delete Packer KeyVaults
+        if: ${{ steps.packer_source.outputs.packer_skip_create_build_key_vault != 'true' }}
         continue-on-error: true
         uses: azure/CLI@v2
         with:
           inlineScript:	| 
-            if grep -i -q -E '^\s*skip_create_build_key_vault\s*=\s*true' ../_packer/*.pkr.hcl; then 
-              echo 'Packer is operating in a mode that skips the creation of key vaults - no key vaults to delete';
-            else
-              RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
-              RGNAME_SUFFIX=$(echo "-${{ github.workflow }}" | tr [:lower:] [:upper:])
-              # for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
-              for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} | jq --raw-output ".[] | select((.properties.vaultId | ascii_upcase | contains(\"/resourceGroups/PKR-SITECORE\")) and (.properties.vaultId | ascii_upcase | contains(\"-FACTORY/providers/\"))).name"); do
-                echo "Purging deleted key vault '$KEYVAULT' ..." 
-                az keyvault purge --subscription ${{ steps.image.outputs.factory_subscription }} --name $KEYVAULT -o none & 
-              done; wait  
-            fi
+            RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
+            RGNAME_SUFFIX=$(echo "-${{ github.workflow }}" | tr [:lower:] [:upper:])
+            # for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
+            for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} | jq --raw-output ".[] | select((.properties.vaultId | ascii_upcase | contains(\"/resourceGroups/PKR-SITECORE\")) and (.properties.vaultId | ascii_upcase | contains(\"-FACTORY/providers/\"))).name"); do
+              echo "Purging deleted key vault '$KEYVAULT' ..." 
+              az keyvault purge --subscription ${{ steps.image.outputs.factory_subscription }} --name $KEYVAULT -o none & 
+            done; wait  
 
       - name: Build Image
         id: packer
