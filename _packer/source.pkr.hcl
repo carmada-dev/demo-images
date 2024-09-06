@@ -16,8 +16,12 @@ source "azure-arm" "vm" {
   winrm_insecure                      = true
   winrm_timeout                       = "15m"
   winrm_use_ssl                       = true
-  skip_build_key_vault_create         = true
-  
+
+  # avoid keyvault creation
+  skip_create_build_key_vault         = true
+  custom_script  = "powershell -ExecutionPolicy Unrestricted -NoProfile -NonInteractive -Command \"$userData = (Invoke-RestMethod -H @{'Metadata'='True'} -Method GET -Uri 'http://169.254.169.254/metadata/instance/compute/userData?api-version=2021-01-01&format=text'); $contents = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($userData)); set-content -path c:\\Windows\\Temp\\userdata.ps1 -value $contents; . c:\\Windows\\Temp\\userdata.ps1;\""
+  user_data_file = "./vm_userdata.ps1"
+
   # os settings
   os_type                             = "Windows"
   os_disk_size_gb                     = 1024
