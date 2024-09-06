@@ -45,10 +45,10 @@ source "azure-arm" "vm" {
     storage_account_type              = "Premium_LRS" # default is Standard_LRS
   }
 
-  spot {
-      eviction_policy                 = "Delete"
-      max_price                       = "-1" # -1 means the current on-demand price
-  }
+  # spot {
+  #     eviction_policy                 = "Delete"
+  #     max_price                       = "-1" # -1 means the current on-demand price
+  # }
 
   # new image version are excluded from latest to support staging
   shared_gallery_image_version_exclude_from_latest = true
