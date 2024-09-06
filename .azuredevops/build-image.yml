@@ -32,8 +32,6 @@ stages:
         sudo apt-get update && sudo apt-get install packer
       displayName: 'Setup Packer'
   
-
-
     - bash: |
         cd ./${{ parameters.imageName }}
         packer init ../_packer/
@@ -119,13 +117,17 @@ stages:
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          RGNAME_PREFIX=$(echo "PKR-${{ parameters.imageName }}" | tr [:lower:] [:upper:])
-          RGNAME_SUFFIX=$(echo "-$( Build.DefinitionName)" | tr [:lower:] [:upper:])
-          # for KEYVAULT in $(az keyvault list-deleted --subscription $(imageInfo.factory_subscription) --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
-          for KEYVAULT in $(az keyvault list-deleted --subscription $(imageInfo.factory_subscription) | jq --raw-output ".[] | select((.properties.vaultId | ascii_upcase | contains(\"/resourceGroups/PKR-SITECORE\")) and (.properties.vaultId | ascii_upcase | contains(\"-FACTORY/providers/\"))).name"); do
-            echo "Purging deleted key vault '$KEYVAULT' ..." 
-            az keyvault purge --subscription $(imageInfo.factory_subscription) --name $KEYVAULT -o none & 
-          done; wait 
+            if grep -i -q -E '^\s*skip_create_build_key_vault\s*=\s*true' ../_packer/*.pkr.hcl; then 
+              echo 'Packer is operating in a mode that skips the creation of key vaults - no key vaults to delete';
+            else
+              RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
+              RGNAME_SUFFIX=$(echo "-${{ github.workflow }}" | tr [:lower:] [:upper:])
+              # for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
+              for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} | jq --raw-output ".[] | select((.properties.vaultId | ascii_upcase | contains(\"/resourceGroups/PKR-SITECORE\")) and (.properties.vaultId | ascii_upcase | contains(\"-FACTORY/providers/\"))).name"); do
+                echo "Purging deleted key vault '$KEYVAULT' ..." 
+                az keyvault purge --subscription ${{ steps.image.outputs.factory_subscription }} --name $KEYVAULT -o none & 
+              done; wait  
+            fi
       displayName: Delete Packer KeyVaults
       continueOnError: true
 
@@ -170,6 +172,7 @@ stages:
             --sku name="$(imageInfo.devcenter_compute)" \
             --hibernate-support Enabled \
             --only-show-errors 2>&1
+            
 - stage: QA
   dependsOn: Build
   jobs:
