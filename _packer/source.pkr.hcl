@@ -16,7 +16,8 @@ source "azure-arm" "vm" {
   winrm_insecure                      = true
   winrm_timeout                       = "15m"
   winrm_use_ssl                       = true
-
+  skip_build_key_vault_create         = true
+  
   # os settings
   os_type                             = "Windows"
   os_disk_size_gb                     = 1024
