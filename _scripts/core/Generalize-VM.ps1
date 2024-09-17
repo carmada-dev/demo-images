@@ -54,31 +54,10 @@ Invoke-ScriptSection -Title 'Cleanup Event Logs' -ScriptBlock {
 		@{L='Overflow Action'; E={ $_.OverflowAction }}
 }
 
-Invoke-ScriptSection -Title 'Cleanup Volumne Caches' -ScriptBlock {
+Invoke-ScriptSection -Title 'Optimize Windows Partition' -ScriptBlock {
 
-	$volumeCachePath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches"
-	$volumeCacheKey = "StateFlags0042"
-
-	try {
-
-		Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object { 
-			Write-Host "- Register Volumne Cache for clean up: $_"
-			New-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -PropertyType DWord -Value 2 -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null 
-		}
-
-		Write-Host ">>> Run Disk Cleanup Utility"
-		Invoke-CommandLine -Command 'cleanmgr' -Arguments '/sagerun:42' | Select-Object -ExpandProperty Output | Write-Host
-
-	} finally {
-		
-		Write-Host ">>> Remove Volumne Cache Registrations"
-		Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object { 
-			Remove-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null 
-		}
-	}
-}
-
-Invoke-ScriptSection -Title 'Defrag Windows Partition' -ScriptBlock {
+	Write-Host ">>> Run Disk Cleanup Utility"
+	Invoke-CommandLine -Command 'cleanmgr' -Arguments '/VERYLOWDISK' | Select-Object -ExpandProperty Output | Write-Host
 
 	Write-Host ">>> Run free space consolidation"
 	Invoke-CommandLine -Command 'defrag' -Arguments 'c: /FreespaceConsolidate /Verbose'

@@ -204,7 +204,7 @@ build {
 	  elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.environment
-    timeout           = "1h"
+    timeout           = "2h"
     script            = "${local.path.imageRoot}/../_scripts/core/Generalize-VM.ps1"
   }
 
