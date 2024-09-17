@@ -57,7 +57,7 @@ Invoke-ScriptSection -Title 'Cleanup Event Logs' -ScriptBlock {
 Invoke-ScriptSection -Title 'Optimize Windows Partition' -ScriptBlock {
 
 	Write-Host ">>> Run Disk Cleanup Utility"
-	Invoke-CommandLine -Command 'cleanmgr' -Arguments '/VERYLOWDISK' | Select-Object -ExpandProperty Output | Write-Host
+	Invoke-CommandLine -Command 'cleanmgr' -Arguments '/VERYLOWDISK /sagerun:5' | Select-Object -ExpandProperty Output | Write-Host
 
 	Write-Host ">>> Run free space consolidation"
 	Invoke-CommandLine -Command 'defrag' -Arguments 'c: /FreespaceConsolidate /Verbose'
