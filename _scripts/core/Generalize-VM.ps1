@@ -62,7 +62,7 @@ Invoke-ScriptSection -Title 'Optimize Windows Partition' -ScriptBlock {
 	Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches" | ForEach-Object { New-ItemProperty -Path "$($_.PSPath)" -Name StateFlags0000 -Value 2 -Type DWORD -Force | Out-Null }
 
 	Write-Host ">>> Run Disk Cleanup Utility"
-	Invoke-CommandLine -Command 'cleanmgr' -Arguments '/sagerun:0' | Select-Object -ExpandProperty Output | Write-Host
+	Invoke-CommandLine -Command 'cleanmgr' -Arguments '/d C: /sagerun:0' | Select-Object -ExpandProperty Output | Write-Host
 
 	Write-Host ">>> Run free space consolidation"
 	Invoke-CommandLine -Command 'defrag' -Arguments 'c: /FreespaceConsolidate /Verbose'
