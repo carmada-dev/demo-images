@@ -21,10 +21,6 @@ Invoke-ScriptSection -Title 'Set DevBox access permissions' -ScriptBlock {
 	Get-ChildItem -Path $env:DEVBOX_HOME -Recurse | Enable-NTFSAccessInheritance
 }
 
-Invoke-ScriptSection -Title 'Disable reserved storage' -ScriptBlock {
-	Invoke-CommandLine -Command 'dism' -Arguments '/Online /Set-ReservedStorageState /State:Disabled'
-}
-
 Invoke-ScriptSection -Title 'Enable Active Setup Tasks' -ScriptBlock {
 	Enable-ActiveSetup
 }
@@ -56,8 +52,17 @@ Invoke-ScriptSection -Title 'Cleanup Event Logs' -ScriptBlock {
 
 Invoke-ScriptSection -Title 'Optimize Windows Partition' -ScriptBlock {
 
+	Write-Host ">>> Disable Windows reserved storage"
+	Invoke-CommandLine -Command 'dism' -Arguments '/Online /Set-ReservedStorageState /State:Disabled' | Select-Object -ExpandProperty Output | Write-Host
+
+	Write-Host ">>> Check Windows Component Store Health"
+	Invoke-CommandLine -Command 'dism' -Arguments '/Online /Cleanup-Image /CheckHealth' | Select-Object -ExpandProperty Output | Write-Host
+
+	Write-Host ">>> Prepare Disk Cleanup Utility"
+	Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches" | ForEach-Object { New-ItemProperty -Path "$($_.PSPath)" -Name StateFlags0000 -Value 2 -Type DWORD -Force | Out-Null }
+
 	Write-Host ">>> Run Disk Cleanup Utility"
-	Invoke-CommandLine -Command 'cleanmgr' -Arguments '/VERYLOWDISK /sagerun:5' | Select-Object -ExpandProperty Output | Write-Host
+	Invoke-CommandLine -Command 'cleanmgr' -Arguments '/sagerun:0' | Select-Object -ExpandProperty Output | Write-Host
 
 	Write-Host ">>> Run free space consolidation"
 	Invoke-CommandLine -Command 'defrag' -Arguments 'c: /FreespaceConsolidate /Verbose'
