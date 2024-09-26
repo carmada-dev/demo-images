@@ -3,8 +3,10 @@
 
 	"language": {
 		"prefered": "en-US",
-		"additional": [ "en-GB", "de-DE", "zh-CN" ]
+		"additional": []
 	},
+	
+	"updates": "all",
 
 	"features": [
 

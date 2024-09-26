@@ -5,7 +5,6 @@
 	"offer": "CarmadaDev",
 	"sku": "win11-podman-devbox",
 	"regions": [ "West Europe" ],
-	"updates": "all",
 
 	"base": {
 		"publisher": "MicrosoftVisualStudio",

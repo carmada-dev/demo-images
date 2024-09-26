@@ -7,21 +7,18 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 } 
 
 Invoke-ScriptSection -Title 'Set DevBox access permissions' -ScriptBlock {
+	
 	if (-not(Get-Module -ListAvailable -Name NTFSSecurity))
 	{
 		Write-Host ">>> Installing NTFSSecurity Module"
 		Install-Module -Name NTFSSecurity -Force
 	}
 
-	Write-Host ">>> Installing NTFSSecurity Module"
+	Write-Host ">>> Importing NTFSSecurity Module"
 	Import-Module -Name NTFSSecurity
 
 	Write-Host ">>> Enable NTFS access inheritance on '$($env:DEVBOX_HOME)' (recursive)"
 	Get-ChildItem -Path $env:DEVBOX_HOME -Recurse | Enable-NTFSAccessInheritance
-}
-
-Invoke-ScriptSection -Title 'Disable reserved storage' -ScriptBlock {
-	Invoke-CommandLine -Command 'dism' -Arguments '/Online /Set-ReservedStorageState /State:Disabled'
 }
 
 Invoke-ScriptSection -Title 'Enable Active Setup Tasks' -ScriptBlock {
@@ -53,31 +50,22 @@ Invoke-ScriptSection -Title 'Cleanup Event Logs' -ScriptBlock {
 		@{L='Overflow Action'; E={ $_.OverflowAction }}
 }
 
-Invoke-ScriptSection -Title 'Cleanup Volumne Caches' -ScriptBlock {
+Invoke-ScriptSection -Title 'Optimize Windows Partition' -ScriptBlock {
 
-	$volumeCachePath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches"
-	$volumeCacheKey = "StateFlags0042"
+	Write-Host ">>> Disable Windows reserved storage"
+	Invoke-CommandLine -Command 'dism' -Arguments '/Online /Set-ReservedStorageState /State:Disabled' | Select-Object -ExpandProperty Output | Write-Host
 
-	try {
+	Write-Host ">>> Check Windows Component Store Health"
+	Invoke-CommandLine -Command 'dism' -Arguments '/Online /Cleanup-Image /CheckHealth' | Select-Object -ExpandProperty Output | Write-Host
 
-		Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object { 
-			Write-Host "- Register Volumne Cache for clean up: $_"
-			New-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -PropertyType DWord -Value 2 -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null 
-		}
+	if (Test-IsWindows11) {
+
+		Write-Host ">>> Prepare Disk Cleanup Utility"
+		Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches" | ForEach-Object { New-ItemProperty -Path "$($_.PSPath)" -Name StateFlags0000 -Value 2 -Type DWORD -Force | Out-Null }
 
 		Write-Host ">>> Run Disk Cleanup Utility"
-		Invoke-CommandLine -Command 'cleanmgr' -Arguments '/sagerun:42' | Select-Object -ExpandProperty Output | Write-Host
-
-	} finally {
-		
-		Write-Host ">>> Remove Volumne Cache Registrations"
-		Get-ChildItem -Path $volumeCachePath -Name | ForEach-Object { 
-			Remove-ItemProperty -Path $volumeCachePath\$_ -Name $volumeCacheKey -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null 
-		}
+		Invoke-CommandLine -Command 'cleanmgr' -Arguments '/verylowdisk /sagerun:0' | Select-Object -ExpandProperty Output | Write-Host
 	}
-}
-
-Invoke-ScriptSection -Title 'Defrag Windows Partition' -ScriptBlock {
 
 	Write-Host ">>> Run free space consolidation"
 	Invoke-CommandLine -Command 'defrag' -Arguments 'c: /FreespaceConsolidate /Verbose'

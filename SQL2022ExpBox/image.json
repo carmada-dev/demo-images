@@ -1,0 +1,62 @@
+{
+	"$schema": "../_schemas/image.schema.json",
+	"publisher": "CarmadaRnD",
+	"offer": "CarmadaDev",
+	"sku": "win11-sql2022exp-devbox",
+	"regions": [
+		"West Europe"
+	],
+	"updates": "all",
+
+	"base": {
+		"publisher": "MicrosoftVisualStudio",
+		"offer": "windowsplustools",
+		"sku": "base-win11-gen2",
+		"version": "latest"
+	},
+
+	"gallery": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": "CarmadaRnD"
+	},
+
+	"archive": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": ""
+	},
+
+	"devCenter": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": "CarmadaRnD",
+		"compute": "general_i_8c32gb1024ssd_v2",
+		"storage": "ssd_1024gb"
+	},
+
+	"devDrive": {
+		"sizeGB": 0,
+		"filters": [],
+		"repositories": []
+	},
+
+	"features": [
+
+	],
+
+	"prepare": [
+
+	],
+
+	"packages": [
+		{
+			"name": "Microsoft.SQLServerManagementStudio",
+			"scope": "machine"
+		}
+	],
+
+	"configure": [
+		"[IMAGEROOT]/../_scripts/Install-MSSQL.ps1"
+	]
+}

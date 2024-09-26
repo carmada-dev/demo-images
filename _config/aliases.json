@@ -55,7 +55,7 @@
 			"--force",
 			"--wait",
 			"--nocache",
-			"--config \"%DEVBOX_HOME%\\artifacts\\VS2022Ent.vsconfig\""
+			"--config \"%DEVBOX_HOME%\\Artifacts\\VS2022Ent.vsconfig"
 		],
 		"configure": [
 			"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1"			
@@ -84,7 +84,7 @@
 			"--force",
 			"--wait",
 			"--nocache",
-			"--config \"%DEVBOX_HOME%\\artifacts\\VS2022Pro.vsconfig\""
+			"--config \"%DEVBOX_HOME%\\Artifacts\\VS2022Pro.vsconfig\""
 		],
 		"configure": [
 			"[IMAGEROOT]/../_scripts/Configure-VisualStudio.ps1"			

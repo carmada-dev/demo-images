@@ -1,0 +1,275 @@
+trigger: none
+parameters:
+- name: imageName
+  type: string
+  default: ''
+
+- name: imageVersion
+  type: string
+  default: ''
+
+variables:
+- name: setName
+  value: "Build Image ${{ parameters.imageName}}_${{ parameters.imageVersion}}"
+
+name: $(setName)
+appendCommitMessageToRunName: false
+pool:
+      vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildImage
+    timeoutInMinutes: 360
+    displayName: 'Building ${{ parameters.imageName }} (${{ parameters.imageVersion }})'
+    steps:
+    - checkout: self
+
+    - script: |
+        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+        sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+        sudo apt-get update && sudo apt-get install packer
+      displayName: 'Setup Packer'
+  
+    - bash: |
+        cd ./${{ parameters.imageName }}
+        packer init ../_packer/
+      displayName: 'Init Packer'
+
+    - bash: |
+          cd ./${{ parameters.imageName }}
+          HCLJSON="$(echo "jsonencode(local)" | packer console ../_packer/)"
+          echo $HCLJSON | jq .
+          echo "##vso[task.setvariable variable=factory_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.factory.subscription')"
+          echo "##vso[task.setvariable variable=factory_region;isOutput=true]$(echo $HCLJSON | jq --raw-output '.factory.region')"
+          echo "##vso[task.setvariable variable=image_publisher;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.publisher')"
+          echo "##vso[task.setvariable variable=image_offer;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.offer')"
+          echo "##vso[task.setvariable variable=image_sku;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.sku')"
+          echo "##vso[task.setvariable variable=gallery_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.gallery.subscription')"
+          echo "##vso[task.setvariable variable=gallery_resourcegroup;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.gallery.resourceGroup')"
+          echo "##vso[task.setvariable variable=gallery_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.gallery.name')"
+          echo "##vso[task.setvariable variable=archive_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.subscription')"
+          echo "##vso[task.setvariable variable=archive_resourcegroup;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.resourceGroup')"
+          echo "##vso[task.setvariable variable=archive_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.name')"
+          echo "##vso[task.setvariable variable=devcenter_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.subscription')"
+          echo "##vso[task.setvariable variable=devcenter_resourcegroup;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.resourceGroup')"
+          echo "##vso[task.setvariable variable=devcenter_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.name')"
+          echo "##vso[task.setvariable variable=devcenter_storage;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.storage')"
+          echo "##vso[task.setvariable variable=devcenter_compute;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.compute')"      
+      displayName:  'Resolve Image Information'
+      name: imageInfo
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'PipelineSP'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az sig image-definition create \
+                --subscription $(imageInfo.gallery_subscription) \
+                --resource-group $(imageInfo.gallery_resourcegroup) \
+                --gallery-name $(imageInfo.gallery_name) \
+                --gallery-image-definition ${{ parameters.imageName }} \
+                --publisher $(imageInfo.image_publisher) \
+                --offer $(imageInfo.image_offer) \
+                --sku $(imageInfo.image_sku) \
+                --os-type Windows \
+                --os-state Generalized \
+                --hyper-v-generation V2 \
+                --features 'IsHibernateSupported=true SecurityType=TrustedLaunch' \
+                --only-show-errors 2>&1
+      displayName: Ensure Image Definition
+
+     
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'PipelineSP'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          IMAGELIST=$(az sig image-version list --subscription $(imageInfo.gallery_subscription) --resource-group $(imageInfo.gallery_resourcegroup) --gallery-name $(imageInfo.gallery_name) --gallery-image-definition ${{ parameters.imageName }} --query "[?publishingProfile.excludeFromLatest].id" --output tsv 2>/dev/null)
+          echo "IMAGELIST: $IMAGELIST"
+          for IMAGEVERSION in $IMAGELIST; do
+            echo "Deleting image version '$IMAGEVERSION' ..." 
+            az sig image-version delete --subscription $(imageInfo.gallery_subscription) --ids $IMAGEVERSION --output none &
+          done; wait
+      displayName: Delete Image PreReleases
+      continueOnError: true
+              
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'PipelineSP'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          RGNAME_PREFIX=$(echo "PKR-${{ parameters.imageName }}" | tr [:lower:] [:upper:])
+          RGNAME_SUFFIX=$(echo "-$(Build.DefinitionName)" | tr [:lower:] [:upper:])
+          for RESOURCEGROUP in $(az group list --subscription $(imageInfo.factory_subscription) | jq --raw-output ".[] | select((.name | ascii_upcase | startswith(\"$RGNAME_PREFIX\")) and (.name | ascii_upcase | endswith(\"$RGNAME_SUFFIX\"))) | .name"); do
+            echo "Deleting resource group '$RESOURCEGROUP' in subscription '$(imageInfo.factory_subscription)' ..."
+            az group delete --subscription $(imageInfo.factory_subscription) --resource-group $RESOURCEGROUP --force-deletion-types 'Microsoft.Compute/virtualMachines' --yes &
+          done; wait
+      displayName: Delete Packer ResourceGroups
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'PipelineSP'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+            if grep -i -q -E '^\s*skip_create_build_key_vault\s*=\s*true' ../_packer/*.pkr.hcl; then 
+              echo 'Packer is operating in a mode that skips the creation of key vaults - no key vaults to delete';
+            else
+              RGNAME_PREFIX=$(echo "PKR-${{ inputs.imageName }}" | tr [:lower:] [:upper:])
+              RGNAME_SUFFIX=$(echo "-${{ github.workflow }}" | tr [:lower:] [:upper:])
+              # for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} --resource-type vault --query "[?(starts_with(name, 'pkrkv'))].name" -o tsv 2>/dev/null); do
+              for KEYVAULT in $(az keyvault list-deleted --subscription ${{ steps.image.outputs.factory_subscription }} | jq --raw-output ".[] | select((.properties.vaultId | ascii_upcase | contains(\"/resourceGroups/PKR-SITECORE\")) and (.properties.vaultId | ascii_upcase | contains(\"-FACTORY/providers/\"))).name"); do
+                echo "Purging deleted key vault '$KEYVAULT' ..." 
+                az keyvault purge --subscription ${{ steps.image.outputs.factory_subscription }} --name $KEYVAULT -o none & 
+              done; wait  
+            fi
+      displayName: Delete Packer KeyVaults
+      continueOnError: true
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'PipelineSP'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          cd ./${{ parameters.imageName }}
+          packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$(Build.DefinitionName)" -var "imageVersion=${{ parameters.imageVersion }}" ../_packer/ | tee ./image.log
+          echo "##vso[task.setvariable variable=gallery_imageid;isOutput=true]$(tail -n 15 ./image.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)"
+
+      displayName: Build Image
+      name: packer
+
+    - task: AzureCLI@2
+      displayName: 'Create or Update Devbox Definition'
+      inputs:
+        azureSubscription: 'PipelineSP'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az extension add --name devcenter --upgrade --yes
+          test
+          COMPUTEGALLERY_RESOURCEID=$(echo '$(packer.gallery_imageid)' | cut -d '/' -f -9)
+          DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription $(imageInfo.devcenter_subscription) --resource-group $(imageInfo.devcenter_resourcegroup) --dev-center $(imageInfo.devcenter_name) | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
+          DEVCENTERGALLERY_IMAGEID=$DEVCENTERGALLERY_RESOURCEID/$(echo '$(packer.gallery_imageid)' | cut -d '/' -f 10-)
+          DEVCENTERGALLERY_IMAGENAME=${{ parameters.imageName }}-PRE
+          
+          while [ "Accepted" == "$(az devcenter admin devbox-definition show --subscription $(imageInfo.devcenter_subscription) --resource-group $(imageInfo.devcenter_resourcegroup) --dev-center $(imageInfo.devcenter_name) --devbox-definition-name "$DEVCENTERGALLERY_IMAGENAME" --query provisioningState --output tsv 2> /dev/null)" ]; do
+            echo "DevBox definition '$DEVCENTERGALLERY_IMAGENAME' is in a pending state and can't be created or updated - retry in 60 sec"; sleep 60 
+          done 
+          echo "running"
+          az devcenter admin devbox-definition create \
+            --devbox-definition-name "$DEVCENTERGALLERY_IMAGENAME" \
+            --subscription $(imageInfo.devcenter_subscription) \
+            --resource-group $(imageInfo.devcenter_resourcegroup) \
+            --dev-center $(imageInfo.devcenter_name) \
+            --image-reference id=$DEVCENTERGALLERY_IMAGEID \
+            --os-storage-type $(imageInfo.devcenter_storage) \
+            --sku name="$(imageInfo.devcenter_compute)" \
+            --hibernate-support Enabled \
+            --only-show-errors 2>&1
+            
+- stage: QA
+  dependsOn: Build
+  jobs:
+  - job: waitForValidation
+    displayName: Image Validation of image ${{parameters.imageName}} (${{parameters.imageVersion}})
+    pool: server
+    timeoutInMinutes: 4320 # job times out in 3 days
+    steps:
+    - task: ManualValidation@0
+      displayName: 'Validate Image'
+      timeoutInMinutes: 1440 # task times out in 1 day
+      inputs:
+        notifyUsers: 'dhallerbach@microsoft.com'
+        instructions: 'Please validate the Image ${{parameters.imageName}}!'
+        onTimeout: 'reject'
+
+- stage: Release
+  dependsOn: [Build, QA]
+  jobs:
+  - job: ReleaseImage
+    variables:
+      # map the output variable from Build stage
+      gallery_subscription: $[stageDependencies.Build.BuildImage.outputs['imageInfo.gallery_subscription']]
+      gallery_resourcegroup: $[stageDependencies.Build.BuildImage.outputs['imageInfo.gallery_resourcegroup']]
+      gallery_name: $[stageDependencies.Build.BuildImage.outputs['imageInfo.gallery_name']]
+      gallery_imageid: $[stageDependencies.Build.BuildImage.outputs['packer.gallery_imageid']]
+      devcenter_subscription: $[stageDependencies.Build.BuildImage.outputs['imageInfo.devcenter_subscription']]
+      devcenter_resourcegroup: $[stageDependencies.Build.BuildImage.outputs['imageInfo.devcenter_resourcegroup']]
+      devcenter_name: $[stageDependencies.Build.BuildImage.outputs['imageInfo.devcenter_name']]
+      devcenter_storage: $[stageDependencies.Build.BuildImage.outputs['imageInfo.devcenter_storage']]
+      devcenter_compute: $[stageDependencies.Build.BuildImage.outputs['imageInfo.devcenter_compute']]
+    displayName: 'Release ${{ parameters.imageName }} (${{ parameters.imageVersion }})'
+    
+    steps: 
+
+      - task: AzureCLI@2
+        displayName: 'Update Image Version'
+        inputs:
+          azureSubscription: 'PipelineSP'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az sig image-version update \
+              --subscription $(gallery_subscription) \
+              --resource-group $(gallery_resourcegroup) \
+              --gallery-name $(gallery_name) \
+              --gallery-image-definition ${{parameters.imageName}} \
+              --gallery-image-version ${{parameters.imageVersion}} \
+              --set publishingProfile.excludeFromLatest=false \
+
+      - task: AzureCLI@2
+        displayName: Determine Image Reference ID & Type
+        inputs:
+          azureSubscription: 'PipelineSP'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az extension add --name devcenter --upgrade --yes
+            COMPUTEGALLERY_RESOURCEID=$(echo '$(gallery_imageid)' | cut -d '/' -f -9)
+            DEVCENTERGALLERY_RESOURCEID=$(az devcenter admin gallery list --subscription $(devcenter_subscription) --resource-group $(devcenter_resourcegroup) --dev-center $(devcenter_name) | jq --raw-output ".[] | select(.galleryResourceId == \"$COMPUTEGALLERY_RESOURCEID\") | .id")
+            echo "##vso[task.setvariable variable=referenceId_version]$DEVCENTERGALLERY_RESOURCEID/$(echo '$(gallery_imageid)' | cut -d '/' -f 10-)"
+            echo "##vso[task.setvariable variable=referenceId_latest]$DEVCENTERGALLERY_RESOURCEID/$(echo '$(gallery_imageid)' | cut -d '/' -f 10- | cut -d '/' -f -2)"
+            echo "##vso[task.setvariable variable=referenceVersion]$(az devcenter admin devbox-definition show \          
+              --dev-box-definition-name "${{ parameters.imageName }}" \
+              --subscription $(devcenter_subscription) \
+              --resource-group $(devcenter_resourcegroup) \
+              --dev-center $(devcenter_name) \
+              --query "contains(imageReference.id, '/versions/')" 2> /dev/null || echo 'false')"
+
+
+      - task: AzureCLI@2
+        displayName: 'Create or Update Devbox Definition'
+        inputs:
+          azureSubscription: 'PipelineSP'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az extension add --name devcenter --upgrade --yes
+            
+            while [ "Accepted" == "$(az devcenter admin devbox-definition show --subscription $(devcenter_subscription) --resource-group $(devcenter_resourcegroup) --dev-center $(devcenter_name) --devbox-definition-name "${{parameters.imageName}}" --query provisioningState --output tsv 2> /dev/null)" ]; do
+              echo "DevBox definition '${{parameters.imageName}}' is in a pending state and can't be created or updated - retry in 60 sec"; sleep 60 
+            done 
+            if [ "$(referenceVersion)" == "true" ]; then
+              ID=$(referenceId_version)
+            else
+              ID=$(referenceId_latest)
+            fi
+            echo $ID
+            while true; do
+              sleep 60 && az devcenter admin devbox-definition create \
+                --devbox-definition-name "${{parameters.imageName}}" \
+                --subscription $(devcenter_subscription) \
+                --resource-group $(devcenter_resourcegroup) \
+                --dev-center $(devcenter_name) \
+                --image-reference id="$ID" \
+                --os-storage-type $(devcenter_storage) \
+                --sku name="$(devcenter_compute)" \
+                --hibernate-support Enabled \
+                --only-show-errors && break || echo "DevBox definition '${{parameters.imageName}}' can't be created or updated because of a pending gallery update - retry in 60 sec"
+            done

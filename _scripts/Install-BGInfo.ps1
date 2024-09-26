@@ -35,7 +35,7 @@ if (Test-IsPacker) {
 			Write-Host ">>> Register BGInfo Scheduled Task ..."
 			$taskAction = New-ScheduledTaskAction -Execute $bgInfoExe -Argument $bgInfoArguments
 			$taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
-			$taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew 
+			$taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -Priority 0 -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -DontStopIfGoingOnBatteries -DontStopOnIdleEnd
 			$taskTriggers = @( New-ScheduledTaskTrigger -AtLogOn )
 			Register-ScheduledTask -Force -TaskName BackgroundInfo -TaskPath '\' -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal | Out-Null
 

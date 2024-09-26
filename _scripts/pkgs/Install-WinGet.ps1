@@ -5,7 +5,7 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 
 if (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
-	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Install-WinGet.ps1' -Elevate
+	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Install-WinGet.ps1'
 } else { 
     Write-Host ">>> Initializing transcript"
     Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 
@@ -48,7 +48,12 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
-	Add-AppxPackage -Path $loc -ErrorAction Stop
+	$Error.Clear(); Add-AppxPackage -Path $loc -ErrorAction SilentlyContinue
+
+	if ($Error.Count -gt 0) {
+		Write-Host ">>> Error installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
+		$Error | Write-Warning
+	}
 
 	$url = "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6"
 	$loc = Join-Path $offlineDirectory 'Microsoft.UI.Xaml.2.8.appx'
@@ -60,7 +65,12 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
-	Add-AppxPackage -Path $loc -ErrorAction Stop
+	$Error.Clear(); Add-AppxPackage -Path $loc -ErrorAction SilentlyContinue
+
+	if ($Error.Count -gt 0) {
+		Write-Host ">>> Error installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
+		$Error | Write-Warning
+	}
 
 	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
 	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
@@ -72,7 +82,12 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet CLI..."
-	Add-AppxPackage -Path $loc -ErrorAction Stop
+	$Error.Clear(); Add-AppxPackage -Path $loc -ErrorAction SilentlyContinue
+
+	if ($Error.Count -gt 0) {
+		Write-Host ">>> Error installing WinGet CLI..."
+		$Error | Write-Warning
+	}
 
 	if (Test-IsElevated) {
 		Write-Host ">>> Resetting WinGet Sources ..."
@@ -89,7 +104,12 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet Source Cache Package ..."	
-	Add-AppxPackage -Path $loc -ErrorAction Stop
+	$Error.Clear(); Add-AppxPackage -Path $loc -ErrorAction SilentlyContinue
+
+	if ($Error.Count -gt 0) {
+		Write-Host ">>> Error installing WinGet Source Cache Package ..."	
+		$Error | Write-Warning
+	}
 }
 
 if (Test-IsPacker) {

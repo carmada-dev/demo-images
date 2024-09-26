@@ -1,0 +1,223 @@
+{
+	"$schema": "../_schemas/image.schema.json",
+	"publisher": "CarmadaRnD",
+	"offer": "CarmadaDev",
+	"sku": "wombat-devbox",
+	"regions": [
+		"West Europe"
+	],
+	"updates": "all",
+
+	"base": {
+		"publisher": "MicrosoftVisualStudio",
+		"offer": "windowsplustools",
+		"sku": "base-win11-gen2",
+		"version": "latest"
+	},
+
+	"gallery": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": "CarmadaRnD"
+	},
+
+	"archive": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": ""
+	},
+
+	"devCenter": {
+		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
+		"resourceGroup": "ORG-CarmadaRnD",
+		"name": "CarmadaRnD",
+		"compute": "general_i_8c32gb1024ssd_v2",
+		"storage": "ssd_1024gb"
+	},
+
+	"devDrive": {
+		"sizeGB": 0,
+		"filters": [],
+		"repositories": []
+	},
+
+	"features": [
+		"IIS-WebServerRole",
+		"IIS-WebServer",
+		"IIS-CommonHttpFeatures",
+		"IIS-HttpErrors",
+		"IIS-HttpRedirect",
+		"IIS-ApplicationDevelopment",
+		"IIS-Security",
+		"IIS-RequestFiltering",
+		"IIS-NetFxExtensibility45",
+		"IIS-HealthAndDiagnostics",
+		"IIS-HttpLogging",
+		"IIS-RequestMonitor",
+		"IIS-HttpTracing",
+		"IIS-URLAuthorization",
+		"IIS-IPSecurity",
+		"IIS-Performance",
+		"IIS-HttpCompressionDynamic",
+		"IIS-WebServerManagementTools",
+		"IIS-IIS6ManagementCompatibility",
+		"IIS-Metabase",
+		"IIS-HostableWebCore",
+		"IIS-StaticContent",
+		"IIS-DefaultDocument",
+		"IIS-DirectoryBrowsing",
+		"IIS-WebDAV",
+		"IIS-WebSockets",
+		"IIS-ApplicationInit",
+		"IIS-ISAPIFilter",
+		"IIS-ISAPIExtensions",
+		"IIS-ASPNET45",
+		"IIS-ASP",
+		"IIS-CustomLogging",
+		"IIS-BasicAuthentication",
+		"IIS-HttpCompressionStatic",
+		"IIS-ManagementConsole",
+		"IIS-ManagementService",
+		"IIS-WindowsAuthentication"
+	],
+
+	"prepare": [
+	],
+
+	"packages": [
+		{
+			"name": "vscode",
+			"source": "alias"			
+		},
+		{
+			"name": "podman-desktop",
+			"source": "alias"
+		},
+		{
+			"name": "Notepad++.Notepad++",
+			"scope": "machine"
+		},
+		{
+			"name": "vs2022EntWithConfig",
+			"source": "alias"
+		},
+		{
+			"name": "Microsoft.DotNet.Framework.DeveloperPack_4",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DotNet.SDK.6",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DotNet.SDK.7",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.DotNet.SDK.8",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.SQLServerManagementStudio",
+			"scope": "machine"
+		},
+		{
+			"name": "OpenJS.NodeJS.LTS",
+			"scope": "machine"
+		},
+		{
+			"name": "Mozilla.Firefox",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.Edge",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.EdgeDriver",
+			"scope": "machine"
+		},
+		{
+			"name": "Google.Chrome",
+			"scope": "machine"
+		},
+		{
+			"name": "Chromium.ChromeDriver",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.Azure.StorageExplorer",
+			"scope": "machine"
+		},
+		{
+			"name": "Microsoft.NuGet",
+			"scope": "user"
+		},
+		{
+			"name": "WinMerge.WinMerge",
+			"scope": "machine"
+		},
+		{
+			"name": "FireDaemon.OpenSSL",
+			"scope": "machine"
+		},
+		{
+			"name": "JetBrains.ReSharper",
+			"scope": "machine"
+		},
+		{
+			"name": "Greenshot.Greenshot",
+			"scope": "machine"
+		},
+		{
+			"name": "DEVCOM.JMeter",
+			"scope": "user"
+		},
+		{
+			"name": "JetBrains.Rider",
+			"scope": "machine"
+		},
+		{
+			"name": "SmartBear.SoapUI",
+			"scope": "machine"
+		},
+		{
+			"name": "Foxit.FoxitReader",
+			"scope": "machine"
+		},
+		{
+			"name": "7zip.7zip",
+			"scope": "machine"
+		},
+		{
+			"name": "ChangemakerStudios.Papercut-SMTP",
+			"scope": "machine"
+		},
+		{
+			"name": "JAMSoftware.TreeSize.Free",
+			"scope": "machine"
+		},
+		{
+			"name": "icsharpcode.ILSpy",
+			"scope": "user"
+		},	
+		{
+			"name": "DominikReichl.KeePass",
+			"scope": "machine"
+		},	
+
+		{
+			"name": "git",
+			"source": "alias"
+		},
+
+		{
+			"name": "Postman.Postman",
+			"scope": "user"
+		}
+	],
+
+	"configure": [
+		"[IMAGEROOT]/../_scripts/Install-NVM.ps1"
+	]
+}

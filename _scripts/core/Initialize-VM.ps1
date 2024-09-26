@@ -43,6 +43,31 @@ $downloadKeyVaultArtifact = {
 	}
 }
 
+$downloadStorageArtifact = {
+	param([string] $Source, [string] $Destination)
+
+	Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
+		Import-Module -Name $_
+	} 
+
+	$azcopy = Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Tools') -Recurse -Filter 'azcopy.exe' | Select-Object -ExpandProperty FullName -First 1
+	if (-not($azcopy)) { 
+		lj
+		Throw "AzCopy not found" 
+
+	} else {
+
+		Write-Host ">>> Downloading Storage Artifact $Source" 
+		Invoke-CommandLine -Command $azcopy -Arguments "copy `"$Source`" `"$Destination`" --output-level=quiet" | Select-Object -ExpandProperty Output | Write-Host
+	
+		if (Test-Path -Path $Destination -PathType Leaf) { 
+			Write-Host ">>> Resolved Artifact $Destination" 
+		} else {
+			Write-Error "!!! Missing Artifact $Destination"
+		}	
+	}
+}
+
 $downloadArtifact = {
 	param([string] $Source, [string] $Destination)
 
@@ -102,6 +127,12 @@ Invoke-ScriptSection -Title 'Disable OneDrive Folder Backup' -ScriptBlock {
 	Write-Host "done"
 }
 
+Invoke-ScriptSection -Title 'Enable Teredo support' -ScriptBlock {
+	
+	Set-NetTeredoConfiguration -Type Enterpriseclient -ErrorAction SilentlyContinue
+	Write-Host "done"
+}
+
 Invoke-ScriptSection -Title 'Enable Windows Developer Mode' -ScriptBlock {
 
 	$DevModeRegKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
@@ -110,12 +141,20 @@ Invoke-ScriptSection -Title 'Enable Windows Developer Mode' -ScriptBlock {
 	Write-Host "done"
 }
 
+Invoke-ScriptSection -Title 'Prepare Hibernate Support' -ScriptBlock {
+
+	Write-Host ">>> Enable Virtual Machine Platform feature ..." 
+	Enable-WindowsOptionalFeature -FeatureName "VirtualMachinePlatform" -Online -All -NoRestart | Out-null
+
+	# Write-Host ">>> Disable Hypervisor Enforced Code Integrity ..."
+	# $HypervisorEnforcedCodeIntegrityPath = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
+	# if (-not(Test-Path -Path $HypervisorEnforcedCodeIntegrityPath)) { New-Item -Path $HypervisorEnforcedCodeIntegrityPath -ItemType Directory -Force | Out-Null }
+	# New-ItemProperty -Path $HypervisorEnforcedCodeIntegrityPath -Name Enabled -PropertyType DWORD -Value 0 -Force | Out-Null
+}
+
 Invoke-ScriptSection -Title 'Enable Hibernate Support' -ScriptBlock {
 
-	Enable-WindowsOptionalFeature -FeatureName "VirtualMachinePlatform" -Online -All -NoRestart | Out-null
-	$HypervisorEnforcedCodeIntegrityPath = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
-	if (-not(Test-Path -Path $HypervisorEnforcedCodeIntegrityPath)) { New-Item -Path $HypervisorEnforcedCodeIntegrityPath -ItemType Directory -Force | Out-Null }
-	New-ItemProperty -Path $HypervisorEnforcedCodeIntegrityPath -Name Enabled -PropertyType DWORD -Value 0 -Force | Out-Null
+	Invoke-CommandLine -Command 'powercfg' -Arguments '/hibernate on' | Select-Object -ExpandProperty Output | Write-Host   
 	Write-Host "done"
 }
 
@@ -181,6 +220,19 @@ if (Test-Path -Path $Artifacts -PathType Container) {
                     Start-Sleep -Seconds 10
 				}
 			}
+
+			Write-Host ">>> Download azcopy"
+			$azcopyTemp = ''
+			if ([Environment]::Is64BitOperatingSystem) { 
+				$azcopyTemp = Invoke-FileDownload -Url 'https://aka.ms/downloadazcopy-v10-windows' -Name "azcopy.zip" -Expand
+			} else { 
+				$azcopyTemp = Invoke-FileDownload -Url 'https://aka.ms/downloadazcopy-v10-windows-32bit' -Name "azcopy.zip" -Expand 
+			}
+
+			Get-ChildItem -Path $azcopyTemp -Recurse -Filter 'azcopy.exe' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object { 
+				$tools = New-Item -Path (Join-Path $Env:DEVBOX_HOME 'Tools') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
+				Move-Item -Path $_ -Destination $tools -Force | Out-Null
+			}
 		}
 
 		Invoke-ScriptSection -Title "Download artifacts" -ScriptBlock {
@@ -197,10 +249,17 @@ if (Test-Path -Path $Artifacts -PathType Container) {
 
 					$KeyVaultEndpoint = (Get-AzEnvironment -Name AzureCloud | Select-Object -ExpandProperty AzureKeyVaultServiceEndpointResourceId)
 					$KeyVaultPattern = $KeyVaultEndpoint.replace('://','://*.').trim() + '/*'
+					
+					$StorageEndpoint = (Get-AzEnvironment -Name AzureCloud | Select-Object -ExpandProperty StorageEndpointSuffix)
+					$StoragePattern = "https://*.blob.$StorageEndpoint/*"
 
 					if ($ArtifactUrl -like $KeyVaultPattern) {
 
 						$jobs += Start-Job -Scriptblock $downloadKeyVaultArtifact -ArgumentList ("$ArtifactUrl", "$ArtifactFile", "$KeyVaultEndpoint")
+
+					} elseif ($ArtifactUrl -like $StoragePattern) {
+
+						$jobs += Start-Job -Scriptblock $downloadStorageArtifact -ArgumentList ("$ArtifactUrl", "$ArtifactFile")
 
 					} else {
 						
