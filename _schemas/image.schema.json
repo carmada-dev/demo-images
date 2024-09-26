@@ -87,7 +87,7 @@
 					"type": "array",
 					"description": "Filters to apply to the DevDrive",
 					"default": [
-						"bindFlt",
+						"bindFlt", 
 						"wcifs",
 						"PrjFlt",
 						"MsSecFlt",
