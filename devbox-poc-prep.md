@@ -24,7 +24,7 @@ Microsoft DevBox is a cloud-based development environment that is built on top o
 Find the offical documentation [here](https://learn.microsoft.com/en-us/azure/dev-box/overview-what-is-microsoft-dev-box)
 and the current roadmap [here](https://learn.microsoft.com/en-us/azure/dev-box/dev-box-roadmap).
 
-> If all prerequisites are mert the estimated time to complete a DevBox PoC is about 2-3 days.
+> If all prerequisites are met the estimated time to complete a DevBox PoC is about 2-3 days.
 
 ## 💰 Licensing
 
