@@ -38,6 +38,8 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 	Write-Host "- OS Type: $osType"
 	
+	$wingetInstalled = [bool](Get-Command -Name 'winget' -ErrorAction SilentlyContinue)
+
 	$url = "https://aka.ms/Microsoft.VCLibs.$osType.14.00.Desktop.appx"
 	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
 
@@ -48,7 +50,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
-	$Error.Clear(); Add-AppxPackage -Path $loc -ErrorAction SilentlyContinue
+	$Error.Clear(); if (not($wingetInstalled)) { Add-AppxPackage -Path $loc -ForceApplicationShutdown -ErrorAction SilentlyContinue }
 
 	if ($Error.Count -gt 0) {
 		Write-Host ">>> Error installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
@@ -65,7 +67,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
-	$Error.Clear(); Add-AppxPackage -Path $loc -ErrorAction SilentlyContinue
+	$Error.Clear(); if (not($wingetInstalled)) { Add-AppxPackage -Path $loc -ForceApplicationShutdown -ErrorAction SilentlyContinue }
 
 	if ($Error.Count -gt 0) {
 		Write-Host ">>> Error installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
@@ -82,7 +84,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet CLI..."
-	$Error.Clear(); Add-AppxPackage -Path $loc -ErrorAction SilentlyContinue
+	$Error.Clear(); if (not($wingetInstalled)) { Add-AppxPackage -Path $loc -ForceApplicationShutdown -ErrorAction SilentlyContinue }
 
 	if ($Error.Count -gt 0) {
 		Write-Host ">>> Error installing WinGet CLI..."
@@ -104,7 +106,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet Source Cache Package ..."	
-	$Error.Clear(); Add-AppxPackage -Path $loc -ErrorAction SilentlyContinue
+	$Error.Clear(); Add-AppxPackage -Path $loc -ForceApplicationShutdown -ErrorAction SilentlyContinue
 
 	if ($Error.Count -gt 0) {
 		Write-Host ">>> Error installing WinGet Source Cache Package ..."	

@@ -21,13 +21,19 @@ function Invoke-FileDownload {
         while($true) {
             try {
                 Write-Host ">>> Downloading $Url > $path $(&{ if ($retryCount -gt 0) { " (Retry: $retryCount of $Retries)" } else { '' } })".Trim() 
-                Invoke-WebRequest -Uri $Url -OutFile $path -UseBasicParsing ; break
+                Invoke-WebRequest -Uri $Url -OutFile $path; break
             }
             catch {
                 $retryCount = $retryCount + 1
                 if ($retryCount -gt $Retries) { throw }
             }
         }
+    }
+
+    if (Test-Path -Path $path -PathType Leaf) { 
+    
+        Write-Host ">>> Unblock $path"
+        Unblock-File $path -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
     }
 
 	if ($Expand) {
