@@ -14,9 +14,10 @@ if ($features.Count -gt 0) {
 	Invoke-ScriptSection -Title "Enable Windows Features" -ScriptBlock {
 		$features | Foreach-Object {
 			Write-Host "- $_"
-			Enable-WindowsOptionalFeature `
-				-FeatureName $_ `
-				-Online -All -NoRestart -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-null
+			Get-WindowsOptionalFeature -Online `
+				| Where-Object { $_.FeatureName -eq "$_" -and $_.State -ne "Enabled" } `
+				| Enable-WindowsOptionalFeature -Online -All -NoRestart `
+				| Out-Null
 		}
 	}
 }
