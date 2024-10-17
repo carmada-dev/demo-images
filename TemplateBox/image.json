@@ -1,0 +1,73 @@
+// for additional properties see: ../_schemas/image.schema.json
+{
+  "$schema": "../_schemas/image.schema.json",
+
+  "publisher": "<name of the publisher of the custom image - e.g. CarmadaRnD>",
+  "offer": "<offer name of the custom image - e.g. CarmadaDev>",
+  "sku": "<sku of the custom image - e.g. win11-vs2022pro-devbox>",
+  "regions": ["the azure region(s)", "- e.g.", "West Europe", "East US"],
+  "updates": "<windows updates that should be installed - all, none, recommended or important>",
+
+  "base": {
+    "publisher": "<publisher of the base image - e.g. MicrosoftVisualStudio>",
+    "offer": "<offer of the base image - e.g. windowsplustools>",
+    "sku": "<sku of the base image - e.g. imagebase-win11-gen2>",
+    "version": "<version of the based image - e.g. latest>"
+  },
+
+  "gallery": {
+    "subscription": "<subscription id of the devbox image gallery>",
+    "resourceGroup": "<resource group name of of the devbox image gallery>",
+    "name": "<name of the devbox image gallery>"
+  },
+
+  "archive": {
+    "subscription": "<subscription id of the devbox image archive>",
+    "resourceGroup": "<resource group name of the devbox image archive>",
+    "name": "<name of the devbox image archive>"
+  },
+
+  "devCenter": {
+    "subscription": "<subscription id of the dev center>",
+    "resourceGroup": "<resource group dame of the dev center>",
+    "name": "<name of the dev center>",
+    "compute": "<compute size to use for the devbox definition - e.g. general_i_8c32gb1024ssd_v2",
+    "storage": "<storage size to use for the devbox definiion - e.g. ssd_1024gb>"
+  },
+
+  "devDrive": {
+    "sizeGB": "<size of the dev drive in GB (minimum 5GB); set to 0 to disable the dev drive>",
+    "filters": ["<filters to be applied to the dev drive - TODO>"],
+    "repositories": [
+      {
+        "repoUrl": "needed - e.g. https://github.com/markusheiliger/courier.git",
+        "tokenUrl": "optional - e.g. https://carmada.vault.azure.net/secrets/GitHub/"
+      }
+    ]
+  },
+
+  "features": ["<list of features to enable in the image - e.g. TODO>"],
+
+  "prepare": [
+    "<list of scripts to run to prepare the image before installing packages> - e.g. [IMAGEROOT]/../_scripts/Install-WSL2.ps1>"
+  ],
+
+  "packages": [
+    {
+      "name": "git - see: ../_config/aliases.json",
+      "source": "alias - see: ../_config/aliases.json"
+    },
+    {
+      "name": "GitHub.cli",
+      "scope": "machine - used to install everything that needs additional priviledges"
+    },
+    {
+      "name": "Postman.Postman",
+      "scope": "user - used to install stuff for the user with user priviledges"
+    }
+  ],
+
+  "configure": [
+    "<list of scripts to run to configure the image after installing packages, same as in prepare>"
+  ]
+}
