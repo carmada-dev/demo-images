@@ -135,10 +135,14 @@ Invoke-ScriptSection -Title 'Enable Teredo support' -ScriptBlock {
 
 Invoke-ScriptSection -Title 'Enable Windows Developer Mode' -ScriptBlock {
 
-	$DevModeRegKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
-	if (-not(Test-Path -Path $DevModeRegKeyPath)) { New-Item -Path $DevModeRegKeyPath -ItemType Directory -Force | Out-Null }
-	New-ItemProperty -Path $DevModeRegKeyPath -Name AllowDevelopmentWithoutDevLicense -PropertyType DWORD -Value 1 -Force | Out-Null
-	Write-Host "done"
+	$RegKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
+	if (-not(Test-Path -Path $RegKeyPath)) { New-Item -Path $RegKeyPath -ItemType Directory -Force | Out-Null }
+
+	Write-Host ">>> Allow Development Without Dev License"
+	New-ItemProperty -Path $RegKeyPath -Name AllowDevelopmentWithoutDevLicense -PropertyType DWORD -Value 1 -Force | Out-Null
+
+	Write-Host ">>> Allow All Trusted Apps"
+	New-ItemProperty -Path $RegKeyPath -Name AllowAllTrustedApps -PropertyType DWORD -Value 1 -Force | Out-Null
 }
 
 Invoke-ScriptSection -Title 'Prepare Hibernate Support' -ScriptBlock {
