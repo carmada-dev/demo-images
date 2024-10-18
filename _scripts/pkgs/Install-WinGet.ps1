@@ -44,7 +44,7 @@ function Install-Package() {
 	catch
 	{
 		if ($_.Exception.Message -match '0x80073D06') {
-			Write-Host "!!! ERROR: $($_.Exception.Message)"
+			Write-Warning "!!! WARNING - $($_.Exception.Message)"
 		} else {
 			throw
 		}
