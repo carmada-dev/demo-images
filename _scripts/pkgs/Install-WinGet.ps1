@@ -30,6 +30,27 @@ $adminWinGetConfig = @"
 }
 "@
 
+function Install-Package() {
+	param (
+		[Parameter()]
+		[string] $Path
+	)
+
+	try
+	{
+		Write-Host ">>> Installing Package: $Path"
+		Add-AppxPackage -Path $loc -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
+	}
+	catch
+	{
+		if ($_.Exception.Message -match '0x80073D06') {
+			Write-Host "!!! ERROR: $($_.Exception.Message)"
+		} else {
+			throw
+		}
+	}
+}
+
 Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
 	$offlineDirectory =	New-Item -Path (Join-Path $env:DEVBOX_HOME 'Offline\WinGet') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
@@ -48,7 +69,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
-	Add-AppxPackage -Path $loc -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
+	Install-Package -Path $loc 
 
 	$url = "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6"
 	$loc = Join-Path $offlineDirectory 'Microsoft.UI.Xaml.2.8.appx'
@@ -60,7 +81,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
-	Add-AppxPackage -Path $loc -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
+	Install-Package -Path $loc 
 
 	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
 	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
@@ -72,7 +93,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet CLI..."
-	Add-AppxPackage -Path $loc -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
+	Install-Package -Path $loc 
 
 	if (Test-IsElevated) {
 		Write-Host ">>> Resetting WinGet Sources ..."
@@ -89,7 +110,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet Source Cache Package ..."	
-	Add-AppxPackage -Path $loc -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
+	Install-Package -Path $loc 
 }
 
 if (Test-IsPacker) {
