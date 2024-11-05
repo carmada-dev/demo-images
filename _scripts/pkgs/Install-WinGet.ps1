@@ -39,7 +39,7 @@ function Install-Package() {
 	try
 	{
 		Write-Host ">>> Installing Package: $Path"
-		Add-AppxPackage -Path $loc -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
+		Add-AppxPackage -Path $Path -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
 	}
 	catch
 	{
