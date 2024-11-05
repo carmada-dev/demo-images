@@ -258,8 +258,9 @@ foreach ($package in $packages) {
 
 	if ((Test-IsPacker) -and (Test-PendingReboot)) {
 		Write-ErrorMessage ">>> Pending reboot detected after installing package $($package.name) - restarting the machine ..."
-		shutdown /r /f /t 0 /d p:4:1 /c "Pending reboot after installing package $($package.name)"
-		exit 3010
+		Restart-Computer -Force -Wait -For WinRM
+		# shutdown /r /f /t 1 /d p:4:1 /c "Pending reboot after installing package $($package.name)"
+		# exit 3010
 	}
 }
 
