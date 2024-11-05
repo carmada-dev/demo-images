@@ -58,30 +58,49 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
 	$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 	Write-Host "- OS Type: $osType"
-	
-	$url = "https://aka.ms/Microsoft.VCLibs.$osType.14.00.Desktop.appx"
-	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
+
+	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
+	$loc = Join-Path $offlineDirectory 'Dependencies'
 
 	if (-not(Test-Path $loc -PathType Leaf)) {
-		Write-Host ">>> Downloading WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
-		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc))
-		Move-Item -Path $path -Destination $loc -Force | Out-Null
+		Write-Host ">>> Downloading WinGet dependencies ..."
+		$path = Join-Path (Invoke-FileDownload -Url $url -Expand) $osType
+		Get-ChildItem -Path $path -Filter '*.*' | ForEach-Object {
+			New-Item -Path $loc -ItemType Directory -Force | Out-Null
+			$destination = Join-Path $loc ([IO.Path]::GetFileName($_.FullName))
+			Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
+		}
 	}
 
-	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
-	Install-Package -Path $loc 
-
-	$url = "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6"
-	$loc = Join-Path $offlineDirectory 'Microsoft.UI.Xaml.2.8.appx'
-
-	if (-not (Test-Path $loc -PathType Leaf)) {
-		Write-Host ">>> Downloading WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
-		$path = Invoke-FileDownload -Url $url -Name 'Microsoft.UI.Xaml.zip' -Expand $true
-		Move-Item -Path (Join-Path $path "tools\AppX\$osType\Release\Microsoft.UI.Xaml.2.8.appx") -Destination $loc -Force | Out-Null
+	Write-Host ">>> Installing WinGet dependencies ..."
+	Get-ChildItem -Path $loc -Filter '*.*' | ForEach-Object { 
+		Write-Host "- $($_.FullName)"
+		Install-Package -Path $_.FullName 
 	}
+	
+	# $url = "https://aka.ms/Microsoft.VCLibs.$osType.14.00.Desktop.appx"
+	# $loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
 
-	Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
-	Install-Package -Path $loc 
+	# if (-not(Test-Path $loc -PathType Leaf)) {
+	# 	Write-Host ">>> Downloading WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
+	# 	$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc))
+	# 	Move-Item -Path $path -Destination $loc -Force | Out-Null
+	# }
+
+	# Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.VCLibs ..."
+	# Install-Package -Path $loc 
+
+	# $url = "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6"
+	# $loc = Join-Path $offlineDirectory 'Microsoft.UI.Xaml.2.8.appx'
+
+	# if (-not (Test-Path $loc -PathType Leaf)) {
+	# 	Write-Host ">>> Downloading WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
+	# 	$path = Invoke-FileDownload -Url $url -Name 'Microsoft.UI.Xaml.zip' -Expand $true
+	# 	Move-Item -Path (Join-Path $path "tools\AppX\$osType\Release\Microsoft.UI.Xaml.2.8.appx") -Destination $loc -Force | Out-Null
+	# }
+
+	# Write-Host ">>> Installing WinGet pre-requisites ($osType) - Microsoft.UI.Xaml ..."
+	# Install-Package -Path $loc 
 
 	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
 	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
