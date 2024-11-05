@@ -5,7 +5,7 @@
 	"offer": "CarmadaDev",
 	"sku": "win11-python-devbox",
 	"regions": [ "West Europe" ],
-	"updates": "none",
+	"updates": "all",
 
 	"base": {
 		"publisher": "MicrosoftVisualStudio",

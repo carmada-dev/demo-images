@@ -4,7 +4,7 @@
 	"offer": "CarmadaDev",
 	"sku": "win11-java-devbox",
 	"regions": [ "West Europe" ],
-	"updates": "none",
+	"updates": "all",
 
 	"base": {
 		"publisher": "MicrosoftVisualStudio",

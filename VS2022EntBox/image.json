@@ -5,7 +5,7 @@
 	"offer": "CarmadaDev",
 	"sku": "win11-vs2022ent-devbox",
 	"regions": [ "West Europe" ],
-	"updates": "none",
+	"updates": "all",
 
 	"base": {
 		"publisher": "MicrosoftVisualStudio",
