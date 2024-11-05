@@ -46,6 +46,16 @@ function Install-Package() {
 		if ($_.Exception.Message -match '0x80073D06') {
 			Write-Warning "!!! WARNING - $($_.Exception.Message)"
 		} else {
+
+			$activityIdsPattern = '\b[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\b'
+			$activityIds = [regex]::Matches($_.Exception.Message, $activityIdsPattern) | ForEach-Object { $_.Value } | Select-Object -Unique
+
+			$activityIds | ForEach-Object {
+				Write-Warning "!!! WARNING - $($_.Exception.Message)"
+				Write-Host "----------------------------------------------------------------------------------------------------------"
+				Get-AppxLog -ActivityId $_ | ForEach-Object { Write-Host $_ }
+			}
+
 			throw
 		}
 	}
