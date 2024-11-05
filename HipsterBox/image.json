@@ -6,7 +6,7 @@
 	"regions": [
 		"West Europe"
 	],
-	"updates": "all",
+	"updates": "none",
 
 	"base": {
 		"publisher": "MicrosoftVisualStudio",

@@ -5,7 +5,7 @@
 	"offer": "CarmadaDev",
 	"sku": "win11-dotnet-devbox",
 	"regions": [ "West Europe" ],
-	"updates": "all",
+	"updates": "none",
 
 	"base": {
 		"publisher": "MicrosoftVisualStudio",
