@@ -146,12 +146,12 @@ build {
   # =============================================================================================
 
   provisioner "powershell" {
-    elevated_user     = build.User
-    elevated_password = build.Password
-    environment_vars  = local.environment
-    inline            = [templatefile("${local.path.imageRoot}/../_templates/InstallPackages.pkrtpl.hcl", { packages = local.resolved.packages })]
-    max_retries       = 30
-    retry_delay       = "2m"
+    elevated_user       = build.User
+    elevated_password   = build.Password
+    environment_vars    = local.environment
+    inline              = [templatefile("${local.path.imageRoot}/../_templates/InstallPackages.pkrtpl.hcl", { packages = local.resolved.packages })]
+    max_retries         = 30
+    start_retry_timeout = "2m"
   }
 
   provisioner "windows-restart" {
