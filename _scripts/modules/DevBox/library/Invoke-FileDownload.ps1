@@ -45,8 +45,8 @@ function Invoke-FileDownload {
             Write-Host ">>> Expanding $path > $archive"
 		    Expand-Archive -Path $path -DestinationPath $archive -Force
 
-            Get-ChildItem -Path $archive -Recurse -Filter '*.*' | ForEach-Object {
-                Write-Host ">>> Unblock: $_"
+            Get-ChildItem -Path $archive -Recurse -File -Filter '*.*' | ForEach-Object {
+                Write-Host ">>> Unblock: $($_.FullName)"
                 Unblock-File -Path $_.FullName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
             }
         }

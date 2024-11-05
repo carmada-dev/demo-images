@@ -63,10 +63,17 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	$loc = Join-Path $offlineDirectory 'Dependencies'
 
 	if (-not(Test-Path $loc -PathType Leaf)) {
+
 		Write-Host ">>> Downloading WinGet dependencies ..."
 		$path = Join-Path (Invoke-FileDownload -Url $url -Expand) $osType
+		
 		Get-ChildItem -Path $path -Filter '*.*' | ForEach-Object {
-			New-Item -Path $loc -ItemType Directory -Force | Out-Null
+			
+			if (-not(Test-Path $loc -PathType Container)) {
+				Write-Host ">>> Creating dependency directory: $loc"
+				New-Item -Path $loc -ItemType Directory -Force | Out-Null
+			}
+
 			$destination = Join-Path $loc ([IO.Path]::GetFileName($_.FullName))
 			Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
 		}
