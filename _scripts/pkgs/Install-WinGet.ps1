@@ -73,10 +73,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	}
 
 	Write-Host ">>> Installing WinGet dependencies ..."
-	Get-ChildItem -Path $loc -Filter '*.*' | ForEach-Object { 
-		Write-Host "- $($_.FullName)"
-		Install-Package -Path $_.FullName 
-	}
+	Get-ChildItem -Path $loc -Filter '*.*' | ForEach-Object { Install-Package -Path $_.FullName }
 	
 	# $url = "https://aka.ms/Microsoft.VCLibs.$osType.14.00.Desktop.appx"
 	# $loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
