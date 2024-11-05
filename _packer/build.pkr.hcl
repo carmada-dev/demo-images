@@ -150,7 +150,8 @@ build {
     elevated_password = build.Password
     environment_vars  = local.environment
     inline            = [templatefile("${local.path.imageRoot}/../_templates/InstallPackages.pkrtpl.hcl", { packages = local.resolved.packages })]
-    max_retries       = 10
+    max_retries       = 30
+    retry_delay       = "2m"
   }
 
   provisioner "windows-restart" {
