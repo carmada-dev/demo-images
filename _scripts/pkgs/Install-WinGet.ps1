@@ -69,13 +69,13 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 	Write-Host "- OS Type: $osType"
 
-	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
 	$loc = Join-Path $offlineDirectory 'Dependencies'
-
 	if (-not(Test-Path $loc -PathType Leaf)) {
 
 		Write-Host ">>> Downloading WinGet dependencies ..."
-		$path = Join-Path (Invoke-FileDownload -Url $url -Expand) $osType
+
+		$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
+		$path = Join-Path (Invoke-FileDownload -Url $url -Expand -Retries 5) $osType
 		
 		Get-ChildItem -Path $path -Filter '*.*' | ForEach-Object {
 			
@@ -85,6 +85,8 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 			}
 
 			$destination = Join-Path $loc ([IO.Path]::GetFileName($_.FullName))
+
+			Write-Host ">>> Moving $($_.FullName) > $destination"
 			Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
 		}
 	}
@@ -92,12 +94,15 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Write-Host ">>> Installing WinGet dependencies ..."
 	Get-ChildItem -Path $loc -Filter '*.*' | ForEach-Object { Install-Package -Path $_.FullName }
 
-	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
 	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
-
 	if (-not (Test-Path $loc -PathType Leaf)) {
+
 		Write-Host ">>> Downloading WinGet CLI ..."
-		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc))
+		
+		$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
+		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc)) -Retries 5
+		
+		Write-Host ">>> Moving $path > $loc"
 		Move-Item -Path $path -Destination $loc -Force | Out-Null
 	}
 
