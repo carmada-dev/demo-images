@@ -192,11 +192,13 @@ $successExitCodes_choco = @(
 
 $lastSuccessPackageFile = Join-Path $env:DEVBOX_HOME 'Package.info'
 $lastSuccessPackageHash = Get-Content -Path $lastSuccessPackageFile -ErrorAction SilentlyContinue
+$currentPackageIndex = 0
 
 foreach ($package in $packages) {
 
-	# calculate the hash of the current package
+	# calculate the hash of the current package and its current index (1-based)
 	$currentPackageHash = $package | ConvertTo-Json -Compress | ConvertTo-GUID
+	$currentPackageIndex = $currentPackageIndex + 1
 
 	if ((Test-IsPacker) -and ($lastSuccessPackageHash)) {
 
@@ -256,7 +258,11 @@ foreach ($package in $packages) {
 	# store the last successful package hash
 	$currentPackageHash | Set-Content -Path $lastSuccessPackageFile -Force
 
-	if ((Test-IsPacker) -and (Test-PendingReboot)) {
+	# we trigger a computer restart if the following conditions are met:
+	# - the script is executed by packer
+	# - a pending reboot is detected
+	# - the current package index is less than the total number of packages (to avoid a reboot after the last package)
+	if ((Test-IsPacker) -and (Test-PendingReboot) -and ($currentPackageIndex -lt $packages.Count)) {
 		Write-ErrorMessage ">>> Pending reboot detected after installing package $($package.name) - restarting the machine ..."
 		Restart-Computer -Force 
 		exit 1
