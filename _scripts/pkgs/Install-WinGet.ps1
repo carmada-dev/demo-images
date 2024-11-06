@@ -44,16 +44,16 @@ function Install-Package() {
 	catch
 	{
 		if ($_.Exception.Message -match '0x80073D06') {
-			Write-Warning "!!! WARNING - $($_.Exception.Message)"
+			Write-Warning ($_.Exception.Message)
 		} else {
 
 			$activityIdsPattern = '\b[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\b'
 			$activityIds = [regex]::Matches($_.Exception.Message, $activityIdsPattern) | ForEach-Object { $_.Value } | Select-Object -Unique
 
 			$activityIds | ForEach-Object {
-				Write-Warning "!!! WARNING - $($_.Exception.Message)"
+				Write-Warning ($_.Exception.Message)
 				Write-Host "----------------------------------------------------------------------------------------------------------"
-				Get-AppxLog -ActivityId $_ | ForEach-Object { Write-Host $_ }
+				Get-AppxLog -ActivityId $_ | Out-Host
 			}
 
 			throw
@@ -70,7 +70,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Write-Host "- OS Type: $osType"
 
 	$loc = Join-Path $offlineDirectory 'Dependencies'
-	
+
 	if (-not(Test-Path $loc -PathType Leaf)) {
 
 		Write-Host ">>> Downloading WinGet dependencies ..."
