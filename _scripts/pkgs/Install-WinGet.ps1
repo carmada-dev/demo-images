@@ -70,6 +70,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Write-Host "- OS Type: $osType"
 
 	$loc = Join-Path $offlineDirectory 'Dependencies'
+	
 	if (-not(Test-Path $loc -PathType Leaf)) {
 
 		Write-Host ">>> Downloading WinGet dependencies ..."
@@ -94,12 +95,12 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Write-Host ">>> Installing WinGet dependencies ..."
 	Get-ChildItem -Path $loc -Filter '*.*' | ForEach-Object { Install-Package -Path $_.FullName }
 
+	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
 	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
+
 	if (-not (Test-Path $loc -PathType Leaf)) {
 
 		Write-Host ">>> Downloading WinGet CLI ..."
-		
-		$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
 		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc)) -Retries 5
 		
 		Write-Host ">>> Moving $path > $loc"
