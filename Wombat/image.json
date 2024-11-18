@@ -22,9 +22,9 @@
 	},
 
 	"archive": {
-		"subscription": "f9fcf631-fa8d-4ea2-8298-61b43220a3d1",
-		"resourceGroup": "ORG-CarmadaRnD",
-		"name": ""
+		"subscription": "bffe1654-7f9a-4630-b7b9-d24759a76222",
+		"resourceGroup": "BLD-Carmada",
+		"name": "carmada"
 	},
 
 	"devCenter": {

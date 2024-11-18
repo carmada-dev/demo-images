@@ -40,7 +40,12 @@
 					"type": "string",
 					"description": "The archive storage account resource name",
 					"default": ""
-				}				
+				},
+				"container": {
+					"type": "string",
+					"description": "The archive container name",
+					"default": "archive"
+				}		
 			},
 			"required": [ "subscription", "resourceGroup", "name" ],
 			"additionalProperties": false
