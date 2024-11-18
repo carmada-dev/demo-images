@@ -18,8 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Azure CLI version 2.64.0 is broken (https://github.com/Azure/azure-cli/issues/29830). Fall back to latest when fixed.
-  azureCliVersion: 2.63.0
+  # Azure CLI version 2.64.0 is broken (https://github.com/Azure/azure-cli/issues/29830)
+  azureCliVersion: latest
 
 jobs:
   build:
