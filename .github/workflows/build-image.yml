@@ -342,7 +342,7 @@ jobs:
             CONTAINER_URL="$(az storage account show \
               --subscription ${{ steps.image.outputs.archive_subscription }} \
               --resource-group ${{ steps.image.outputs.archive_resourcegroup }} \
-              --name $ARCHIVE_NAME \
+              --name ${{ steps.image.outputs.archive_name }} \
               --query id \
               --output tsv)$CONTAINER_NAME/${{ inputs.imageName }}-${{ inputs.imageVersion }}.vhd?$CONTAINER_SAS"
             
