@@ -290,7 +290,7 @@ jobs:
         with:
           azcliversion: ${{ env.azureCliVersion }}
           inlineScript: |
-            DISK_NAME="$(echo "${{ steps.image.outputs.gallery_imageid }}" | cut -d/ -f9)"
+            DISK_NAME="$(echo "${{ steps.image.outputs.gallery_imageid }}" | cut -d/ -f11)"
 
             DISK_LOCATION="$(az sig show \
               --subscription ${{ steps.image.outputs.gallery_subscription }} \
