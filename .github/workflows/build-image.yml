@@ -290,7 +290,7 @@ jobs:
         with:
           azcliversion: ${{ env.azureCliVersion }}
           inlineScript: |
-            DISK_NAME="$(echo "${{ steps.image.outputs.gallery_imageid }}" | cut -d/ -f11)"
+            DISK_NAME="$(echo "${{ steps.image.outputs.gallery_imageid }}" | cut -d/ -f9)-$(echo "${{ steps.image.outputs.gallery_imageid }}" | cut -d/ -f13)"
 
             DISK_LOCATION="$(az sig show \
               --subscription ${{ steps.image.outputs.gallery_subscription }} \
@@ -326,31 +326,28 @@ jobs:
         with:
           azcliversion: ${{ env.azureCliVersion }}
           inlineScript: |
-
+          
+            ACCOUNT_NAME=${{ steps.image.outputs.archive_name }}
+            ACCOUNT_KEY=$(az storage account keys list --subscription ${{ steps.image.outputs.archive_subscription }} --resource-group ${{ steps.image.outputs.archive_resourcegroup }} --account-name ${{ steps.image.outputs.archive_name }} --query [0].value --output tsv)
             CONTAINER_NAME=$([ -z "${{ steps.image.outputs.archive_container }}" ] && echo "archive" || echo "${{ steps.image.outputs.archive_container }}")
+            BLOB_NAME="-$(echo "${{ steps.archiveDisk.outputs.resourceId }}" | cut -d/ -f9).vhd"
 
-            CONTAINER_SAS="$(az storage container generate-sas \
-              --subscription ${{ steps.image.outputs.archive_subscription }} \
-              --account-name ${{ steps.image.outputs.archive_name }} \
-              --name $CONTAINER_NAME \
-              --as-user \
-              --auth-mode login \
-              --permissions acw \
-              --expiry $(date -d '+1 hour' +"%Y-%m-%dT%H:%MZ") \
-              --output tsv)"
-
-            CONTAINER_URL="$(az storage account show \
-              --subscription ${{ steps.image.outputs.archive_subscription }} \
-              --resource-group ${{ steps.image.outputs.archive_resourcegroup }} \
-              --name ${{ steps.image.outputs.archive_name }} \
-              --query id \
-              --output tsv)$CONTAINER_NAME/${{ inputs.imageName }}-${{ inputs.imageVersion }}.vhd?$CONTAINER_SAS"
+            az storage blob copy start \
+              --destination-blob $BLOB_NAME \
+              --destination-container $CONTAINER_NAME \
+              --account-name $ACCOUNT_NAME \
+              --account-key $ACCOUNT_KEY \
+              --source-uri "${{ steps.archiveDisk.outputs.resourceUrl }}" 
             
-            azcopy copy "${{ steps.archiveDisk.outputs.resourceUrl }}" "$CONTAINER_URL" --blob-type PageBlob
+            echo "Copying disk to archive storage account is in progress - retry in 60 sec"; sleep 60
+            while [ "pending" = "$(az storage blob show --name $BLOB_NAME --container-name $CONTAINER_NAME --account-name $ACCOUNT_NAME --account-key $ACCOUNT_KEY --query properties.copy.status --output tsv)" ]; do
+              echo "Copying disk to archive storage account is in progress - retry in 60 sec"; sleep 60 
+            done
 
       - name: Delete Archive Disk
         uses: azure/CLI@v2
-        if: always() && ${{ steps.archiveDisk.outputs.resourceId != '' }}                
+        if: always() && ${{ steps.archiveDisk.outputs.resourceId != '' }}    
+        continue-on-error: true            
         with:
           azcliversion: ${{ env.azureCliVersion }}
           inlineScript: |
