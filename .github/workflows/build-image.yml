@@ -290,7 +290,7 @@ jobs:
         with:
           azcliversion: ${{ env.azureCliVersion }}
           inlineScript: |
-            DISK_NAME="$(echo "${{ steps.image.outputs.gallery_imageid }}" | cut -d/ -f9)-$(echo "${{ steps.image.outputs.gallery_imageid }}" | cut -d/ -f13)"
+            DISK_NAME="$(echo "${{ steps.image.outputs.gallery_imageid }}" | cut -d/ -f11)-$(echo "${{ steps.image.outputs.gallery_imageid }}" | cut -d/ -f13)"
 
             DISK_LOCATION="$(az sig show \
               --subscription ${{ steps.image.outputs.gallery_subscription }} \
@@ -300,8 +300,8 @@ jobs:
               --output tsv)"
             
             echo "resourceId=$(az disk create \
-              --subscription ${{ steps.image.outputs.gallery_subscription }} \
-              --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
+              --subscription ${{ steps.image.outputs.archive_subscription }} \
+              --resource-group ${{ steps.image.outputs.archive_resourcegroup }} \
               --location $DISK_LOCATION \
               --name $DISK_NAME \
               --gallery-image-reference ${{ steps.image.outputs.gallery_imageid }} \
@@ -311,8 +311,8 @@ jobs:
               --output tsv)" >> $GITHUB_OUTPUT
             
             echo "resourceUrl=$(az disk grant-access \
-              --subscription ${{ steps.image.outputs.gallery_subscription }} \
-              --resource-group ${{ steps.image.outputs.gallery_resourcegroup }} \
+              --subscription ${{ steps.image.outputs.archive_subscription }} \
+              --resource-group ${{ steps.image.outputs.archive_resourcegroup }} \
               --name $DISK_NAME \
               --duration-in-seconds 3600 \
               --access-level read \
