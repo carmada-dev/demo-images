@@ -327,10 +327,10 @@ jobs:
           azcliversion: ${{ env.azureCliVersion }}
           inlineScript: |
           
-            ACCOUNT_NAME=${{ steps.image.outputs.archive_name }}
+            ACCOUNT_NAME="${{ steps.image.outputs.archive_name }}"
             ACCOUNT_KEY=$(az storage account keys list --subscription ${{ steps.image.outputs.archive_subscription }} --resource-group ${{ steps.image.outputs.archive_resourcegroup }} --account-name ${{ steps.image.outputs.archive_name }} --query [0].value --output tsv)
             CONTAINER_NAME=$([ -z "${{ steps.image.outputs.archive_container }}" ] && echo "archive" || echo "${{ steps.image.outputs.archive_container }}")
-            BLOB_NAME="-$(echo "${{ steps.archiveDisk.outputs.resourceId }}" | cut -d/ -f9).vhd"
+            BLOB_NAME="$(echo "${{ steps.archiveDisk.outputs.resourceId }}" | cut -d/ -f9).vhd"
 
             az storage blob copy start \
               --destination-blob $BLOB_NAME \
