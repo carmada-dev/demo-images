@@ -351,5 +351,5 @@ jobs:
         with:
           azcliversion: ${{ env.azureCliVersion }}
           inlineScript: |
-            az disk revoke-access --ids ${{ steps.archiveDisk.outputs.resourceId }} --yes
+            az disk revoke-access --ids ${{ steps.archiveDisk.outputs.resourceId }}
             az disk delete --ids ${{ steps.archiveDisk.outputs.resourceId }} --yes
