@@ -18,7 +18,7 @@ pool:
       vmImage: 'ubuntu-latest'
 
 stages:
-- stage: Build
+- stage: build
   jobs:
   - job: BuildImage
     timeoutInMinutes: 360
@@ -41,22 +41,23 @@ stages:
           cd ./${{ parameters.imageName }}
           HCLJSON="$(echo "jsonencode(local)" | packer console ../_packer/)"
           echo $HCLJSON | jq .
-          echo "##vso[task.setvariable variable=factory_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.factory.subscription')"
-          echo "##vso[task.setvariable variable=factory_region;isOutput=true]$(echo $HCLJSON | jq --raw-output '.factory.region')"
-          echo "##vso[task.setvariable variable=image_publisher;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.publisher')"
-          echo "##vso[task.setvariable variable=image_offer;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.offer')"
-          echo "##vso[task.setvariable variable=image_sku;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.sku')"
-          echo "##vso[task.setvariable variable=gallery_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.gallery.subscription')"
-          echo "##vso[task.setvariable variable=gallery_resourcegroup;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.gallery.resourceGroup')"
-          echo "##vso[task.setvariable variable=gallery_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.gallery.name')"
-          echo "##vso[task.setvariable variable=archive_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.subscription')"
-          echo "##vso[task.setvariable variable=archive_resourcegroup;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.resourceGroup')"
-          echo "##vso[task.setvariable variable=archive_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.name')"
-          echo "##vso[task.setvariable variable=devcenter_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.subscription')"
-          echo "##vso[task.setvariable variable=devcenter_resourcegroup;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.resourceGroup')"
-          echo "##vso[task.setvariable variable=devcenter_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.name')"
-          echo "##vso[task.setvariable variable=devcenter_storage;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.storage')"
-          echo "##vso[task.setvariable variable=devcenter_compute;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.compute')"      
+          echo "##vso[task.setvariable variable=factory_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.factory.subscription // empty')"
+          echo "##vso[task.setvariable variable=factory_region;isOutput=true]$(echo $HCLJSON | jq --raw-output '.factory.region // empty')"
+          echo "##vso[task.setvariable variable=image_publisher;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.publisher // empty')"
+          echo "##vso[task.setvariable variable=image_offer;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.offer // empty')"
+          echo "##vso[task.setvariable variable=image_sku;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.sku // empty')"
+          echo "##vso[task.setvariable variable=gallery_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.gallery.subscription // empty')"
+          echo "##vso[task.setvariable variable=gallery_resourcegroup;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.gallery.resourceGroup // empty')"
+          echo "##vso[task.setvariable variable=gallery_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.gallery.name // empty')"
+          echo "##vso[task.setvariable variable=archive_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.subscription // empty')"
+          echo "##vso[task.setvariable variable=archive_resourcegroup;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.resourceGroup // empty')"
+          echo "##vso[task.setvariable variable=archive_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.name // empty')"
+          echo "##vso[task.setvariable variable=archive_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.archive.container // empty')"
+          echo "##vso[task.setvariable variable=devcenter_subscription;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.subscription // empty')"
+          echo "##vso[task.setvariable variable=devcenter_resourcegroup;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.resourceGroup // empty')"
+          echo "##vso[task.setvariable variable=devcenter_name;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.name // empty')"
+          echo "##vso[task.setvariable variable=devcenter_storage;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.storage // empty')"
+          echo "##vso[task.setvariable variable=devcenter_compute;isOutput=true]$(echo $HCLJSON | jq --raw-output '.image.devCenter.compute // empty')"      
       displayName:  'Resolve Image Information'
       name: imageInfo
 
@@ -80,22 +81,6 @@ stages:
                 --features 'IsHibernateSupported=true SecurityType=TrustedLaunch' \
                 --only-show-errors 2>&1
       displayName: Ensure Image Definition
-
-     
-    - task: AzureCLI@2
-      inputs:
-        azureSubscription: 'PipelineSP'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          IMAGELIST=$(az sig image-version list --subscription $(imageInfo.gallery_subscription) --resource-group $(imageInfo.gallery_resourcegroup) --gallery-name $(imageInfo.gallery_name) --gallery-image-definition ${{ parameters.imageName }} --query "[?publishingProfile.excludeFromLatest].id" --output tsv 2>/dev/null)
-          echo "IMAGELIST: $IMAGELIST"
-          for IMAGEVERSION in $IMAGELIST; do
-            echo "Deleting image version '$IMAGEVERSION' ..." 
-            az sig image-version delete --subscription $(imageInfo.gallery_subscription) --ids $IMAGEVERSION --output none &
-          done; wait
-      displayName: Delete Image PreReleases
-      continueOnError: true
               
     - task: AzureCLI@2
       inputs:
@@ -140,7 +125,6 @@ stages:
           cd ./${{ parameters.imageName }}
           packer build -force -color=false -on-error=abort -timestamp-ui -var "imageSuffix=$(Build.DefinitionName)" -var "imageVersion=${{ parameters.imageVersion }}" ../_packer/ | tee ./image.log
           echo "##vso[task.setvariable variable=gallery_imageid;isOutput=true]$(tail -n 15 ./image.log | grep 'ManagedImageSharedImageGalleryId: ' | cut -d ' ' -f 2-)"
-
       displayName: Build Image
       name: packer
 
@@ -172,9 +156,22 @@ stages:
             --sku name="$(imageInfo.devcenter_compute)" \
             --hibernate-support Enabled \
             --only-show-errors 2>&1
-            
-- stage: QA
-  dependsOn: Build
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'PipelineSP'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          for IMAGEVERSION in $(az sig image-version list --subscription $(steps.image.outputs.gallery_subscription) --resource-group $(steps.image.outputs.gallery_resourcegroup) --gallery-name $(steps.image.outputs.gallery_name) --gallery-image-definition $(inputs.imageName) --query "[?publishingProfile.excludeFromLatest].id | sort(@) | [::-1] | [3:]" --output tsv 2>/dev/null); do
+            echo "Deleting image version '$IMAGEVERSION' ..." 
+            az sig image-version delete --subscription $(imageInfo.gallery_subscription) --ids $IMAGEVERSION --output none &
+          done; wait
+      displayName: Delete Image PreReleases (keep 3)
+      continueOnError: true
+
+- stage: releaseGate
+  dependsOn: build
   jobs:
   - job: waitForValidation
     displayName: Image Validation of image ${{parameters.imageName}} (${{parameters.imageVersion}})
@@ -189,8 +186,8 @@ stages:
         instructions: 'Please validate the Image ${{parameters.imageName}}!'
         onTimeout: 'reject'
 
-- stage: Release
-  dependsOn: [Build, QA]
+- stage: release
+  dependsOn: [build, releaseGate]
   jobs:
   - job: ReleaseImage
     variables:
