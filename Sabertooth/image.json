@@ -2,16 +2,18 @@
 	"$schema": "../_schemas/image.schema.json",
 	"publisher": "CarmadaRnD",
 	"offer": "CarmadaDev",
-	"sku": "win11-core-devbox",
+	"sku": "sabertooth-devbox",
+
 	"regions": [
 		"West Europe"
 	],
+
 	"updates": "all",
 
 	"base": {
-		"publisher": "MicrosoftVisualStudio",
-		"offer": "windowsplustools",
-		"sku": "base-win11-gen2",
+		"publisher": "dockerinc1694120899427",
+		"offer": "devbox_azuremachine",
+		"sku": "devboxlicensefpromo",
 		"version": "latest"
 	},
 
@@ -41,19 +43,40 @@
 		"repositories": []
 	},
 
-	"features": [
+	"features": [],
 
-	],
-
-	"prepare": [
-
-	],
+	"prepare": [],
 
 	"packages": [
-
+		{
+			"name": "7zip.7zip",
+			"scope": "machine"
+		},
+		{
+			"name": "Adobe.Acrobat.Reader.64-bit",
+			"scope": "machine"
+		},
+		{
+			"name": "Kitware.CMake",
+			"scope": "machine"
+		},
+		{
+			"name": "DimitriVanHeesch.Doxygen",
+			"scope": "machine"
+		},
+		{
+			"name": "git-extensions",
+			"source": "alias"
+		},
+		{
+			"name": "JetBrains.ReSharper.EAP",
+			"scope": "machine"
+		},
+		{
+			"name": "DominikReichl.KeePass",
+			"scope": "machine"
+		}
 	],
 
-	"configure": [
-
-	]
+	"configure": []
 }

@@ -20,6 +20,17 @@
 		]
 	},
 
+	"git-extensions": [
+		{
+			"name": "git",
+			"source": "alias"
+		},
+		{
+			"name": "GitExtensionsTeam.GitExtensions",
+			"scope": "machine"
+		}
+	],
+
 	"vscode": {
 		"name": "Microsoft.VisualStudioCode",
 		"scope": "machine",
