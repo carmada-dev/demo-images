@@ -43,15 +43,19 @@ function Install-Package() {
 	}
 	catch
 	{
-		if ($_.Exception.Message -match '0x80073D06') {
-			Write-Warning ($_.Exception.Message)
+		$exceptionMessage = $_.Exception.Message
+
+		if ($exceptionMessage -match '0x80073D06') {
+
+			Write-Warning $exceptionMessage
+			
 		} else {
 
 			$activityIdsPattern = '\b[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\b'
-			$activityIds = [regex]::Matches($_.Exception.Message, $activityIdsPattern) | ForEach-Object { $_.Value } | Select-Object -Unique
+			$activityIds = [regex]::Matches($exceptionMessage, $activityIdsPattern) | ForEach-Object { $_.Value } | Select-Object -Unique
 
 			$activityIds | ForEach-Object {
-				Write-Warning ($_.Exception.Message)
+				Write-Warning $exceptionMessage
 				Write-Host "----------------------------------------------------------------------------------------------------------"
 				Get-AppxLog -ActivityId $_ | Out-Host
 			}
