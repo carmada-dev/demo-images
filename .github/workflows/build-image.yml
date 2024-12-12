@@ -60,6 +60,13 @@ jobs:
           echo "image_publisher=$(echo $HCLJSON | jq --raw-output '.image.publisher // empty')" >> $GITHUB_OUTPUT
           echo "image_offer=$(echo $HCLJSON | jq --raw-output '.image.offer // empty')" >> $GITHUB_OUTPUT
           echo "image_sku=$(echo $HCLJSON | jq --raw-output '.image.sku // empty')" >> $GITHUB_OUTPUT
+          echo "image_base_publisher=$(echo $HCLJSON | jq --raw-output '.image.base.publisher // empty')" >> $GITHUB_OUTPUT          
+          echo "image_base_offer=$(echo $HCLJSON | jq --raw-output '.image.base.offer // empty')" >> $GITHUB_OUTPUT          
+          echo "image_base_sku=$(echo $HCLJSON | jq --raw-output '.image.base.sku // empty')" >> $GITHUB_OUTPUT          
+          echo "image_base_version=$(echo $HCLJSON | jq --raw-output '.image.base.version // empty')" >> $GITHUB_OUTPUT          
+          echo "image_base_plan_name=$(echo $HCLJSON | jq --raw-output '.image.base.plan.name // empty')" >> $GITHUB_OUTPUT          
+          echo "image_base_plan_product=$(echo $HCLJSON | jq --raw-output '.image.base.plan.product // empty')" >> $GITHUB_OUTPUT          
+          echo "image_base_plan_publisher=$(echo $HCLJSON | jq --raw-output '.image.base.plan.publisher // empty')" >> $GITHUB_OUTPUT          
           echo "gallery_subscription=$(echo $HCLJSON | jq --raw-output '.image.gallery.subscription // empty')" >> $GITHUB_OUTPUT
           echo "gallery_resourcegroup=$(echo $HCLJSON | jq --raw-output '.image.gallery.resourceGroup // empty')" >> $GITHUB_OUTPUT
           echo "gallery_name=$(echo $HCLJSON | jq --raw-output '.image.gallery.name // empty')" >> $GITHUB_OUTPUT
@@ -79,6 +86,19 @@ jobs:
         run: |
           echo "packer_skip_create_build_key_vault=$(sed -nr 's/^\s*skip_create_build_key_vault\s*=\s*(\w+)/\1/p' ../_packer/source.pkr.hcl | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT | tee -a ${{ runner.temp }}/image.info
+
+      - name: Ensure Base Image Terms Accepted
+        uses: azure/CLI@v2
+        if: ${{ steps.image.outputs.image_base_plan_name != '' }}
+        continue-on-error: true
+        with:
+          azcliversion: ${{ env.azureCliVersion }}
+          inlineScript:	|
+            az vm image terms accept \
+              --subscription ${{ steps.image.outputs.factory_subscription }} \
+              --offer ${{ steps.image.outputs.image_base_offer }} \
+              --publisher ${{ steps.image.outputs.image_base_publisher }} \
+              --plan ${{ steps.image.outputs.image_base_plan_name }} 
 
       - name: Ensure Image Definition
         uses: azure/CLI@v2
