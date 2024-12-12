@@ -33,7 +33,7 @@ source "azure-arm" "vm" {
   image_version                       = local.image.base.version
 
   # base image commercial plan if defined (Azure Marketplace Images only)  
-  plan                                = local.resolved.plan
+  plan_info                           = local.resolved.plan
 
   # temporary resource location
   subscription_id                     = local.factory.subscription
