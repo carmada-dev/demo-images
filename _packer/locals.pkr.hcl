@@ -127,6 +127,6 @@ locals {
 				plan_product            = try(local.image.base.plan.product, null)
 				plan_promotion_code     = try(local.image.base.plan.promotionCode, null)
 			}
-		}, convert(can(local.image.base.plan), string), null)
+		}, convert(can(local.image.base.plan), string), {})
 	}
 }
