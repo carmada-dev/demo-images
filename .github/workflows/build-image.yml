@@ -90,7 +90,6 @@ jobs:
       - name: Ensure Base Image Terms Accepted
         uses: azure/CLI@v2
         if: ${{ steps.image.outputs.image_base_plan_name != '' }}
-        continue-on-error: true
         with:
           azcliversion: ${{ env.azureCliVersion }}
           inlineScript:	|
