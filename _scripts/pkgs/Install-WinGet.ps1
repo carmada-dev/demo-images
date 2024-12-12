@@ -39,7 +39,7 @@ function Install-Package() {
 	try
 	{
 		Write-Host ">>> Installing Package: $Path"
-		Add-AppxPackage -Path $Path -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
+		Add-AppxPackage -Path $Path -ErrorAction Stop
 	}
 	catch
 	{
@@ -72,6 +72,11 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
 	$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 	Write-Host "- OS Type: $osType"
+
+	if (Test-IsElevated) {
+		Write-Host ">>> Enforce application sideloading ..."
+		Invoke-CommandLine -Command 'reg' -Arguments 'add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"' | Select-Object -ExpandProperty Output | Write-Host
+	}
 
 	$loc = Join-Path $offlineDirectory 'Dependencies'
 	if (-not(Test-Path $loc -PathType Leaf)) {
