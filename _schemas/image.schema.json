@@ -4,6 +4,30 @@
 
 
 	"$defs":{
+		"plan": {
+			"type": "object",
+			"description": "Plan information when using Marketplace images with terms as a base",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "The plan name"
+				},
+				"product": {
+					"type": "string",
+					"description": "The plan product"
+				},
+				"publisher": {
+					"type": "string",
+					"description": "The plan publisher"
+				},
+				"promotionCode": {
+					"type": "string",
+					"description": "The plan promotion code"
+				}
+			},
+			"required": [ "name", "product", "publisher" ],
+			"additionalProperties": false
+		},
 		"gallery": {
 			"type": "object",
 			"description": "The target gallery to upload the image",
@@ -182,6 +206,10 @@
 					"type": "string",
 					"description": "The version of the base image",
 					"default": "latest"
+				},
+				"plan": {
+					"type": "string",
+					"$ref": "#/$defs/plan"
 				}
 			},
 			"required": [ "publisher", "offer", "sku", "version" ],

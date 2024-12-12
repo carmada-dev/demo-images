@@ -119,5 +119,14 @@ locals {
 		))
 
 		language = merge(try(local.default.language, {}), try(local.image.language, {}))
+
+		plan = lookup({
+			true = {
+				plan_name				= try(local.image.base.plan.name, null)
+				plan_publisher          = try(local.image.base.plan.publisher, null)
+				plan_product            = try(local.image.base.plan.product, null)
+				plan_promotion_code     = try(local.image.base.plan.promotionCode, null)
+			}
+		}, convert(can(local.image.base.plan), string), null)
 	}
 }

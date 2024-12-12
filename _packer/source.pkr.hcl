@@ -32,12 +32,16 @@ source "azure-arm" "vm" {
   image_sku                           = local.image.base.sku
   image_version                       = local.image.base.version
 
+  # base image commercial plan if defined (Azure Marketplace Images only)  
+  plan                                = local.resolved.plan
+
   # temporary resource location
   subscription_id                     = local.factory.subscription
   location                            = local.factory.region
   user_assigned_managed_identities    = [ local.factory.identity ]
   temp_resource_group_name            = "PKR-${upper(local.variables.imageName)}-${upper(local.variables.imageVersion)}${upper(local.variables.imageSuffix)}"
   public_ip_sku                       = "Standard"
+
 
   # publish image to gallery
   shared_image_gallery_destination {

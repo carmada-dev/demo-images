@@ -14,7 +14,12 @@
 		"publisher": "dockerinc1694120899427",
 		"offer": "devbox_azuremachine",
 		"sku": "devboxlicensefpromo",
-		"version": "latest"
+		"version": "latest",
+		"plan": {
+			"name": "devboxlicensefpromo",
+			"product": "devbox_azuremachine",
+			"publisher": "dockerinc1694120899427"
+		}
 	},
 
 	"gallery": {
