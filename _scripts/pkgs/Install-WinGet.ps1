@@ -38,6 +38,16 @@ function Install-Package() {
 
 	try
 	{
+		if ((Get-Service -Name 'AppXSvc' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status) -ne 'Running') {
+			Write-Host ">>> Starting AppXSvc ..."
+			Start-Service -Name 'AppXSvc' -ErrorAction SilentlyContinue
+		}
+
+		if ((Get-Service -Name 'InstallService' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status) -ne 'Running') {
+			Write-Host ">>> Starting InstallService ..."
+			Start-Service -Name 'InstallService' -ErrorAction SilentlyContinue
+		}
+
 		Write-Host ">>> Installing Package: $Path"
 		Add-AppxPackage -Path $Path -ErrorAction Stop
 	}
