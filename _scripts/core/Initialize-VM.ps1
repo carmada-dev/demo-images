@@ -180,13 +180,9 @@ Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 	Write-Host ">>> Register PSGallery as a trusted repository"
 	Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
-	if (Get-Module -ListAvailable -Name PowerShellGet) {
-		Write-Host ">>> Upgrading Powershell Module: PowerShellGet"
-		Update-Module -Name PowerShellGet -Force -ErrorAction Stop
-	} else {
-		Write-Host ">>> Installing Powershell Module: PowerShellGet" 
-		Install-Module -Name PowerShellGet -AcceptLicense -Force -AllowClobber -ErrorAction Stop
-	}
+	Write-Host ">>> Install PowershellGet module"
+	try 	{ Update-Module -Name PowerShellGet -Force -ErrorAction Stop } 
+	catch 	{ Install-Module -Name PowerShellGet -AcceptLicense -Force -AllowClobber -ErrorAction Stop }
 }
 
 $Artifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath 'Artifacts'

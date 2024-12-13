@@ -2,6 +2,11 @@ build {
 
   sources = ["source.azure-arm.vm"]
 
+  provisioner "windows-update" {
+    search_criteria = local.update.search
+    filters = local.update.filters
+  }
+  
   # =============================================================================================
   # Upload Artifacts
   # =============================================================================================
