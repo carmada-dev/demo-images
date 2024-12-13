@@ -177,16 +177,19 @@ Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 	Write-Host ">>> Installing NuGet package provider" 
 	Install-PackageProvider -Name NuGet -Force | Out-Null
 
-	Write-Host ">>> Register PSGallery"
+	Write-Host ">>> Installing / Upgrading PowerShellGet module" 
+	Install-Module PowerShellGet -AllowClobber -Force
+
+	Write-Host ">>> Register PSGallery as a trusted repository"
 	Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
-	if (Get-Module -ListAvailable -Name PowerShellGet) {
-		Write-Host ">>> Upgrading Powershell Module: PowerShellGet"
-		Update-Module -Name PowerShellGet -AcceptLicense -Force -WarningAction SilentlyContinue -ErrorAction Stop
-	} else {
-		Write-Host ">>> Installing Powershell Module: PowerShellGet" 
-		Install-Module -Name PowerShellGet -AcceptLicense -Force -AllowClobber -WarningAction SilentlyContinue -ErrorAction Stop
-	}
+	# if (Get-Module -ListAvailable -Name PowerShellGet) {
+	# 	Write-Host ">>> Upgrading Powershell Module: PowerShellGet"
+	# 	Update-Module -Name PowerShellGet -AcceptLicense -Force -WarningAction SilentlyContinue -ErrorAction Stop
+	# } else {
+	# 	Write-Host ">>> Installing Powershell Module: PowerShellGet" 
+	# 	Install-Module -Name PowerShellGet -AcceptLicense -Force -AllowClobber -WarningAction SilentlyContinue -ErrorAction Stop
+	# }
 }
 
 $Artifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath 'Artifacts'
