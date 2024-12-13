@@ -58,6 +58,8 @@ function Install-Package() {
 				Write-Warning $exceptionMessage
 				Write-Host "----------------------------------------------------------------------------------------------------------"
 				Get-AppxLog -ActivityId $_ | Out-Host
+				Write-Host "----------------------------------------------------------------------------------------------------------"
+				Get-AppPackageLog -ActivityID $_ | Out-Host
 			}
 
 			throw
