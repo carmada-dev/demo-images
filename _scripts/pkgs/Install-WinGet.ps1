@@ -49,7 +49,7 @@ function Install-Package() {
 		}
 
 		Write-Host ">>> Dump C-drive ACLs ..."
-		Get-Acl -Path C:\ | Format-Table -Wrap -AutoSize | Out-Host
+		Get-Acl -Path $Path | Format-Table -Wrap -AutoSize | Out-Host
 
 		Write-Host ">>> Installing Package: $Path"
 		Add-AppxPackage -Path $Path -ErrorAction Stop
