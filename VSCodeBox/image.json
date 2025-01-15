@@ -3,7 +3,7 @@
 
 	"publisher": "CarmadaRnD",
 	"offer": "CarmadaDev",
-	"sku": "win11-vs2022pro-devbox",
+	"sku": "win11-vscode-devbox",
 	"regions": [ "West Europe" ],
 	"updates": "all",
 
