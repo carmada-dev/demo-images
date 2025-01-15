@@ -16,30 +16,66 @@ $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
 # ==============================================================================
 
-Invoke-ScriptSection -Title "Configure Visual Studio Code" -ScriptBlock {
+$vscode = Get-Command -Name 'code' -ErrorAction SilentlyContinue
 
-# $extensions = (
-# 	"eamodio.gitlens",
-# 	"telesoho.vscode-markdown-paste-images",
-# 	"ms-azuretools.vscode-bicep",
-# 	"ms-azuretools.vscode-docker",
-# 	"ms-vscode-remote.remote-containers",
-# 	"ms-vscode-remote.remote-ssh",
-# 	"ms-vscode-remote.remote-wsl",
-# 	"ms-vscode.azurecli",
-# 	"ms-vscode.powershell"
-# )
+if ($vscode) {
 
-# $process = Start-Process code -ArgumentList "--version" -NoNewWindow -Wait -PassThru
+	$extFolder = Join-Path $env:DEVBOX_HOME 'Artifacts\VisualStudioCode\extensions'
+	$extOffline = Join-Path $env:DEVBOX_HOME 'Artifacts\VisualStudioCode\extensions.offline'
+	$extOnline = Join-Path $env:DEVBOX_HOME 'Artifacts\VisualStudioCode\extensions.online'
+	
+	if (-not (Test-IsPacker)) {
 
-# if ($process.ExitCode -eq 0) {
-# 	$extensions | ForEach-Object -Begin { Write-Host ">>> Installing VSCode extensions ..." } -Process {
-# 		Write-Host "- $_"
-# 		$process = Start-Process code -ArgumentList ("--install-extension", $_) -NoNewWindow -Wait -PassThru -RedirectStandardOutput "NUL"
-# 		if ($process.ExitCode -ne 0) { exit $process.ExitCode }
-# 	}
-# }
+		if (Test-Path -Path $extOffline -PathType Leaf) {
 
-# exit $process.ExitCode
+			Invoke-ScriptSection -Title "Downloading offline extensions" -ScriptBlock {
 
+				Write-Host ">>> Ensure extensions folder exists: $extFolder"
+				New-Item -Path $extFolder -ItemType Directory -Force | Out-Null
+
+				Get-Content -Path $extOffline -ErrorAction SilentlyContinue | Where-Object { -not([System.String]::IsNullOrWhiteSpace($extOffline)) } | ForEach-Object {
+
+					Write-Host ">>> Downloading extension: $_"
+
+					$tokens = "$_".Split('.')
+					$publisher = $tokens[0]
+					$package = $tokens[1]
+
+					$url = "https://$publisher.gallery.vsassets.io/_apis/public/gallery/publisher/$publisher/extension/$package/latest/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+					$extVsix = Join-Path -Path $extFolder -ChildPath "$publisher.$package.vsix"
+					$extTemp = Invoke-FileDownload -url $url -name "$publisher.$package.vsix"
+
+					Write-Host ">>> Moving extension to $extVsix"
+					Move-Item -Path $extTemp -Destination $extVsix -Force | Out-Null
+				}
+			}
+		}
+
+	} else {
+
+		if (Test-Path -Path $extOnline -PathType Leaf) {
+
+			Invoke-ScriptSection -Title "Installing online extensions" -ScriptBlock {
+
+				Get-Content -Path $extOnline -ErrorAction SilentlyContinue | Where-Object { -not([System.String]::IsNullOrWhiteSpace($_)) } | ForEach-Object {
+
+					Write-Host ">>> Installing extension: $_"
+					Invoke-CommandLine -Command $vscode -Arguments "--install-extension $_" | Select-Object -ExpandProperty Output
+				}
+			}
+		}
+
+		if (Test-Path -Path $extFolder -PathType Container) {
+
+			Invoke-ScriptSection -Title "Installing offline extensions" -ScriptBlock {
+
+				Get-ChildItem -Path $extFolder -Filter '*.vsix' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object {
+
+					Write-Host ">>> Installing extension: $_"
+					Invoke-CommandLine -Command $vscode -Arguments "--install-extension $_" | Select-Object -ExpandProperty Output
+				}
+			}
+		}
+
+	}
 }
