@@ -24,58 +24,71 @@ if ($vscode) {
 	$extOffline = Join-Path $env:DEVBOX_HOME 'Artifacts\VisualStudioCode\extensions.offline'
 	$extOnline = Join-Path $env:DEVBOX_HOME 'Artifacts\VisualStudioCode\extensions.online'
 	
-	if (-not (Test-IsPacker)) {
-
-		if (Test-Path -Path $extOffline -PathType Leaf) {
+	if (Test-IsPacker) {
 
 			Invoke-ScriptSection -Title "Downloading offline extensions" -ScriptBlock {
+				if (Test-Path -Path $extOffline -PathType Leaf) {
 
-				Write-Host ">>> Ensure extensions folder exists: $extFolder"
-				New-Item -Path $extFolder -ItemType Directory -Force | Out-Null
+					Write-Host ">>> Ensure extensions folder exists: $extFolder"
+					New-Item -Path $extFolder -ItemType Directory -Force | Out-Null
 
-				Get-Content -Path $extOffline -ErrorAction SilentlyContinue | Where-Object { -not([System.String]::IsNullOrWhiteSpace($extOffline)) } | ForEach-Object {
+					Get-Content -Path $extOffline -ErrorAction SilentlyContinue | Where-Object { -not([System.String]::IsNullOrWhiteSpace($extOffline)) } | ForEach-Object {
 
-					Write-Host ">>> Downloading extension: $_"
+						Write-Host ">>> Downloading extension: $_"
 
-					$tokens = "$_".Split('.')
-					$publisher = $tokens[0]
-					$package = $tokens[1]
+						$tokens = "$_".Split('.')
+						$publisher = $tokens[0]
+						$package = $tokens[1]
 
-					$url = "https://$publisher.gallery.vsassets.io/_apis/public/gallery/publisher/$publisher/extension/$package/latest/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
-					$extVsix = Join-Path -Path $extFolder -ChildPath "$publisher.$package.vsix"
-					$extTemp = Invoke-FileDownload -url $url -name "$publisher.$package.vsix"
+						$url = "https://$publisher.gallery.vsassets.io/_apis/public/gallery/publisher/$publisher/extension/$package/latest/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+						$extVsix = Join-Path -Path $extFolder -ChildPath "$publisher.$package.vsix"
+						$extTemp = Invoke-FileDownload -url $url -name "$publisher.$package.vsix"
 
-					Write-Host ">>> Moving extension to $extVsix"
-					Move-Item -Path $extTemp -Destination $extVsix -Force | Out-Null
+						Write-Host ">>> Moving extension to $extVsix"
+						Move-Item -Path $extTemp -Destination $extVsix -Force | Out-Null
+					}
+
+				} else {
+
+					Write-Host ">>> Extension list not found: $extOffline"
 				}
 			}
-		}
 
 	} else {
 
-		if (Test-Path -Path $extOnline -PathType Leaf) {
-
-			Invoke-ScriptSection -Title "Installing online extensions" -ScriptBlock {
+		Invoke-ScriptSection -Title "Installing online extensions" -ScriptBlock {
+			if (Test-Path -Path $extOnline -PathType Leaf) {
 
 				Get-Content -Path $extOnline -ErrorAction SilentlyContinue | Where-Object { -not([System.String]::IsNullOrWhiteSpace($_)) } | ForEach-Object {
 
 					Write-Host ">>> Installing extension: $_"
 					Invoke-CommandLine -Command $vscode -Arguments "--install-extension $_" | Select-Object -ExpandProperty Output
 				}
+
+			} else {
+				
+				Write-Host ">>> Extension list not found: $extOnline"
 			}
 		}
 
-		if (Test-Path -Path $extFolder -PathType Container) {
-
-			Invoke-ScriptSection -Title "Installing offline extensions" -ScriptBlock {
+		Invoke-ScriptSection -Title "Installing offline extensions" -ScriptBlock {
+			if (Test-Path -Path $extFolder -PathType Container) {
 
 				Get-ChildItem -Path $extFolder -Filter '*.vsix' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object {
 
 					Write-Host ">>> Installing extension: $_"
 					Invoke-CommandLine -Command $vscode -Arguments "--install-extension $_" | Select-Object -ExpandProperty Output
 				}
+
+			} else {
+				
+				Write-Host ">>> Extension folder not found: $extFolder"
 			}
 		}
 
 	}
+
+} else {
+
+	Write-Host ">>> Visual Studio Code is not installed"
 }
