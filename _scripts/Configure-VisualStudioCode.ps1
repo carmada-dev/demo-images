@@ -16,7 +16,7 @@ $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
 # ==============================================================================
 
-$vscode = Get-Command -Name 'code' -ErrorAction SilentlyContinue
+$vscode = Get-Command 'code' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 
 if ($vscode) {
 
