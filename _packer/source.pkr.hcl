@@ -46,7 +46,7 @@ source "azure-arm" "vm" {
   user_assigned_managed_identities    = [ local.factory.identity ]
   temp_resource_group_name            = "PKR-${upper(local.variables.imageName)}-${upper(local.variables.imageVersion)}${upper(local.variables.imageSuffix)}"
   public_ip_sku                       = "Standard"
-  azure_tag                           = local.resolved.tags  
+  azure_tags                          = local.resolved.tags  
 
   # publish image to gallery
   shared_image_gallery_destination {
