@@ -120,6 +120,6 @@ locals {
 
 		language = merge(try(local.default.language, {}), try(local.image.language, {}))
 
-		tags = [ for t in keys(merge(try(local.default.tags, {}), try(local.image.tags, {}))) : { name = t, value = lookup(merge(try(local.default.tags, {}), try(local.image.tags, {})), t, null) } ]
+		tags = [ for t in keys(merge(try(local.default.tags, {}), try(local.image.tags, {}))) : { name = t, value = lookup(merge(try(local.default.tags, {}), try(local.image.tags, {})), t, "") } ]
 	}
 }
