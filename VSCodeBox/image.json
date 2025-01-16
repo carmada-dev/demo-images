@@ -7,6 +7,10 @@
 	"regions": [ "West Europe" ],
 	"updates": "all",
 
+	"tags": {
+		"purpose": "VSCode DevBox with extensions"
+	},
+
 	"base": {
 		"publisher": "MicrosoftVisualStudio",
 		"offer": "windowsplustools",

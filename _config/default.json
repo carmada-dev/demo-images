@@ -8,6 +8,11 @@
 	
 	"updates": "all",
 
+	"tags": {
+		"owner": "CarmadaRnD",
+		"project": "DevBoxImages"
+	},
+
 	"features": [
 
 	],
