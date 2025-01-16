@@ -121,4 +121,5 @@ locals {
 		language = merge(try(local.default.language, {}), try(local.image.language, {}))
 
 		tags = merge(try(local.default.tags, {}), try(local.image.tags, {}))
+	}
 }
