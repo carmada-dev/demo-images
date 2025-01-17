@@ -3,6 +3,7 @@
 	"publisher": "CarmadaRnD",
 	"offer": "CarmadaDev",
 	"sku": "win11-core-devbox",
+	"size": 512,
 	"regions": [
 		"West Europe"
 	],

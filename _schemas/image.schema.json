@@ -173,6 +173,12 @@
 			"type": "string",
 			"description": "The SKU of the image"
 		},
+		"size": {
+			"type": "integer",
+			"description": "The size of the drive in GB",
+			"enum": [ 256, 512, 1024, 2048 ],
+			"default": 1024
+		},
 		"regions": {
 			"type": "array",
 			"description": "The regions where the image is available",

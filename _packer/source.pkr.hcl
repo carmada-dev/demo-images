@@ -24,7 +24,7 @@ source "azure-arm" "vm" {
 
   # os settings
   os_type                             = "Windows"
-  os_disk_size_gb                     = 1024
+  os_disk_size_gb                     = try(local.image.size, 1024)
   
   # base image options (Azure Marketplace Images only)
   image_publisher                     = local.image.base.publisher
