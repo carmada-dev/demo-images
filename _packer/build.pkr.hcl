@@ -63,7 +63,7 @@ build {
     elevated_password = build.Password
     environment_vars  = local.environment
     inline            = [
-      "sfc /scannow"
+      "sfc /scannow",
       "DISM /Online /Cleanup-Image /RestoreHealth"
     ]
   }
