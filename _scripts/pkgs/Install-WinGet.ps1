@@ -48,8 +48,11 @@ function Install-Package() {
 			Start-Service -Name 'InstallService' -ErrorAction SilentlyContinue
 		}
 
-		Write-Host ">>> Dump C-drive ACLs ..."
+		Write-Host ">>> Dump ACLs for $Path ..."
 		Get-Acl -Path $Path | Format-Table -Wrap -AutoSize | Out-Host
+
+		Write-Host ">>> Dump ACLs for $($env:APPDATA)"
+		Get-Acl -Path $env:APPDATA | Format-Table -Wrap -AutoSize | Out-Host
 
 		Write-Host ">>> Installing Package: $Path"
 		Add-AppxPackage -Path $Path -ErrorAction Stop
