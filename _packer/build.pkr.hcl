@@ -55,6 +55,25 @@ build {
   }
 
   # =============================================================================================
+  # Enforce Windows Integrity
+  # =============================================================================================
+
+  provisioner "powershell" {
+    elevated_user     = build.User
+    elevated_password = build.Password
+    environment_vars  = local.environment
+    inline            = [
+      "sfc /scannow"
+      "DISM /Online /Cleanup-Image /RestoreHealth"
+    ]
+  }
+
+  provisioner "windows-restart" {
+    # force restart 
+    restart_timeout   = "30m"
+  }
+
+  # =============================================================================================
   # Enable Windows Features 
   # =============================================================================================
 
