@@ -18,9 +18,11 @@ $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
 Invoke-ScriptSection -Title "Installing Choco Package Manager" -ScriptBlock {
 
-	Write-Host ">>> Downloading Chocolatey ..."
-	$installer = Invoke-FileDownload -Url 'https://chocolatey.org/install.ps1' -Retries 5
+	Write-Host ">>> SKIP - Chocolatey is no longer needed as we rely entirely on WinGet"
+	
+	# Write-Host ">>> Downloading Chocolatey ..."
+	# $installer = Invoke-FileDownload -Url 'https://chocolatey.org/install.ps1' -Retries 5
 
-	Write-Host ">>> Installing Chocolatey ..."
-	& $installer | Out-Null
+	# Write-Host ">>> Installing Chocolatey ..."
+	# & $installer | Out-Null
 }
