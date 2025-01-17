@@ -42,7 +42,7 @@ if ($vscode) {
 
 						$url = "https://$publisher.gallery.vsassets.io/_apis/public/gallery/publisher/$publisher/extension/$package/latest/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
 						$extVsix = Join-Path -Path $extFolder -ChildPath "$publisher.$package.vsix"
-						$extTemp = Invoke-FileDownload -url $url -name "$publisher.$package.vsix"
+						$extTemp = Invoke-FileDownload -url $url -name "$publisher.$package.vsix" -Retry 5
 
 						Write-Host ">>> Moving extension to $extVsix"
 						Move-Item -Path $extTemp -Destination $extVsix -Force | Out-Null
