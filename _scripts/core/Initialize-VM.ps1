@@ -182,7 +182,10 @@ Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 
 	Write-Host ">>> Install PowershellGet module"
 	try 	{ Update-Module -Name PowerShellGet -Force -ErrorAction Stop } 
-	catch 	{ Install-Module -Name PowerShellGet -AcceptLicense -Force -AllowClobber -ErrorAction Stop }
+	catch 	{ 
+		try 	{ Install-Module -Name PowerShellGet -AcceptLicense -Force -AllowClobber -ErrorAction Stop }
+		catch 	{ Install-Module -Name PowerShellGet -Force -AllowClobber -ErrorAction Stop }
+	}
 }
 
 $Artifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath 'Artifacts'
