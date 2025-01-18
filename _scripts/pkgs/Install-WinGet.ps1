@@ -83,6 +83,9 @@ function Install-Package() {
 
 Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
+	Write-Host ">>> Enforce Appx Deployment Service running ..."
+	Get-Service “AppXSvc” | Start-Service
+
 	$offlineDirectory =	New-Item -Path (Join-Path $env:DEVBOX_HOME 'Offline\WinGet') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
 	Write-Host "- Offline directory: $offlineDirectory"
 

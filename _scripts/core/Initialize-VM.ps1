@@ -135,17 +135,12 @@ Invoke-ScriptSection -Title 'Enable Teredo support' -ScriptBlock {
 
 Invoke-ScriptSection -Title 'Enable Windows Developer Mode' -ScriptBlock {
 
-	# $RegKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
-	# if (-not(Test-Path -Path $RegKeyPath)) { New-Item -Path $RegKeyPath -ItemType Directory -Force | Out-Null }
-
-	# Write-Host ">>> Allow Development Without Dev License"
-	# New-ItemProperty -Path $RegKeyPath -Name AllowDevelopmentWithoutDevLicense -PropertyType DWORD -Value 1 -Force | Out-Null
-
-	# Write-Host ">>> Allow All Trusted Apps"
-	# New-ItemProperty -Path $RegKeyPath -Name AllowAllTrustedApps -PropertyType DWORD -Value 1 -Force | Out-Null
-
 	Invoke-CommandLine -Command 'reg' -Arguments 'add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"' | Select-Object -ExpandProperty Output | Write-Host
 	Invoke-CommandLine -Command 'reg' -Arguments 'add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Appx" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"' | Select-Object -ExpandProperty Output | Write-Host
+}
+
+Invoke-ScriptSection -Title 'List existing Appx packages' -ScriptBlock {
+	Get-AppxPackage | Format-Table Name, Version, Status, InstallLocation
 }
 
 Invoke-ScriptSection -Title 'Prepare Hibernate Support' -ScriptBlock {
