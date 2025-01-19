@@ -75,41 +75,44 @@ function Install-Package() {
 
 $offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
 $dependenciesDirectory = Join-Path $offlineDirectory 'Dependencies'
-$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 
-Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
+if (Test-IsPacker) {
+	Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
 
-	Write-Host ">>> Ensure offline directory: $offlineDirectory"
-	New-Item -Path $offlineDirectory -ItemType Directory -Force | Out-Null
+		$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 
-	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
-	$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
-	$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
+		Write-Host ">>> Ensure offline directory: $offlineDirectory"
+		New-Item -Path $offlineDirectory -ItemType Directory -Force | Out-Null
 
-	Write-Host ">>> Moving $path > $destination"
-	Move-Item -Path $path -Destination $destination -Force | Out-Null
+		$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
+		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
+		$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
 
-	$url = "https://cdn.winget.microsoft.com/cache/source.msix"
-	$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
-	$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
+		Write-Host ">>> Moving $path > $destination"
+		Move-Item -Path $path -Destination $destination -Force | Out-Null
 
-	Write-Host ">>> Moving $path > $destination"
-	Move-Item -Path $path -Destination $destination -Force | Out-Null
+		$url = "https://cdn.winget.microsoft.com/cache/source.msix"
+		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
+		$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
 
-	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
-	$path = Join-Path (Invoke-FileDownload -Url $url -Expand -Retries 5) $osType
-	
-	Get-ChildItem -Path $path -Filter '*.*' | ForEach-Object {
+		Write-Host ">>> Moving $path > $destination"
+		Move-Item -Path $path -Destination $destination -Force | Out-Null
+
+		$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
+		$path = Join-Path (Invoke-FileDownload -Url $url -Expand -Retries 5) $osType
 		
-		if (-not(Test-Path $dependenciesDirectory -PathType Container)) {
-			Write-Host ">>> Creating dependency directory: $dependenciesDirectory"
-			New-Item -Path $dependenciesDirectory -ItemType Directory -Force | Out-Null
+		Get-ChildItem -Path $path -Filter '*.*' | ForEach-Object {
+			
+			if (-not(Test-Path $dependenciesDirectory -PathType Container)) {
+				Write-Host ">>> Creating dependency directory: $dependenciesDirectory"
+				New-Item -Path $dependenciesDirectory -ItemType Directory -Force | Out-Null
+			}
+
+			$destination = Join-Path $dependenciesDirectory ([IO.Path]::GetFileName($_.FullName))
+
+			Write-Host ">>> Moving $($_.FullName) > $destination"
+			Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
 		}
-
-		$destination = Join-Path $dependenciesDirectory ([IO.Path]::GetFileName($_.FullName))
-
-		Write-Host ">>> Moving $($_.FullName) > $destination"
-		Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
 	}
 }
 
