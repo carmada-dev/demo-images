@@ -52,7 +52,7 @@ function Invoke-ScriptSection {
 
         @(
             $sglLine, 
-            "Finished after $($measure.ToString("hh\:mm\:ss\.fff")) as $($env:username) $(&{ if (Test-IsElevated -ErrorAction SilentlyContinue) { '(elevated)' } else { '' } })", 
+            "Finished after $($measure.ToString("hh\:mm\:ss\.fff")) as $($env:username) $(&{ if (Test-IsElevated -ErrorAction SilentlyContinue) { '(elevated)' } else { '' } }) - PSVersion $($PSVersionTable.PSVersion.ToString())", 
             $dblLine
         ) | Write-Host
     }

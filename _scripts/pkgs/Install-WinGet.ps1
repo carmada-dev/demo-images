@@ -43,11 +43,22 @@ function Install-Package() {
 		Write-Host ">>> Dump ACLs for $Path ..."
 		Get-Acl -Path $Path | Format-Table -Wrap -AutoSize | Out-Host
 
-		Write-Host ">>> Dump ACLs for $($env:APPDATA)"
-		Get-Acl -Path $env:APPDATA | Format-Table -Wrap -AutoSize | Out-Host
+		if ($Dependencies) {
+		
+			$Dependencies | ForEach-Object {
+				Write-Host ">>> Dump ACLs for $_ ..."
+				Get-Acl -Path $_ | Format-Table -Wrap -AutoSize | Out-Host
+			}
 
-		Write-Host ">>> Installing Package: $Path (Dependencies: $($Dependencies -join ', '))"
-		Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ErrorAction Stop
+			Write-Host ">>> Installing Package: $Path (Dependencies: $($Dependencies -join ', '))"
+			Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ErrorAction Stop
+	
+		} else {
+
+			Write-Host ">>> Installing Package: $Path"
+			Add-AppxPackage -Path $Path -ErrorAction Stop
+	
+		}
 	}
 	catch
 	{
