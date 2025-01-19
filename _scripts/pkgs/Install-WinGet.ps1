@@ -33,29 +33,21 @@ $adminWinGetConfig = @"
 function Install-Package() {
 	param (
 		[Parameter()]
-		[string] $Path
+		[string] $Path,
+		[Parameter(Mandatory = $false)]
+		[string[]] $Dependencies
 	)
 
 	try
 	{
-		if ((Get-Service -Name 'AppXSvc' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status) -ne 'Running') {
-			Write-Host ">>> Starting AppXSvc ..."
-			Start-Service -Name 'AppXSvc' -ErrorAction SilentlyContinue
-		}
-
-		if ((Get-Service -Name 'InstallService' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status) -ne 'Running') {
-			Write-Host ">>> Starting InstallService ..."
-			Start-Service -Name 'InstallService' -ErrorAction SilentlyContinue
-		}
-
 		Write-Host ">>> Dump ACLs for $Path ..."
 		Get-Acl -Path $Path | Format-Table -Wrap -AutoSize | Out-Host
 
 		Write-Host ">>> Dump ACLs for $($env:APPDATA)"
 		Get-Acl -Path $env:APPDATA | Format-Table -Wrap -AutoSize | Out-Host
 
-		Write-Host ">>> Installing Package: $Path"
-		Add-AppxPackage -Path $Path -ErrorAction Stop
+		Write-Host ">>> Installing Package: $Path (Dependencies: $($Dependencies -join ', '))"
+		Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ErrorAction Stop
 	}
 	catch
 	{
@@ -81,86 +73,79 @@ function Install-Package() {
 	}
 }
 
-Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
+$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
+$dependenciesDirectory = Join-Path $offlineDirectory 'Dependencies'
+$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 
-	Write-Host ">>> Enforce Appx Deployment Service running ..."
-	Get-Service “AppXSvc” | Start-Service
+Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
 
-	$offlineDirectory =	New-Item -Path (Join-Path $env:DEVBOX_HOME 'Offline\WinGet') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
-	Write-Host "- Offline directory: $offlineDirectory"
-
-	$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
-	Write-Host "- OS Type: $osType"
-
-	$loc = Join-Path $offlineDirectory 'Dependencies'
-	if (-not(Test-Path $loc -PathType Leaf)) {
-
-		Write-Host ">>> Downloading WinGet dependencies ..."
-
-		$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
-		$path = Join-Path (Invoke-FileDownload -Url $url -Expand -Retries 5) $osType
-		
-		Get-ChildItem -Path $path -Filter '*.*' | ForEach-Object {
-			
-			if (-not(Test-Path $loc -PathType Container)) {
-				Write-Host ">>> Creating dependency directory: $loc"
-				New-Item -Path $loc -ItemType Directory -Force | Out-Null
-			}
-
-			$destination = Join-Path $loc ([IO.Path]::GetFileName($_.FullName))
-
-			Write-Host ">>> Moving $($_.FullName) > $destination"
-			Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
-		}
-	}
-
-	Write-Host ">>> Installing WinGet dependencies ..."
-	Get-ChildItem -Path $loc -Filter '*.*' | Sort-Object -Descending | ForEach-Object { Install-Package -Path $_.FullName }
+	Write-Host ">>> Ensure offline directory: $offlineDirectory"
+	New-Item -Path $offlineDirectory -ItemType Directory -Force | Out-Null
 
 	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
-	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
+	$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
+	$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
 
-	if (-not (Test-Path $loc -PathType Leaf)) {
-
-		Write-Host ">>> Downloading WinGet CLI ..."
-		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc)) -Retries 5
-		
-		Write-Host ">>> Moving $path > $loc"
-		Move-Item -Path $path -Destination $loc -Force | Out-Null
-	}
-
-	Write-Host ">>> Installing WinGet CLI..."
-	Install-Package -Path $loc 
-
-	if (Test-IsElevated) {
-		Write-Host ">>> Resetting WinGet Sources ..."
-		Invoke-CommandLine -Command 'winget' -Arguments "source reset --force --disable-interactivity" | Select-Object -ExpandProperty Output | Write-Host
-	}
+	Write-Host ">>> Moving $path > $destination"
+	Move-Item -Path $path -Destination $destination -Force | Out-Null
 
 	$url = "https://cdn.winget.microsoft.com/cache/source.msix"
-	$loc = Join-Path $offlineDirectory ([IO.Path]::GetFileName($url))
+	$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
+	$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
 
-	if (-not(Test-Path $loc -PathType Leaf)) {
-		Write-Host ">>> Downloading WinGet Source Cache Package ..."
-		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($loc)) -Retries 5
-		Move-Item -Path $path -Destination $loc -Force | Out-Null
+	Write-Host ">>> Moving $path > $destination"
+	Move-Item -Path $path -Destination $destination -Force | Out-Null
+
+	$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
+	$path = Join-Path (Invoke-FileDownload -Url $url -Expand -Retries 5) $osType
+	
+	Get-ChildItem -Path $path -Filter '*.*' | ForEach-Object {
+		
+		if (-not(Test-Path $dependenciesDirectory -PathType Container)) {
+			Write-Host ">>> Creating dependency directory: $dependenciesDirectory"
+			New-Item -Path $dependenciesDirectory -ItemType Directory -Force | Out-Null
+		}
+
+		$destination = Join-Path $dependenciesDirectory ([IO.Path]::GetFileName($_.FullName))
+
+		Write-Host ">>> Moving $($_.FullName) > $destination"
+		Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
 	}
-
-	Write-Host ">>> Installing WinGet Source Cache Package ..."	
-	Install-Package -Path $loc 
 }
 
-# Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
+Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
-# 	Write-Host ">>> Installing WinGet PowerShell module for PSGallery ..."
-# 	Install-PackageProvider -Name NuGet -Force | Out-Null
+	Write-Host ">>> Starting AppXSvc ..."
+	Start-Service -Name 'AppXSvc' -ErrorAction SilentlyContinue
 
-# 	Write-Host ">>> Installing WinGet Client PowerShell module ..."
-# 	Install-Module -Name Microsoft.WinGet.Client -Scope AllUsers -Force -Repository PSGallery | Out-Null
+	Write-Host ">>> Starting InstallService ..."
+	Start-Service -Name 'InstallService' -ErrorAction SilentlyContinue
 
-# 	Write-Host ">>> Installing WinGet Client ..."
-# 	Repair-WinGetPackageManager 
-# }
+	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+	
+	if ($winget) {
+
+		Write-Host ">>> WinGet is already installed: $winget"
+
+	} else {
+
+		$wingetPackage = Get-ChildItem -Path $offlineDirectory -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName -First 1
+		$wingetDependencies = Get-ChildItem -Path $dependenciesDirectory -Filter '*.*' | Select-Object -ExpandProperty FullName
+		$wingetCache = Get-ChildItem -Path $offlineDirectory -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1
+
+		Write-Host ">>> Installing Package: $Path"
+		Install-Package -Path $wingetPackage -DependencyPath $wingetDependencies -ErrorAction Stop
+
+		if (Test-IsElevated) {
+			Write-Host ">>> Resetting WinGet Sources ..."
+			Invoke-CommandLine -Command 'winget' -Arguments "source reset --force --disable-interactivity" | Select-Object -ExpandProperty Output | Write-Host
+		}
+
+		Write-Host ">>> Installing WinGet Source Cache Package ..."	
+		Install-Package -Path $wingetCache -ErrorAction Stop
+				
+	}
+}
 
 if (Test-IsPacker) {
 	Invoke-ScriptSection -Title "Patching WinGet Config for Packer Mode" -ScriptBlock {
