@@ -148,7 +148,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 		$wingetCache = Get-ChildItem -Path $offlineDirectory -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1
 
 		Write-Host ">>> Installing Package: $Path"
-		Install-Package -Path $wingetPackage -DependencyPath $wingetDependencies -ErrorAction Stop
+		Install-Package -Path $wingetPackage -DependencyPath @($wingetDependencies) -ErrorAction Stop
 
 		if (Test-IsElevated) {
 			Write-Host ">>> Resetting WinGet Sources ..."
