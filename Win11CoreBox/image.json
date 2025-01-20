@@ -10,9 +10,9 @@
 	"updates": "none",
 
 	"base": {
-		"publisher": "MicrosoftVisualStudio",
-		"offer": "windowsplustools",
-		"sku": "base-win11-gen2",
+		"publisher": "MicrosoftWindowsDesktop",
+		"offer": "windows-ent-cpc",
+		"sku": "win11-24h2-ent-cpc",
 		"version": "latest"
 	},
 
