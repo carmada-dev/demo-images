@@ -150,7 +150,7 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 		$wingetManifest = Join-Path ($wingetPackage | Select-Object -ExpandProperty InstallLocation) 'Appxmanifest.xml'
 
 		Write-Host ">>> Install WinGet package: $wingetManifest"
-		Add-AppxPackage -Path $ManifestPath -Register -ErrorAction Stop
+		Add-AppxPackage -Path $wingetManifest -Register -ErrorAction Stop
 
 	} else {
 
