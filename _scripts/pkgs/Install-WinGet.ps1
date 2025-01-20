@@ -84,12 +84,12 @@ function Install-Package() {
 	}
 }
 
-$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
-$dependenciesDirectory = Join-Path $offlineDirectory 'Dependencies'
 
 if (Test-IsPacker) {
 	Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
 
+		$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
+		$dependenciesDirectory = Join-Path $offlineDirectory 'Dependencies'
 		$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 
 		Write-Host ">>> Ensure offline directory: $offlineDirectory"
@@ -128,6 +128,9 @@ if (Test-IsPacker) {
 }
 
 Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
+
+	$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
+	$dependenciesDirectory = Join-Path $offlineDirectory 'Dependencies'
 
 	Write-Host ">>> Starting AppXSvc ..."
 	Start-Service -Name 'AppXSvc' -ErrorAction SilentlyContinue
