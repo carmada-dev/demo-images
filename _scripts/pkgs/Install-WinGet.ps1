@@ -139,10 +139,18 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Start-Service -Name 'InstallService' -ErrorAction SilentlyContinue
 
 	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-	
+	$wingetPackage = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' -ErrorAction SilentlyContinue
+
 	if ($winget) {
 
 		Write-Host ">>> WinGet is already installed: $winget"
+
+	} elseif ($wingetPackage) {
+
+		$wingetManifest = Join-Path ($wingetPackage | Select-Object -ExpandProperty InstallLocation) 'Appxmanifest.xml'
+
+		Write-Host ">>> Install WinGet package: $wingetManifest"
+		Add-AppxPackage -Path $ManifestPath -Register -ErrorAction Stop
 
 	} else {
 
@@ -160,7 +168,6 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
 		Write-Host ">>> Installing WinGet Source Cache Package ..."	
 		Install-Package -Path $wingetCache -ErrorAction Stop
-				
 	}
 }
 
