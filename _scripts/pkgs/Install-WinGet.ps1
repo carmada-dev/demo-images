@@ -147,9 +147,34 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
 	} elseif ($wingetManifest) {
 
-		Write-Host ">>> Install WinGet package: $wingetManifest"
-		Add-AppxPackage -Path $wingetManifest -Register -DisableDevelopmentMode -ErrorAction Stop
-
+		try {
+			
+			Write-Host ">>> Install WinGet package: $wingetManifest"
+			Add-AppxPackage -Path $wingetManifest -Register -DisableDevelopmentMode -ErrorAction Stop
+		}
+		catch
+		{
+			$exceptionMessage = $_.Exception.Message
+	
+			if ($exceptionMessage -match '0x80073D06') {
+	
+				Write-Warning $exceptionMessage
+	
+			} else {
+	
+				$activityIdsPattern = '\b[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\b'
+				$activityIds = [regex]::Matches($exceptionMessage, $activityIdsPattern) | ForEach-Object { $_.Value } | Select-Object -Unique
+	
+				$activityIds | ForEach-Object {
+					Write-Warning $exceptionMessage
+					Write-Host "----------------------------------------------------------------------------------------------------------"
+					Get-AppxLog -ActivityId $_ | Out-Host
+				}
+	
+				throw
+			}
+		}	
+	
 	} else {
 
 		$wingetPackage = Get-ChildItem -Path $offlineDirectory -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName -First 1
