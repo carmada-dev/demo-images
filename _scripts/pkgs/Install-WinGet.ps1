@@ -152,6 +152,9 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 			Write-Host ">>> Dump ACLs for C:\Program Files\WindowsApps ..."
 			Get-Acl -Path 'C:\Program Files\WindowsApps' | Format-Table -Wrap -AutoSize | Out-Host
 	
+			Write-Host ">>> Installed WinGet Version"
+			Invoke-CommandLine -Command 'winget' -Arguments "--version" | Select-Object -ExpandProperty Output | Write-Host
+			
 			Write-Host ">>> Install WinGet package: $wingetManifest"
 			Add-AppxPackage -Path $wingetManifest -Register -DisableDevelopmentMode -ErrorAction Stop
 		}
