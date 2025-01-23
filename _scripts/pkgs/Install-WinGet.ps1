@@ -35,7 +35,7 @@ function Install-Package() {
 		[Parameter()]
 		[string] $Path,
 		[Parameter(Mandatory = $false)]
-		[string[]] $Dependencies
+		[string[]] $Dependencies = @()
 	)
 
 	try
@@ -51,7 +51,7 @@ function Install-Package() {
 			}
 
 			Write-Host ">>> Installing Package: $Path (Dependencies: $($Dependencies -join ', '))"
-			Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ErrorAction Stop
+			Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ForceApplicationShutdown -ForceUpdateFromAnyVersion -InstallAllResources -ErrorAction Stop
 	
 		} else {
 
@@ -139,47 +139,53 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Start-Service -Name 'InstallService' -ErrorAction SilentlyContinue
 
 	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-	$wingetManifest = Get-AppxProvisionedPackage -Online | Where-Object -Property DisplayName -EQ 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty InstallLocation -Last 1
+	# $wingetManifest = Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq 'Microsoft.DesktopAppInstaller' } | Select-Object -ExpandProperty InstallLocation -Last 1
+
+	Write-Host ">>> Provisioned WinGet Packages"
+	Get-AppxProvisionedPackage -Online | Format-Table -Property DisplayName, Version -Wrap -AutoSize | Out-Host
+
+	Write-Host ">>> Installed WinGet Packages"
+	Get-AppxPackage -AllUsers | Format-Table -Property Name, Version -Wrap -AutoSize | Out-Host
 
 	if ($winget) {
 
 		Write-Host ">>> WinGet is already installed: $winget"
 
-	} elseif ($wingetManifest) {
+	# } elseif ($wingetManifest) {
 
-		try {
+	# 	try {
 			
-			Write-Host ">>> Dump ACLs for C:\Program Files\WindowsApps ..."
-			Get-Acl -Path 'C:\Program Files\WindowsApps' | Format-Table -Wrap -AutoSize | Out-Host
+	# 		Write-Host ">>> Dump ACLs for C:\Program Files\WindowsApps ..."
+	# 		Get-Acl -Path 'C:\Program Files\WindowsApps' | Format-Table -Wrap -AutoSize | Out-Host
 	
-			Write-Host ">>> Installed WinGet Version"
-			Invoke-CommandLine -Command 'winget' -Arguments "--version" | Select-Object -ExpandProperty Output | Write-Host
-			
-			Write-Host ">>> Install WinGet package: $wingetManifest"
-			Add-AppxPackage -Path $wingetManifest -Register -DisableDevelopmentMode -ErrorAction Stop
-		}
-		catch
-		{
-			$exceptionMessage = $_.Exception.Message
+	# 		Write-Host ">>> Install WinGet package: $wingetManifest"
+	# 		Add-AppxPackage -Path $wingetManifest -Register -DisableDevelopmentMode -Regions All -ErrorAction Stop
+
+	# 		Write-Host ">>> Installed WinGet Version"
+	# 		Invoke-CommandLine -Command 'winget' -Arguments "--version" | Select-Object -ExpandProperty Output | Write-Host
+	# 	}
+	# 	catch
+	# 	{
+	# 		$exceptionMessage = $_.Exception.Message
 	
-			if ($exceptionMessage -match '0x80073D06') {
+	# 		if ($exceptionMessage -match '0x80073D06') {
 	
-				Write-Warning $exceptionMessage
+	# 			Write-Warning $exceptionMessage
 	
-			} else {
+	# 		} else {
 	
-				$activityIdsPattern = '\b[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\b'
-				$activityIds = [regex]::Matches($exceptionMessage, $activityIdsPattern) | ForEach-Object { $_.Value } | Select-Object -Unique
+	# 			$activityIdsPattern = '\b[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\b'
+	# 			$activityIds = [regex]::Matches($exceptionMessage, $activityIdsPattern) | ForEach-Object { $_.Value } | Select-Object -Unique
 	
-				$activityIds | ForEach-Object {
-					Write-Warning $exceptionMessage
-					Write-Host "----------------------------------------------------------------------------------------------------------"
-					Get-AppxLog -ActivityId $_ | Out-Host
-				}
+	# 			$activityIds | ForEach-Object {
+	# 				Write-Warning $exceptionMessage
+	# 				Write-Host "----------------------------------------------------------------------------------------------------------"
+	# 				Get-AppxLog -ActivityId $_ | Out-Host
+	# 			}
 	
-				throw
-			}
-		}	
+	# 			throw
+	# 		}
+	# 	}	
 	
 	} else {
 
