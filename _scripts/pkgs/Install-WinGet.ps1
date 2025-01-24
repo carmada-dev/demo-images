@@ -51,7 +51,7 @@ function Install-Package() {
 			}
 
 			Write-Host ">>> Installing Package: $Path (Dependencies: $($Dependencies -join ', '))"
-			Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ForceApplicationShutdown -ForceUpdateFromAnyVersion -InstallAllResources -ErrorAction Stop
+			Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
 	
 		} else {
 
@@ -69,6 +69,7 @@ function Install-Package() {
 			Write-Warning $exceptionMessage
 
 		} else {
+
 
 			$activityIdsPattern = '\b[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\b'
 			$activityIds = [regex]::Matches($exceptionMessage, $activityIdsPattern) | ForEach-Object { $_.Value } | Select-Object -Unique
