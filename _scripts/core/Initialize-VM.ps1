@@ -202,7 +202,7 @@ Invoke-ScriptSection -Title "Removing provisioned packages" -ScriptBlock {
 	Get-AppxProvisionedPackage -Online | ForEach-Object {
 		
 		Write-Host ">>> Removing provisioned package: $($_.PackageName)"
-		Remove-AppxProvisionedPackage -PackageName ($_.PackageName) -AllUsers
+		Remove-AppxProvisionedPackage -PackageName ($_.PackageName) -Online
 	}
 }
 
