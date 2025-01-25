@@ -87,6 +87,7 @@ function Install-Package() {
 
 
 if (Test-IsPacker) {
+	
 	Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
 
 		$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
@@ -125,13 +126,18 @@ if (Test-IsPacker) {
 			Write-Host ">>> Moving $($_.FullName) > $destination"
 			Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
 		}
+	}
+
+	Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
+
+		$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
 
 		$packageNames = New-Object System.Collections.Queue 
 		$packageFailed = ''
 
 		Get-ChildItem -Path $offlineDirectory -Filter '*.*' -Recurse `
-			| Select-Object -ExpandProperty Name { [System.IO.Path]::GetFileNameWithoutExtension($_) } `
-			| ForEach-Object { $packageNames.Enqueue($_) }
+			| Select-Object -ExpandProperty Name `
+			| ForEach-Object { $packageNames.Enqueue([System.IO.Path]::GetFileNameWithoutExtension($_)) }
 
 		while ($packageNames.Count -gt 0) {
 
@@ -141,8 +147,10 @@ if (Test-IsPacker) {
 
 			if (-not($packageInstalled) -and $packageProvisioned) {
 				try {
+
 					Write-Host ">>> Uninstalling provisioned package: $packageName"
 					Remove-AppxProvisionedPackage -PackageName ($_.PackageName) -AllUsers -Online
+
 				}
 				catch {
 
@@ -153,11 +161,6 @@ if (Test-IsPacker) {
 					$packageFailed = $packageName
 				}
 			}
-		}
-
-		Get-ChildItem -Path $offlineDirectory -Filter '*.*' -Recurse | Select-Object -ExpandProperty Name | ForEach-Object {
-
-			$packageName = [System.IO.Path]::GetFileNameWithoutExtension($_)
 		}
 	}
 }
