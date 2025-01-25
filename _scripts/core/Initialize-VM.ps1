@@ -186,26 +186,6 @@ Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 	}
 }
 
-# Invoke-ScriptSection -Title "Re-register applications" -ScriptBlock {
-
-# 	Get-AppXPackage | ForEach-Object {
-		
-# 		$path = Join-Path ($_.InstallLocation) 'AppXManifest.xml'
-
-# 		Write-Host ">>> Re-registering: $path"
-# 		Add-AppxPackage -DisableDevelopmentMode -Register $path
-# 	}
-# }
-
-Invoke-ScriptSection -Title "Removing provisioned packages" -ScriptBlock {
-
-	Get-AppxProvisionedPackage -Online | ForEach-Object {
-		
-		Write-Host ">>> Removing provisioned package: $($_.PackageName)"
-		Remove-AppxProvisionedPackage -PackageName ($_.PackageName) -AllUsers
-	}
-}
-
 $Artifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath 'Artifacts'
 if (Test-Path -Path $Artifacts -PathType Container) {
 

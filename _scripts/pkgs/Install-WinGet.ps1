@@ -125,6 +125,40 @@ if (Test-IsPacker) {
 			Write-Host ">>> Moving $($_.FullName) > $destination"
 			Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
 		}
+
+		$packageNames = New-Object System.Collections.Queue 
+		$packageFailed = ''
+
+		Get-ChildItem -Path $offlineDirectory -Filter '*.*' -Recurse `
+			| Select-Object -ExpandProperty Name { [System.IO.Path]::GetFileNameWithoutExtension($_) } `
+			| ForEach-Object { $packageNames.Enqueue($_) }
+
+		while ($packageNames.Count -gt 0) {
+
+			$packageName = $packageNames.Dequeue()
+			$packageInstalled = Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue
+			$packageProvisioned = Get-AppxProvisionedPackage -Online | Where-Object { $_.PackageName -eq $packageName } -ErrorAction SilentlyContinue
+
+			if (-not($packageInstalled) -and $packageProvisioned) {
+				try {
+					Write-Host ">>> Uninstalling provisioned package: $packageName"
+					Remove-AppxProvisionedPackage -PackageName ($_.PackageName) -AllUsers -Online
+				}
+				catch {
+
+					if ($packageFailed -eq $packageName) { throw }
+
+					Write-Warning "!!! Uninstalling provisioned package failed: $($_.Exception.Message)"
+					$packageNames.Enqueue($packageName)
+					$packageFailed = $packageName
+				}
+			}
+		}
+
+		Get-ChildItem -Path $offlineDirectory -Filter '*.*' -Recurse | Select-Object -ExpandProperty Name | ForEach-Object {
+
+			$packageName = [System.IO.Path]::GetFileNameWithoutExtension($_)
+		}
 	}
 }
 
