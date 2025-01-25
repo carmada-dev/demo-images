@@ -128,7 +128,7 @@ if (Test-IsPacker) {
 		}
 	}
 
-	Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
+	Invoke-ScriptSection -Title "Removing Provisioned WinGet Packages" -ScriptBlock {
 
 		$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
 
@@ -139,6 +139,8 @@ if (Test-IsPacker) {
 			| Select-Object -ExpandProperty Name `
 			| ForEach-Object { $packageNames.Enqueue([System.IO.Path]::GetFileNameWithoutExtension($_)) }
 
+		Write-Host ">>> Removing provisioned packages: $($packageNames.ToArray() -join ', ')"
+		
 		while ($packageNames.Count -gt 0) {
 
 			$packageName = $packageNames.Dequeue()
@@ -148,7 +150,7 @@ if (Test-IsPacker) {
 			if (-not($packageInstalled) -and $packageProvisioned) {
 				try {
 
-					Write-Host ">>> Uninstalling provisioned package: $packageName"
+					Write-Host ">>> Removing provisioned package: $packageName"
 					Remove-AppxProvisionedPackage -PackageName ($_.PackageName) -AllUsers -Online
 
 				}
@@ -156,7 +158,7 @@ if (Test-IsPacker) {
 
 					if ($packageFailed -eq $packageName) { throw }
 
-					Write-Warning "!!! Uninstalling provisioned package failed: $($_.Exception.Message)"
+					Write-Warning $_.Exception.Message
 					$packageNames.Enqueue($packageName)
 					$packageFailed = $packageName
 				}
@@ -179,15 +181,17 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 	# $wingetManifest = Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq 'Microsoft.DesktopAppInstaller' } | Select-Object -ExpandProperty InstallLocation -Last 1
 
-	Write-Host ">>> Provisioned WinGet Packages"
-	Get-AppxProvisionedPackage -Online | Format-Table -Property DisplayName, Version -Wrap -AutoSize | Out-Host
+	# Write-Host ">>> Provisioned WinGet Packages"
+	# Get-AppxProvisionedPackage -Online | Format-Table -Property DisplayName, Version -Wrap -AutoSize | Out-Host
 
-	Write-Host ">>> Installed WinGet Packages"
-	Get-AppxPackage -AllUsers | Format-Table -Property Name, Version -Wrap -AutoSize | Out-Host
+	# Write-Host ">>> Installed WinGet Packages"
+	# Get-AppxPackage -AllUsers | Format-Table -Property Name, Version -Wrap -AutoSize | Out-Host
 
 	if ($winget) {
 
-		Write-Host ">>> WinGet is already installed: $winget"
+		Write-Host ">>> WinGet is already installed"
+		Write-Host ">>> Path: $winget"
+		Write-Host ">>> Version: $((Invoke-CommandLine -Command $winget -Arguments "--version" | Select-Object -ExpandProperty Output) -replace '\r\n', '')"
 
 	# } elseif ($wingetManifest) {
 
