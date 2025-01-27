@@ -137,6 +137,7 @@ if (Test-IsPacker) {
 
 		Get-ChildItem -Path $offlineDirectory -Filter '*.*' -Recurse -File `
 			| Select-Object -ExpandProperty Name `
+			| Where-Object { $_ -ne 'source.msix' } `
 			| ForEach-Object { $packageNames.Enqueue([System.IO.Path]::GetFileNameWithoutExtension($_)) }
 
 		Write-Host ">>> Removing provisioned packages: $($packageNames.ToArray() -join ', ')"
@@ -144,13 +145,17 @@ if (Test-IsPacker) {
 		while ($packageNames.Count -gt 0) {
 
 			$packageName = $packageNames.Dequeue()
+			Write-Host ">>> Removing provisioned package: $packageName"
+
 			$packageInstalled = Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue
+			Write-Host "- Installed:   $(if ($packageInstalled) { 'Yes' } else { 'No' })"
+
 			$packageProvisioned = Get-AppxProvisionedPackage -Online | Where-Object { $_.PackageName -eq $packageName } -ErrorAction SilentlyContinue
+			Write-Host "- Provisioned: $(if ($packageProvisioned) { 'Yes' } else { 'No' })"
 
 			if (-not($packageInstalled) -and $packageProvisioned) {
 				try {
 
-					Write-Host ">>> Removing provisioned package: $packageName"
 					Remove-AppxProvisionedPackage -PackageName ($_.PackageName) -AllUsers -Online
 
 				}
