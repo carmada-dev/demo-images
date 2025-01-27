@@ -164,6 +164,8 @@ if (Test-IsPacker) {
 					if ($packageFailed -eq $packageName) { throw }
 
 					Write-Warning $_.Exception.Message
+					Write-Host "Retry in a second ..."
+
 					$packageNames.Enqueue($packageName)
 					$packageFailed = $packageName
 				}

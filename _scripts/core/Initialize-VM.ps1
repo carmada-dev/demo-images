@@ -170,6 +170,24 @@ Invoke-ScriptSection -Title 'Expand System Partition' -ScriptBlock {
 	}
 }
 
+Invoke-ScriptSection -Title 'Restore WindowsApp Permissions' -ScriptBlock {
+
+	# take over temporary ownership of the WindowsApps folder
+	Invoke-CommandLine -Command 'takeown' -Arguments '/f "%ProgramFiles%\WindowsApps"' `
+		| Select-Object -ExpandProperty Output `
+		| Write-Host
+
+	# reset the permissions of the WindowsApps folder
+	Invoke-CommandLine -Command 'cacls' -Arguments '"%programfiles%\WindowsApps" /s:"D:PAI(A;;FA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;OICIIO;GA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;;0x1200a9;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;OICIIO;GXGR;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;;FA;;;SY)(A;OICIIO;GA;;;SY)(A;CI;0x1200a9;;;BA)(A;OICI;0x1200a9;;;LS)(A;OICI;0x1200a9;;;NS)(A;OICI;0x1200a9;;;RC)(XA;;0x1200a9;;;BU;(Exists WIN://SYSAPPID))"' `
+		| Select-Object -ExpandProperty Output `
+		| Write-Host
+
+	# set the owner of the WindowsApps folder back to TrustedInstaller
+	Invoke-CommandLine -Command 'icacls' -Arguments '"%programfiles%\WindowsApps" /setowner "nt service\trustedinstaller"' `
+		| Select-Object -ExpandProperty Output `
+		| Write-Host
+}
+
 Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 
 	Write-Host ">>> Installing NuGet package provider" 
