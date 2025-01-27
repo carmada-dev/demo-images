@@ -138,7 +138,7 @@ if (Test-IsPacker) {
 		Get-ChildItem -Path $offlineDirectory -Filter '*.*' -Recurse -File `
 			| Select-Object -ExpandProperty Name `
 			| Where-Object { $_ -ne 'source.msix' } `
-			| ForEach-Object { $packageNames.Enqueue([System.IO.Path]::GetFileNameWithoutExtension($_)) }
+			| ForEach-Object { $packageNames.Enqueue([System.IO.Path]::GetFileNameWithoutExtension($_)) -split '_' | Select-Object -First 1 }
 
 		Write-Host ">>> Removing provisioned packages: $($packageNames.ToArray() -join ', ')"
 		
