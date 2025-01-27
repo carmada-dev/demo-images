@@ -135,7 +135,7 @@ if (Test-IsPacker) {
 		$packageNames = New-Object System.Collections.Queue 
 		$packageFailed = ''
 
-		Get-ChildItem -Path $offlineDirectory -Filter '*.*' -Recurse `
+		Get-ChildItem -Path $offlineDirectory -Filter '*.*' -Recurse -File `
 			| Select-Object -ExpandProperty Name `
 			| ForEach-Object { $packageNames.Enqueue([System.IO.Path]::GetFileNameWithoutExtension($_)) }
 
