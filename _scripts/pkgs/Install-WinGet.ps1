@@ -135,40 +135,74 @@ if (Test-IsPacker) {
 		$packageNames = New-Object System.Collections.Queue 
 		$packageFailed = ''
 
-		Get-ChildItem -Path $offlineDirectory -Filter '*.*' -Recurse -File `
-			| Select-Object -ExpandProperty Name `
-			| Where-Object { $_ -ne 'source.msix' } `
-			| ForEach-Object { $packageNames.Enqueue([System.IO.Path]::GetFileNameWithoutExtension($_)) -split '_' | Select-Object -First 1 }
+		Get-ChildItem -Path $offlineDirectory -File | Select-Object -ExpandProperty FullName | ForEach-Object {
+
+			$temporary = [System.IO.Path]::ChangeExtension($_, '.zip')
+			$destination = Join-Path $env:TEMP ([System.IO.Path]::GetFileNameWithoutExtension($_))
+			
+			# ensure destination folder does not exist
+			Remove-Item $destination -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
+		
+			try {
+				# expand the package to a temporary location ()
+				Expand-Archive `
+					-Path (Move-Item -Path $_ -Destination $temporary -PassThru | Select-Object -ExpandProperty FullName) `
+					-DestinationPath $destination `
+					-Force `
+					-ErrorAction SilentlyContinue
+			}
+			finally
+			{
+				Move-Item -Path $temporary -Destination $_
+			}
+		
+			if (Test-Path -Path $destination -PathType Container) {
+		
+				try {
+					$manifest = Get-ChildItem -Path $destination -Filter 'AppxManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
+					$packageName = ([xml](Get-Content $manifest)).Package.Identity.Name
+					$packageNames.Enqueue($packageName)
+					Write-Host ">>> Identified package '$packageName' in manifest '$manifest'"
+				}
+				catch {
+					# ignore any errors	
+				}					
+				finally {
+					Remove-Item -Path $destination -Force -Recurse -ErrorAction SilentlyContinue
+				}
+			}
+		}
 
 		Write-Host ">>> Removing provisioned packages: $($packageNames.ToArray() -join ', ')"
-		
+		$packageNames.ToArray() | ForEach-Object { Write-Host "- $_" }
+
 		while ($packageNames.Count -gt 0) {
 
 			$packageName = $packageNames.Dequeue()
-			Write-Host ">>> Removing provisioned package: $packageName"
+			$packageStatus = Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status
 
-			$packageInstalled = Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue
-			Write-Host "- Installed:   $(if ($packageInstalled) { 'Yes' } else { 'No' })"
+			Write-Host ">>> Removing provisioned package: $packageName (Status: $packageStatus)"
 
-			$packageProvisioned = Get-AppxProvisionedPackage -Online | Where-Object { $_.PackageName -eq $packageName } -ErrorAction SilentlyContinue
-			Write-Host "- Provisioned: $(if ($packageProvisioned) { 'Yes' } else { 'No' })"
+			try {
 
-			if (-not($packageInstalled) -and $packageProvisioned) {
-				try {
-
-					Remove-AppxProvisionedPackage -PackageName ($_.PackageName) -AllUsers -Online
-
+				if ($packageStatus -eq 'Ok') {
+					Write-Host "- Installed package"
+					Remove-AppxPackage -PackageName ($packageName) -AllUsers -ErrorAction SilentlyContinue
 				}
-				catch {
 
-					if ($packageFailed -eq $packageName) { throw }
+				Write-Host "- Provisioned package"
+				Remove-AppxProvisionedPackage -PackageName ($_.PackageName) -AllUsers -Online
 
-					Write-Warning $_.Exception.Message
-					Write-Host "Retry in a second ..."
+			}
+			catch {
 
-					$packageNames.Enqueue($packageName)
-					$packageFailed = $packageName
-				}
+				if ($packageFailed -eq $packageName) { throw }
+
+				Write-Warning $_.Exception.Message
+				Write-Host "Retry in a second ..."
+
+				$packageNames.Enqueue($packageName)
+				$packageFailed = $packageName
 			}
 		}
 	}
