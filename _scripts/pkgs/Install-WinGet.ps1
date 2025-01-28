@@ -192,7 +192,7 @@ if (Test-IsPacker) {
 
 		while ($packageNames.Count -gt 0) {
 
-			for ($i = $array.Count - 1; $i -ge 0 ; $i--) {
+			for ($i = $packageNames.Count - 1; $i -ge 0 ; $i--) {
 
 				$packageName = $packageNames[$i]
 				Write-Host ">>> Removing package: $packageName"
@@ -218,7 +218,7 @@ if (Test-IsPacker) {
 			}
 
 			if ($packageCount -eq $packageNames.Count) {
-				throw "Failed to remove any packages"
+				throw "Failed to remove all packages: $($packageNames -join ', ')"
 			} else {
 				$packageCount = $packageNames.Count
 			}
