@@ -131,7 +131,7 @@ if (Test-IsPacker) {
 	Invoke-ScriptSection -Title "Removing Provisioned WinGet Packages" -ScriptBlock {
 
 		$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
-		$packageNames = [System.Collections.Generic.List[String]]::new() 
+		$packages = [System.Collections.Generic.List[PSCustomObject]]::new() 
 
 		Get-ChildItem -Path $offlineDirectory -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
 
@@ -161,19 +161,26 @@ if (Test-IsPacker) {
 					# extract the package name from the manifest
 					$manifest = Get-ChildItem -Path $destination -Filter 'AppxManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
 					if ($manifest) { 
-						$packageName = ([xml](Get-Content $manifest)).Package.Identity.Name 
+						$xml = ([xml](Get-Content $manifest))	
+						$packageName = $xml.Package.Identity.Name 
+						$packageVersion = $xml.Package.Identity.Version
 					} else {
 						# extract the package name from the bundle manifest
 						$manifest = Get-ChildItem -Path $destination -Filter 'AppxBundleManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
 						if ($manifest) { 	
-							$packageName = ([xml](Get-Content $manifest)).Bundle.Identity.Name 
+							$xml = ([xml](Get-Content $manifest))	
+							$packageName = $xml.Bundle.Identity.Name 
+							$packageVersion = $xml.Bundle.Identity.Version
 						}
 					}
 
-					# add the package name to the queue
-					if ($packageName) {
-						$packageNames.Add($packageName)
-						Write-Host ">>> Identified package '$packageName' ($_)"
+					# add the package name/version to the queue
+					if ($packageName -and $packageVersion) {
+						Write-Host ">>> Identified package '$packageName' ($packageVersion) in $_"
+						$packages.Add([PSCustomObject]@{
+							Name = $packageName
+							Version = $packageVersion
+						})
 					}
 				}
 				catch {
@@ -186,41 +193,38 @@ if (Test-IsPacker) {
 			}
 		}
 
-		Write-Host ">>> Removing $($packageNames.Count) provisioned packages "
-		$packageNames | ForEach-Object { Write-Host "- $_" }
-		$packageCount = $packageNames.Count
+		Write-Host ">>> Removing $($packages.Count) provisioned packages "
+		$packages | ForEach-Object { Write-Host "- $($_.Name) ($($_.Version))" }
+		$packageCount = $packages.Count
 
-		while ($packageNames.Count -gt 0) {
+		while ($packages.Count -gt 0) {
 
-			for ($i = $packageNames.Count - 1; $i -ge 0 ; $i--) {
+			for ($i = $packages.Count - 1; $i -ge 0 ; $i--) {
 
-				$packageName = $packageNames[$i]
+				$package = $packages[$i]
 				Write-Host ">>> Removing package: $packageName"
 
 				try {
 
-					if ((Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status) -eq 'Ok') {
-						Write-Host "- Installed package"
-						Remove-AppxPackage -PackageName $packageName -AllUsers -ErrorAction SilentlyContinue
-					}
+					Write-Host "- Installed package"
+					Get-AppxPackage -Name $package.Name | Where-Object { $_.Version -eq $package.Version } | Remove-AppxPackage -AllUsers -ErrorAction Continue
 
 					Write-Host "- Provisioned package"
-					Remove-AppxProvisionedPackage -PackageName $packageName -AllUsers -Online
+					Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) -and ($_.Version -eq $package.Version) } | Remove-AppxProvisionedPackage -AllUsers -Online
 
 					# remove the package from the list
-					$packageNames.RemoveAt($i)
+					$packages.RemoveAt($i)
 				}
 				catch {
 
 					Write-Warning $_.Exception.Message
-
 				}
 			}
 
-			if ($packageCount -eq $packageNames.Count) {
-				throw "Failed to remove all packages: $($packageNames -join ', ')"
+			if ($packageCount -eq $packages.Count) {
+				throw "Failed to remove packages: $(($packages | ForEach-Object { "$($_.Name) ($($_.Version))" }) -join ', ')"
 			} else {
-				$packageCount = $packageNames.Count
+				$packageCount = $packages.Count
 			}
 
 		}
