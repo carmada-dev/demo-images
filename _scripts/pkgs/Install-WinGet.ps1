@@ -135,7 +135,7 @@ if (Test-IsPacker) {
 		$packageNames = New-Object System.Collections.Queue 
 		$packageFailed = ''
 
-		Get-ChildItem -Path $offlineDirectory -File | Select-Object -ExpandProperty FullName | ForEach-Object {
+		Get-ChildItem -Path $offlineDirectory -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
 
 			$temporary = [System.IO.Path]::ChangeExtension($_, '.zip')
 			$destination = Join-Path $env:TEMP ([System.IO.Path]::GetFileNameWithoutExtension($_))
@@ -144,36 +144,39 @@ if (Test-IsPacker) {
 			Remove-Item $destination -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
 		
 			try {
-				# expand the package to a temporary location ()
+				# expand the package to a temporary location (using the zip version of the package file)
 				Expand-Archive `
-					-Path (Move-Item -Path $_ -Destination $temporary -PassThru | Select-Object -ExpandProperty FullName) `
+					-Path (Move-Item -Path $_ -Destination $temporary -PassThru -Force | Select-Object -ExpandProperty FullName) `
 					-DestinationPath $destination `
 					-Force `
 					-ErrorAction SilentlyContinue
 			}
 			finally
 			{
-				Move-Item -Path $temporary -Destination $_
+				# rename the temporary file back to the original
+				Move-Item -Path $temporary -Destination $_ -Force -ErrorAction SilentlyContinue
 			}
 		
 			if (Test-Path -Path $destination -PathType Container) {
 		
 				try {
+					# extract the package name from the manifest
 					$manifest = Get-ChildItem -Path $destination -Filter 'AppxManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
 					$packageName = ([xml](Get-Content $manifest)).Package.Identity.Name
 					$packageNames.Enqueue($packageName)
-					Write-Host ">>> Identified package '$packageName' in manifest '$manifest'"
+					Write-Host ">>> Identified package '$packageName' ($_)"
 				}
 				catch {
 					# ignore any errors	
 				}					
 				finally {
+					# remove the temporary folder
 					Remove-Item -Path $destination -Force -Recurse -ErrorAction SilentlyContinue
 				}
 			}
 		}
 
-		Write-Host ">>> Removing provisioned packages: $($packageNames.ToArray() -join ', ')"
+		Write-Host ">>> Removing $($packageNames.Count) provisioned packages "
 		$packageNames.ToArray() | ForEach-Object { Write-Host "- $_" }
 
 		while ($packageNames.Count -gt 0) {
@@ -220,56 +223,12 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 	Start-Service -Name 'InstallService' -ErrorAction SilentlyContinue
 
 	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-	# $wingetManifest = Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq 'Microsoft.DesktopAppInstaller' } | Select-Object -ExpandProperty InstallLocation -Last 1
-
-	# Write-Host ">>> Provisioned WinGet Packages"
-	# Get-AppxProvisionedPackage -Online | Format-Table -Property DisplayName, Version -Wrap -AutoSize | Out-Host
-
-	# Write-Host ">>> Installed WinGet Packages"
-	# Get-AppxPackage -AllUsers | Format-Table -Property Name, Version -Wrap -AutoSize | Out-Host
-
 	if ($winget) {
 
 		Write-Host ">>> WinGet is already installed"
 		Write-Host ">>> Path: $winget"
 		Write-Host ">>> Version: $((Invoke-CommandLine -Command $winget -Arguments "--version" | Select-Object -ExpandProperty Output) -replace '\r\n', '')"
 
-	# } elseif ($wingetManifest) {
-
-	# 	try {
-			
-	# 		Write-Host ">>> Dump ACLs for C:\Program Files\WindowsApps ..."
-	# 		Get-Acl -Path 'C:\Program Files\WindowsApps' | Format-Table -Wrap -AutoSize | Out-Host
-	
-	# 		Write-Host ">>> Install WinGet package: $wingetManifest"
-	# 		Add-AppxPackage -Path $wingetManifest -Register -DisableDevelopmentMode -Regions All -ErrorAction Stop
-
-	# 		Write-Host ">>> Installed WinGet Version"
-	# 		Invoke-CommandLine -Command 'winget' -Arguments "--version" | Select-Object -ExpandProperty Output | Write-Host
-	# 	}
-	# 	catch
-	# 	{
-	# 		$exceptionMessage = $_.Exception.Message
-	
-	# 		if ($exceptionMessage -match '0x80073D06') {
-	
-	# 			Write-Warning $exceptionMessage
-	
-	# 		} else {
-	
-	# 			$activityIdsPattern = '\b[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\b'
-	# 			$activityIds = [regex]::Matches($exceptionMessage, $activityIdsPattern) | ForEach-Object { $_.Value } | Select-Object -Unique
-	
-	# 			$activityIds | ForEach-Object {
-	# 				Write-Warning $exceptionMessage
-	# 				Write-Host "----------------------------------------------------------------------------------------------------------"
-	# 				Get-AppxLog -ActivityId $_ | Out-Host
-	# 			}
-	
-	# 			throw
-	# 		}
-	# 	}	
-	
 	} else {
 
 		$wingetPackage = Get-ChildItem -Path $offlineDirectory -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName -First 1
