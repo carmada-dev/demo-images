@@ -11,7 +11,9 @@ function Invoke-CommandLine {
         [ValidateSet('StdOut', 'StdErr')]
 		[string] $Capture = 'StdOut',
         [Parameter(Mandatory=$false)]
-        [string[]] $Mask = @()
+        [string[]] $Mask = @(),
+        [Parameter(Mandatory=$false)]
+        [switch] $AsSystem
     )
 
     $processInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -24,9 +26,29 @@ function Invoke-CommandLine {
     $processInfo.Arguments = $Arguments
     $processInfo.WorkingDirectory = $WorkingDirectory
 
-    Using-Object ($process = New-Object System.Diagnostics.Process) {
-    
+    if ($AsSystem) {
+
+        if (-not(Test-IsElevated)) {
+            throw "This command requires administrative privileges."
+        }
+
+        $psexec = Join-Path $Env:DEVBOX_HOME "Tools\PsExec$(&{ if ([Environment]::Is64BitOperatingSystem) { '64' } else { '' } }).exe"
+
+        if (-not(Test-Path $psexec)) {
+            throw "PsExec executable not found at $psexec."
+        }
+
+        $processInfo.FileName = $psexec
+        $processInfo.Arguments = "-accepteula -nobanner -s $Command $Arguments"
+
+        Write-Host "| EXEC $WorkingDirectory> $psexec -accepteula -nobanner -s $Command $($Arguments | ConvertTo-MaskedString -Mask $Mask)"
+
+    } else {
+
         Write-Host "| EXEC $WorkingDirectory> $Command $($Arguments | ConvertTo-MaskedString -Mask $Mask)"
+    }
+
+    Using-Object ($process = New-Object System.Diagnostics.Process) {        
 
         $process.StartInfo = $processInfo
         $process.Start() | Out-Null
@@ -41,10 +63,6 @@ function Invoke-CommandLine {
             Error    = [string] $errout
             ExitCode = $process.ExitCode
         }
-
-        # if (-not($process.ExitCode -eq 0)) {            
-        #     Write-Error (&{ if ($Capture -eq 'StdErr') { $output } else { $errout } })
-        # }
     }
 }
 

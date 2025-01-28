@@ -52,7 +52,7 @@ $downloadStorageArtifact = {
 
 	$azcopy = Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Tools') -Recurse -Filter 'azcopy.exe' | Select-Object -ExpandProperty FullName -First 1
 	if (-not($azcopy)) { 
-		lj
+
 		Throw "AzCopy not found" 
 
 	} else {
@@ -90,6 +90,23 @@ Invoke-ScriptSection -Title 'Setting DevBox environment variables' -ScriptBlock 
 	[Environment]::SetEnvironmentVariable("DEVBOX_HOME", $devboxHome, [System.EnvironmentVariableTarget]::Machine)
 	Get-ChildItem -Path Env:DEVBOX_* | ForEach-Object { [Environment]::SetEnvironmentVariable($_.Name, $_.Value, [System.EnvironmentVariableTarget]::Machine) }
 	Get-ChildItem -Path Env:DEVBOX_* | Out-String | Write-Host
+}
+
+Invoke-ScriptSection -Title 'Downloading Tools' -ScriptBlock {
+
+	$tools = New-Item -Path (Join-Path $Env:DEVBOX_HOME 'Tools') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
+
+	Write-Host ">>> Download azcopy"
+	$azcopyTemp = Invoke-FileDownload -Url "https://aka.ms/downloadazcopy-v10-windows$(&{ if ([Environment]::Is64BitOperatingSystem) { '' } else { '-32bit' } })" -Name "azcopy.zip" -Expand 
+	Get-ChildItem -Path $azcopyTemp -Recurse -Filter 'azcopy.exe' `
+		| Select-Object -ExpandProperty FullName -First 1 `
+		| ForEach-Object { Move-Item -Path $_ -Destination $tools -Force | Out-Null	}
+
+	Write-Host ">>> Downloading PsExec"
+	$pstoolsTemp = Invoke-FileDownload -Url 'https://download.sysinternals.com/files/PSTools.zip' -Name "PSTools.zip" -Expand
+	Get-ChildItem -Path $pstoolsTemp -Recurse -Filter 'PsExec*.exe' `
+		| Select-Object -ExpandProperty FullName `
+		| ForEach-Object { Move-Item -Path $_ -Destination $tools -Force | Out-Null	}
 }
 
 Invoke-ScriptSection -Title 'Disable Defrag Schedule' -ScriptBlock {
@@ -176,29 +193,33 @@ Invoke-ScriptSection -Title 'Restore WindowsApp Permissions' -ScriptBlock {
 	$windowsApps = Join-Path $programFiles 'WindowsApps'
 	$icaclsConfig = Join-Path $env:TEMP 'icacls.config'
 
-	@"
+@"
 windowsapps
 D:PAI(A;;FA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;OICIIO;GA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;;0x1200a9;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;OICIIO;GXGR;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;;FA;;;SY)(A;OICIIO;GA;;;SY)(A;CI;0x1200a9;;;BA)(A;OICI;0x1200a9;;;LS)(A;OICI;0x1200a9;;;NS)(A;OICI;0x1200a9;;;RC)(XA;;0x1200a9;;;BU;(Exists WIN://SYSAPPID))
 "@ | Out-File -FilePath $icaclsConfig -Force
 
-
 	# take over temporary ownership of the WindowsApps folder
-	Invoke-CommandLine -Command 'takeown' -Arguments "/f `"$windowsApps`"" `
+	Invoke-CommandLine -AsSystem -Command 'takeown' -Arguments "/f `"$windowsApps`"" `
 		| Select-Object -ExpandProperty Output `
 		| Write-Host
 
 	# reset the permissions of the WindowsApps folder
-	Invoke-CommandLine -Command 'icacls' -Arguments "`"$programFiles`" /restore `"$icaclsConfig`"" `
+	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$programFiles`" /restore `"$icaclsConfig`" /c" `
 		| Select-Object -ExpandProperty Output `
 		| Write-Host
 
 	# set the owner of the WindowsApps folder back to TrustedInstaller
-	Invoke-CommandLine -Command 'icacls' -Arguments "`"$windowsApps`" /setowner `"nt service\trustedinstaller`"" `
+	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps`" /setowner `"nt service\trustedinstaller`" /c" `
 		| Select-Object -ExpandProperty Output `
 		| Write-Host
 
 	# grant current user full control of the WindowsApps folder
-	Invoke-CommandLine -Command 'icacls' -Arguments "`"$windowsApps`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F`" /t" `
+	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F`" /c" `
+		| Select-Object -ExpandProperty Output `
+		| Write-Host
+
+	# inherit permissions on all files and folders in the WindowsApps folder
+	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps\*`" /reset /c /t" `
 		| Select-Object -ExpandProperty Output `
 		| Write-Host
 }
@@ -251,19 +272,6 @@ if (Test-Path -Path $Artifacts -PathType Container) {
                     Write-Host "- Azure login failed - retry in 10 seconds"
                     Start-Sleep -Seconds 10
 				}
-			}
-
-			Write-Host ">>> Download azcopy"
-			$azcopyTemp = ''
-			if ([Environment]::Is64BitOperatingSystem) { 
-				$azcopyTemp = Invoke-FileDownload -Url 'https://aka.ms/downloadazcopy-v10-windows' -Name "azcopy.zip" -Expand
-			} else { 
-				$azcopyTemp = Invoke-FileDownload -Url 'https://aka.ms/downloadazcopy-v10-windows-32bit' -Name "azcopy.zip" -Expand 
-			}
-
-			Get-ChildItem -Path $azcopyTemp -Recurse -Filter 'azcopy.exe' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object { 
-				$tools = New-Item -Path (Join-Path $Env:DEVBOX_HOME 'Tools') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
-				Move-Item -Path $_ -Destination $tools -Force | Out-Null
 			}
 		}
 
