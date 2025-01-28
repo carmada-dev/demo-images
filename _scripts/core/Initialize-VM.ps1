@@ -198,7 +198,7 @@ D:PAI(A;;FA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;
 		| Write-Host
 
 	# grant current user full control of the WindowsApps folder
-	Invoke-CommandLine -Command 'icacls' -Arguments "`"$windowsApps`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)`"" `
+	Invoke-CommandLine -Command 'icacls' -Arguments "`"$windowsApps`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F`" /t" `
 		| Select-Object -ExpandProperty Output `
 		| Write-Host
 }
