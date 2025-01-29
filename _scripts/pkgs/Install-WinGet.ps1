@@ -193,40 +193,45 @@ if (Test-IsPacker) {
 			}
 		}
 
-		Write-Host ">>> Removing $($packages.Count) provisioned packages "
-		$packages | ForEach-Object { Write-Host "- $($_.Name) ($($_.Version))" }
-		$packageCount = $packages.Count
+		if ($packages.Count -gt 0) {
 
-		while ($packages.Count -gt 0) {
+			Write-Host ">>> Removing $($packages.Count) provisioned packages "
+			$packages | ForEach-Object { Write-Host "- $($_.Name) ($($_.Version))" }
+			$packageCount = $packages.Count
 
-			for ($i = $packages.Count - 1; $i -ge 0 ; $i--) {
+			while ($packages.Count -gt 0) {
+				for ($i = $packages.Count - 1; $i -ge 0 ; $i--) {
 
-				$package = $packages[$i]
-				Write-Host ">>> Removing package: $packageName"
+					$package = $packages[$i]
+					Write-Host ">>> Removing package: $packageName"
 
-				try {
+					try {
 
-					Write-Host "- Installed package"
-					Get-AppxPackage -Name $package.Name | Where-Object { $_.Version -eq $package.Version } | Remove-AppxPackage -AllUsers -ErrorAction Continue
+						Get-AppxPackage -Name $package.Name | Where-Object { $_.Version -eq $package.Version } | ForEach-Object {
+							Write-Host "- Installed package"
+							$_ | Remove-AppxPackage -AllUsers 
+						}
 
-					Write-Host "- Provisioned package"
-					Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) -and ($_.Version -eq $package.Version) } | Remove-AppxProvisionedPackage -AllUsers -Online
+						Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) -and ($_.Version -eq $package.Version) } | ForEach-Object {
+							Write-Host "- Provisioned package"	
+							Remove-AppxProvisionedPackage -AllUsers -Online
+						}
 
-					# remove the package from the list
-					$packages.RemoveAt($i)
+						# remove the package from the list
+						$packages.RemoveAt($i)
+					}
+					catch {
+
+						Write-Warning $_.Exception.Message
+					}
 				}
-				catch {
 
-					Write-Warning $_.Exception.Message
+				if ($packageCount -eq $packages.Count) {
+					throw "Failed to remove packages: $(($packages | ForEach-Object { "$($_.Name) ($($_.Version))" }) -join ', ')"
+				} else {
+					$packageCount = $packages.Count
 				}
 			}
-
-			if ($packageCount -eq $packages.Count) {
-				throw "Failed to remove packages: $(($packages | ForEach-Object { "$($_.Name) ($($_.Version))" }) -join ', ')"
-			} else {
-				$packageCount = $packages.Count
-			}
-
 		}
 	}
 }

@@ -187,42 +187,42 @@ Invoke-ScriptSection -Title 'Expand System Partition' -ScriptBlock {
 	}
 }
 
-Invoke-ScriptSection -Title 'Restore WindowsApp Permissions' -ScriptBlock {
+# Invoke-ScriptSection -Title 'Restore WindowsApp Permissions' -ScriptBlock {
 
-	$programFiles = [Environment]::GetFolderPath('ProgramFiles')
-	$windowsApps = Join-Path $programFiles 'WindowsApps'
-	$icaclsConfig = Join-Path $env:TEMP 'icacls.config'
+# 	$programFiles = [Environment]::GetFolderPath('ProgramFiles')
+# 	$windowsApps = Join-Path $programFiles 'WindowsApps'
+# 	$icaclsConfig = Join-Path $env:TEMP 'icacls.config'
 
-@"
-windowsapps
-D:PAI(A;;FA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;OICIIO;GA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;;0x1200a9;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;OICIIO;GXGR;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;;FA;;;SY)(A;OICIIO;GA;;;SY)(A;CI;0x1200a9;;;BA)(A;OICI;0x1200a9;;;LS)(A;OICI;0x1200a9;;;NS)(A;OICI;0x1200a9;;;RC)(XA;;0x1200a9;;;BU;(Exists WIN://SYSAPPID))
-"@ | Out-File -FilePath $icaclsConfig -Force
+# @"
+# windowsapps
+# D:PAI(A;;FA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;OICIIO;GA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;;0x1200a9;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;OICIIO;GXGR;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;;FA;;;SY)(A;OICIIO;GA;;;SY)(A;CI;0x1200a9;;;BA)(A;OICI;0x1200a9;;;LS)(A;OICI;0x1200a9;;;NS)(A;OICI;0x1200a9;;;RC)(XA;;0x1200a9;;;BU;(Exists WIN://SYSAPPID))
+# "@ | Out-File -FilePath $icaclsConfig -Force
 
-	# take over temporary ownership of the WindowsApps folder
-	Invoke-CommandLine -AsSystem -Command 'takeown' -Arguments "/f `"$windowsApps`"" `
-		| Select-Object -ExpandProperty Output `
-		| Write-Host
+# 	# take over temporary ownership of the WindowsApps folder
+# 	Invoke-CommandLine -AsSystem -Command 'takeown' -Arguments "/f `"$windowsApps`"" `
+# 		| Select-Object -ExpandProperty Output `
+# 		| Write-Host
 
-	# reset the permissions of the WindowsApps folder
-	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$programFiles`" /restore `"$icaclsConfig`" /c" `
-		| Select-Object -ExpandProperty Output `
-		| Write-Host
+# 	# reset the permissions of the WindowsApps folder
+# 	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$programFiles`" /restore `"$icaclsConfig`" /c" `
+# 		| Select-Object -ExpandProperty Output `
+# 		| Write-Host
 
-	# set the owner of the WindowsApps folder back to TrustedInstaller
-	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps`" /setowner `"nt service\trustedinstaller`" /c" `
-		| Select-Object -ExpandProperty Output `
-		| Write-Host
+# 	# set the owner of the WindowsApps folder back to TrustedInstaller
+# 	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps`" /setowner `"nt service\trustedinstaller`" /c" `
+# 		| Select-Object -ExpandProperty Output `
+# 		| Write-Host
 
-	# grant current user full control of the WindowsApps folder
-	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F`" /c" `
-		| Select-Object -ExpandProperty Output `
-		| Write-Host
+# 	# grant current user full control of the WindowsApps folder
+# 	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F`" /c" `
+# 		| Select-Object -ExpandProperty Output `
+# 		| Write-Host
 
-	# inherit permissions on all files and folders in the WindowsApps folder
-	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps\*`" /reset /c /t" `
-		| Select-Object -ExpandProperty Output `
-		| Write-Host
-}
+# 	# inherit permissions on all files and folders in the WindowsApps folder
+# 	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps\*`" /reset /c /t" `
+# 		| Select-Object -ExpandProperty Output `
+# 		| Write-Host
+# }
 
 Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 
