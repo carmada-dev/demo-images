@@ -184,20 +184,32 @@ if (Test-IsPacker) {
 			}
 		}
 
-		$packages | ForEach-Object {
+		$packages | ForEach-Object	`
+			-Begin {
 
-			$package = $_
+				$paths = @(
+					Join-Path $env:ProgramFiles 'WindowsApps'
+				)
+				
+				$paths | ForEach-Object {
+					Write-Host ">>> Dump ACLs: $_"
+					Get-Acl -Path $_ | Format-Table -Wrap -AutoSize | Out-Host
+				}
+			} `
+			-Process {
 
-			Get-AppxPackage -Name $package.Name | ForEach-Object {
-				Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $($_.InstallLocation)"
-				Get-Acl -Path $_.InstallLocation | Format-Table -Wrap -AutoSize | Out-Host
+				$package = $_
+
+				Get-AppxPackage -Name $package.Name | ForEach-Object {
+					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $($_.InstallLocation)"
+					Get-Acl -Path $_.InstallLocation | Format-Table -Wrap -AutoSize | Out-Host
+				}
+
+				Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) } | ForEach-Object {
+					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
+					Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
+				}
 			}
-
-			Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) } | ForEach-Object {
-				Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
-				Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
-			}
-		}
 
 		if ($packages.Count -gt 0) {
 
