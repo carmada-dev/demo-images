@@ -214,7 +214,7 @@ if (Test-IsPacker) {
 
 						Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) -and ($_.Version -eq $package.Version) } | ForEach-Object {
 							Write-Host "- Provisioned package"	
-							Remove-AppxProvisionedPackage -AllUsers -Online
+							$_ | Remove-AppxProvisionedPackage -AllUsers -Online
 						}
 
 						# remove the package from the list
