@@ -40,38 +40,16 @@ function Install-Package() {
 
 	try
 	{
-		Write-Host ">>> Dump ACLs for $Path ..."
-		Get-Acl -Path $Path | Format-Table -Wrap -AutoSize | Out-Host
+		# Write-Host ">>> Dump ACLs for $Path ..."
+		# Get-Acl -Path $Path | Format-Table -Wrap -AutoSize | Out-Host
 
-		if ($Dependencies) {
-		
-			$Dependencies | ForEach-Object {
-				Write-Host ">>> Dump ACLs for $_ ..."
-				Get-Acl -Path $_ | Format-Table -Wrap -AutoSize | Out-Host
-			}
+		# $Dependencies | ForEach-Object {
+		# 	Write-Host ">>> Dump ACLs for $_ ..."
+		# 	Get-Acl -Path $_ | Format-Table -Wrap -AutoSize | Out-Host
+		# }
 
-			Write-Host ">>> Installing Package: $Path (Dependencies: $($Dependencies -join ', '))"
-			# Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
-	
-			Invoke-CommandLine `
-				-AsSystem `
-				-Command 'powershell' `
-				-Arguments "-WindowStyle Hidden -ExecutionPolicy Bypass -Command `"Add-AppxPackage -Path $Path -DependencyPath $($Dependencies -join ', ') -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop`"" `
-				| Select-Object -ExpandProperty Output `
-				| Write-Host
-
-		} else {
-
-			Write-Host ">>> Installing Package: $Path"
-			# Add-AppxPackage -Path $Path -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
-
-			Invoke-CommandLine `
-				-AsSystem `
-				-Command 'powershell' `
-				-Arguments "-WindowStyle Hidden -ExecutionPolicy Bypass -Command `"Add-AppxPackage -Path $Path -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop`"" `
-				| Select-Object -ExpandProperty Output `
-				| Write-Host
-		}
+		Write-Host ">>> Installing Package: $Path (Dependencies: $($Dependencies -join ', '))"
+		Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
 	}
 	catch
 	{
@@ -141,112 +119,129 @@ if (Test-IsPacker) {
 		}
 	}
 
-	# Invoke-ScriptSection -Title "Removing Provisioned WinGet Packages" -ScriptBlock {
+	Invoke-ScriptSection -Title "Fix WinGet Package Permissions" -ScriptBlock {
 
-	# 	$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
-	# 	$packages = [System.Collections.Generic.List[PSCustomObject]]::new() 
+		$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
+		$packages = [System.Collections.Generic.List[PSCustomObject]]::new() 
 
-	# 	Get-ChildItem -Path $offlineDirectory -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
+		Get-ChildItem -Path $offlineDirectory -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
 
-	# 		$temporary = [System.IO.Path]::ChangeExtension($_, '.zip')
-	# 		$destination = Join-Path $env:TEMP ([System.IO.Path]::GetFileNameWithoutExtension($_))
+			$temporary = [System.IO.Path]::ChangeExtension($_, '.zip')
+			$destination = Join-Path $env:TEMP ([System.IO.Path]::GetFileNameWithoutExtension($_))
 			
-	# 		# ensure destination folder does not exist
-	# 		Remove-Item $destination -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
+			# ensure destination folder does not exist
+			Remove-Item $destination -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
 		
-	# 		try {
-	# 			# expand the package to a temporary location (using the zip version of the package file)
-	# 			Expand-Archive `
-	# 				-Path (Move-Item -Path $_ -Destination $temporary -PassThru -Force | Select-Object -ExpandProperty FullName) `
-	# 				-DestinationPath $destination `
-	# 				-Force `
-	# 				-ErrorAction SilentlyContinue
-	# 		}
-	# 		finally
-	# 		{
-	# 			# rename the temporary file back to the original
-	# 			Move-Item -Path $temporary -Destination $_ -Force -ErrorAction SilentlyContinue
-	# 		}
+			try {
+				# expand the package to a temporary location (using the zip version of the package file)
+				Expand-Archive `
+					-Path (Move-Item -Path $_ -Destination $temporary -PassThru -Force | Select-Object -ExpandProperty FullName) `
+					-DestinationPath $destination `
+					-Force `
+					-ErrorAction SilentlyContinue
+			}
+			finally
+			{
+				# rename the temporary file back to the original
+				Move-Item -Path $temporary -Destination $_ -Force -ErrorAction SilentlyContinue
+			}
 		
-	# 		if (Test-Path -Path $destination -PathType Container) {
+			if (Test-Path -Path $destination -PathType Container) {
 		
-	# 			try {
-	# 				# extract the package name from the manifest
-	# 				$manifest = Get-ChildItem -Path $destination -Filter 'AppxManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
-	# 				if ($manifest) { 
-	# 					$xml = ([xml](Get-Content $manifest))	
-	# 					$packageName = $xml.Package.Identity.Name 
-	# 					$packageVersion = $xml.Package.Identity.Version
-	# 				} else {
-	# 					# extract the package name from the bundle manifest
-	# 					$manifest = Get-ChildItem -Path $destination -Filter 'AppxBundleManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
-	# 					if ($manifest) { 	
-	# 						$xml = ([xml](Get-Content $manifest))	
-	# 						$packageName = $xml.Bundle.Identity.Name 
-	# 						$packageVersion = $xml.Bundle.Identity.Version
-	# 					}
-	# 				}
+				try {
+					# extract the package name from the manifest
+					$manifest = Get-ChildItem -Path $destination -Filter 'AppxManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
+					if ($manifest) { 
+						$xml = ([xml](Get-Content $manifest))	
+						$packageName = $xml.Package.Identity.Name 
+						$packageVersion = $xml.Package.Identity.Version
+					} else {
+						# extract the package name from the bundle manifest
+						$manifest = Get-ChildItem -Path $destination -Filter 'AppxBundleManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
+						if ($manifest) { 	
+							$xml = ([xml](Get-Content $manifest))	
+							$packageName = $xml.Bundle.Identity.Name 
+							$packageVersion = $xml.Bundle.Identity.Version
+						}
+					}
 
-	# 				# add the package name/version to the queue
-	# 				if ($packageName -and $packageVersion) {
-	# 					Write-Host ">>> Identified package '$packageName' ($packageVersion) in $_"
-	# 					$packages.Add([PSCustomObject]@{
-	# 						Name = $packageName
-	# 						Version = $packageVersion
-	# 					})
-	# 				}
-	# 			}
-	# 			catch {
-	# 				# ignore any errors	
-	# 			}					
-	# 			finally {
-	# 				# remove the temporary folder
-	# 				Remove-Item -Path $destination -Force -Recurse -ErrorAction SilentlyContinue
-	# 			}
-	# 		}
-	# 	}
+					# add the package name/version to the queue
+					if ($packageName -and $packageVersion) {
+						Write-Host ">>> Identified package '$packageName' ($packageVersion) in $_"
+						$packages.Add([PSCustomObject]@{
+							Name = $packageName
+							Version = $packageVersion
+						})
+					}
+				}
+				catch {
+					# ignore any errors	
+				}					
+				finally {
+					# remove the temporary folder
+					Remove-Item -Path $destination -Force -Recurse -ErrorAction SilentlyContinue
+				}
+			}
+		}
 
-	# 	if ($packages.Count -gt 0) {
+		$packages | ForEach-Object {
 
-	# 		Write-Host ">>> Removing $($packages.Count) provisioned packages "
-	# 		$packages | ForEach-Object { Write-Host "- $($_.Name) ($($_.Version))" }
-	# 		$packageCount = $packages.Count
+			$package = $_
 
-	# 		while ($packages.Count -gt 0) {
-	# 			for ($i = $packages.Count - 1; $i -ge 0 ; $i--) {
+			Get-AppxPackage -Name $package.Name | ForEach-Object {
+				Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $($_.InstallLocation)"
+				Get-Acl -Path $_.InstallLocation | Format-Table -Wrap -AutoSize | Out-Host
+			}
 
-	# 				$package = $packages[$i]
-	# 				Write-Host ">>> Removing package: $($package.Name) ($($package.Version))"
+			Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) } | ForEach-Object {
+				Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
+				Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
+			}
+		}
 
-	# 				try {
+		if ($packages.Count -gt 0) {
 
-	# 					Get-AppxPackage -Name $package.Name | Where-Object { $_.Version -eq $package.Version } | ForEach-Object {
-	# 						Write-Host "- Installed package"
-	# 						$_ | Remove-AppxPackage -AllUsers 
-	# 					}
 
-	# 					Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) -and ($_.Version -eq $package.Version) } | ForEach-Object {
-	# 						Write-Host "- Provisioned package"	
-	# 						$_ | Remove-AppxProvisionedPackage -AllUsers -Online
-	# 					}
 
-	# 					# remove the package from the list
-	# 					$packages.RemoveAt($i)
-	# 				}
-	# 				catch {
+			# Write-Host ">>> Removing $($packages.Count) provisioned packages "
+			# $packages | ForEach-Object { Write-Host "- $($_.Name) ($($_.Version))" }
+			# $packageCount = $packages.Count
 
-	# 					Write-Warning $_.Exception.Message
-	# 				}
-	# 			}
+			# while ($packages.Count -gt 0) {
+			# 	for ($i = $packages.Count - 1; $i -ge 0 ; $i--) {
 
-	# 			if ($packageCount -eq $packages.Count) {
-	# 				throw "Failed to remove packages: $(($packages | ForEach-Object { "$($_.Name) ($($_.Version))" }) -join ', ')"
-	# 			} else {
-	# 				$packageCount = $packages.Count
-	# 			}
-	# 		}
-	# 	}
-	# }
+			# 		$package = $packages[$i]
+			# 		Write-Host ">>> Removing package: $($package.Name) ($($package.Version))"
+
+			# 		try {
+
+			# 			Get-AppxPackage -Name $package.Name | Where-Object { $_.Version -eq $package.Version } | ForEach-Object {
+			# 				Write-Host "- Installed package"
+			# 				$_ | Remove-AppxPackage -AllUsers 
+			# 			}
+
+			# 			Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) -and ($_.Version -eq $package.Version) } | ForEach-Object {
+			# 				Write-Host "- Provisioned package"	
+			# 				$_ | Remove-AppxProvisionedPackage -AllUsers -Online
+			# 			}
+
+			# 			# remove the package from the list
+			# 			$packages.RemoveAt($i)
+			# 		}
+			# 		catch {
+
+			# 			Write-Warning $_.Exception.Message
+			# 		}
+			# 	}
+
+			# 	if ($packageCount -eq $packages.Count) {
+			# 		throw "Failed to remove packages: $(($packages | ForEach-Object { "$($_.Name) ($($_.Version))" }) -join ', ')"
+			# 	} else {
+			# 		$packageCount = $packages.Count
+			# 	}
+			# }
+		}
+	}
 }
 
 Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
