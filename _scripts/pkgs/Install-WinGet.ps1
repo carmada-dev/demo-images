@@ -51,13 +51,26 @@ function Install-Package() {
 			}
 
 			Write-Host ">>> Installing Package: $Path (Dependencies: $($Dependencies -join ', '))"
-			Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
+			# Add-AppxPackage -Path $Path -DependencyPath $Dependencies -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
 	
+			Invoke-CommandLine `
+				-AsSystem `
+				-Command 'powershell' `
+				-Arguments "-WindowStyle Hidden -ExecutionPolicy Bypass -Command `"Add-AppxPackage -Path $Path -DependencyPath $($Dependencies -join ', ') -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop`"" `
+				| Select-Object -ExpandProperty Output `
+				| Write-Host
+
 		} else {
 
 			Write-Host ">>> Installing Package: $Path"
-			Add-AppxPackage -Path $Path -ErrorAction Stop
-	
+			# Add-AppxPackage -Path $Path -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop
+
+			Invoke-CommandLine `
+				-AsSystem `
+				-Command 'powershell' `
+				-Arguments "-WindowStyle Hidden -ExecutionPolicy Bypass -Command `"Add-AppxPackage -Path $Path -ForceApplicationShutdown -ForceUpdateFromAnyVersion -ErrorAction Stop`"" `
+				| Select-Object -ExpandProperty Output `
+				| Write-Host
 		}
 	}
 	catch
@@ -128,112 +141,112 @@ if (Test-IsPacker) {
 		}
 	}
 
-	Invoke-ScriptSection -Title "Removing Provisioned WinGet Packages" -ScriptBlock {
+	# Invoke-ScriptSection -Title "Removing Provisioned WinGet Packages" -ScriptBlock {
 
-		$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
-		$packages = [System.Collections.Generic.List[PSCustomObject]]::new() 
+	# 	$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
+	# 	$packages = [System.Collections.Generic.List[PSCustomObject]]::new() 
 
-		Get-ChildItem -Path $offlineDirectory -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
+	# 	Get-ChildItem -Path $offlineDirectory -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
 
-			$temporary = [System.IO.Path]::ChangeExtension($_, '.zip')
-			$destination = Join-Path $env:TEMP ([System.IO.Path]::GetFileNameWithoutExtension($_))
+	# 		$temporary = [System.IO.Path]::ChangeExtension($_, '.zip')
+	# 		$destination = Join-Path $env:TEMP ([System.IO.Path]::GetFileNameWithoutExtension($_))
 			
-			# ensure destination folder does not exist
-			Remove-Item $destination -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
+	# 		# ensure destination folder does not exist
+	# 		Remove-Item $destination -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
 		
-			try {
-				# expand the package to a temporary location (using the zip version of the package file)
-				Expand-Archive `
-					-Path (Move-Item -Path $_ -Destination $temporary -PassThru -Force | Select-Object -ExpandProperty FullName) `
-					-DestinationPath $destination `
-					-Force `
-					-ErrorAction SilentlyContinue
-			}
-			finally
-			{
-				# rename the temporary file back to the original
-				Move-Item -Path $temporary -Destination $_ -Force -ErrorAction SilentlyContinue
-			}
+	# 		try {
+	# 			# expand the package to a temporary location (using the zip version of the package file)
+	# 			Expand-Archive `
+	# 				-Path (Move-Item -Path $_ -Destination $temporary -PassThru -Force | Select-Object -ExpandProperty FullName) `
+	# 				-DestinationPath $destination `
+	# 				-Force `
+	# 				-ErrorAction SilentlyContinue
+	# 		}
+	# 		finally
+	# 		{
+	# 			# rename the temporary file back to the original
+	# 			Move-Item -Path $temporary -Destination $_ -Force -ErrorAction SilentlyContinue
+	# 		}
 		
-			if (Test-Path -Path $destination -PathType Container) {
+	# 		if (Test-Path -Path $destination -PathType Container) {
 		
-				try {
-					# extract the package name from the manifest
-					$manifest = Get-ChildItem -Path $destination -Filter 'AppxManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
-					if ($manifest) { 
-						$xml = ([xml](Get-Content $manifest))	
-						$packageName = $xml.Package.Identity.Name 
-						$packageVersion = $xml.Package.Identity.Version
-					} else {
-						# extract the package name from the bundle manifest
-						$manifest = Get-ChildItem -Path $destination -Filter 'AppxBundleManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
-						if ($manifest) { 	
-							$xml = ([xml](Get-Content $manifest))	
-							$packageName = $xml.Bundle.Identity.Name 
-							$packageVersion = $xml.Bundle.Identity.Version
-						}
-					}
+	# 			try {
+	# 				# extract the package name from the manifest
+	# 				$manifest = Get-ChildItem -Path $destination -Filter 'AppxManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
+	# 				if ($manifest) { 
+	# 					$xml = ([xml](Get-Content $manifest))	
+	# 					$packageName = $xml.Package.Identity.Name 
+	# 					$packageVersion = $xml.Package.Identity.Version
+	# 				} else {
+	# 					# extract the package name from the bundle manifest
+	# 					$manifest = Get-ChildItem -Path $destination -Filter 'AppxBundleManifest.xml' -Recurse | Select-Object -ExpandProperty FullName -First 1
+	# 					if ($manifest) { 	
+	# 						$xml = ([xml](Get-Content $manifest))	
+	# 						$packageName = $xml.Bundle.Identity.Name 
+	# 						$packageVersion = $xml.Bundle.Identity.Version
+	# 					}
+	# 				}
 
-					# add the package name/version to the queue
-					if ($packageName -and $packageVersion) {
-						Write-Host ">>> Identified package '$packageName' ($packageVersion) in $_"
-						$packages.Add([PSCustomObject]@{
-							Name = $packageName
-							Version = $packageVersion
-						})
-					}
-				}
-				catch {
-					# ignore any errors	
-				}					
-				finally {
-					# remove the temporary folder
-					Remove-Item -Path $destination -Force -Recurse -ErrorAction SilentlyContinue
-				}
-			}
-		}
+	# 				# add the package name/version to the queue
+	# 				if ($packageName -and $packageVersion) {
+	# 					Write-Host ">>> Identified package '$packageName' ($packageVersion) in $_"
+	# 					$packages.Add([PSCustomObject]@{
+	# 						Name = $packageName
+	# 						Version = $packageVersion
+	# 					})
+	# 				}
+	# 			}
+	# 			catch {
+	# 				# ignore any errors	
+	# 			}					
+	# 			finally {
+	# 				# remove the temporary folder
+	# 				Remove-Item -Path $destination -Force -Recurse -ErrorAction SilentlyContinue
+	# 			}
+	# 		}
+	# 	}
 
-		if ($packages.Count -gt 0) {
+	# 	if ($packages.Count -gt 0) {
 
-			Write-Host ">>> Removing $($packages.Count) provisioned packages "
-			$packages | ForEach-Object { Write-Host "- $($_.Name) ($($_.Version))" }
-			$packageCount = $packages.Count
+	# 		Write-Host ">>> Removing $($packages.Count) provisioned packages "
+	# 		$packages | ForEach-Object { Write-Host "- $($_.Name) ($($_.Version))" }
+	# 		$packageCount = $packages.Count
 
-			while ($packages.Count -gt 0) {
-				for ($i = $packages.Count - 1; $i -ge 0 ; $i--) {
+	# 		while ($packages.Count -gt 0) {
+	# 			for ($i = $packages.Count - 1; $i -ge 0 ; $i--) {
 
-					$package = $packages[$i]
-					Write-Host ">>> Removing package: $packageName"
+	# 				$package = $packages[$i]
+	# 				Write-Host ">>> Removing package: $($package.Name) ($($package.Version))"
 
-					try {
+	# 				try {
 
-						Get-AppxPackage -Name $package.Name | Where-Object { $_.Version -eq $package.Version } | ForEach-Object {
-							Write-Host "- Installed package"
-							$_ | Remove-AppxPackage -AllUsers 
-						}
+	# 					Get-AppxPackage -Name $package.Name | Where-Object { $_.Version -eq $package.Version } | ForEach-Object {
+	# 						Write-Host "- Installed package"
+	# 						$_ | Remove-AppxPackage -AllUsers 
+	# 					}
 
-						Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) -and ($_.Version -eq $package.Version) } | ForEach-Object {
-							Write-Host "- Provisioned package"	
-							$_ | Remove-AppxProvisionedPackage -AllUsers -Online
-						}
+	# 					Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) -and ($_.Version -eq $package.Version) } | ForEach-Object {
+	# 						Write-Host "- Provisioned package"	
+	# 						$_ | Remove-AppxProvisionedPackage -AllUsers -Online
+	# 					}
 
-						# remove the package from the list
-						$packages.RemoveAt($i)
-					}
-					catch {
+	# 					# remove the package from the list
+	# 					$packages.RemoveAt($i)
+	# 				}
+	# 				catch {
 
-						Write-Warning $_.Exception.Message
-					}
-				}
+	# 					Write-Warning $_.Exception.Message
+	# 				}
+	# 			}
 
-				if ($packageCount -eq $packages.Count) {
-					throw "Failed to remove packages: $(($packages | ForEach-Object { "$($_.Name) ($($_.Version))" }) -join ', ')"
-				} else {
-					$packageCount = $packages.Count
-				}
-			}
-		}
-	}
+	# 			if ($packageCount -eq $packages.Count) {
+	# 				throw "Failed to remove packages: $(($packages | ForEach-Object { "$($_.Name) ($($_.Version))" }) -join ', ')"
+	# 			} else {
+	# 				$packageCount = $packages.Count
+	# 			}
+	# 		}
+	# 	}
+	# }
 }
 
 Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
@@ -261,12 +274,12 @@ Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 		$wingetCache = Get-ChildItem -Path $offlineDirectory -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1
 
 		Write-Host ">>> Installing Package: $wingetPackage"
-		Install-Package -Path $wingetPackage -Dependencies @($wingetDependencies) -ErrorAction Stop
+		Install-Package -Path $wingetPackage -Dependencies @($wingetDependencies) -ErrorAction Stop		
 
-		if (Test-IsElevated) {
-			Write-Host ">>> Resetting WinGet Sources ..."
-			Invoke-CommandLine -Command 'winget' -Arguments "source reset --force --disable-interactivity" | Select-Object -ExpandProperty Output | Write-Host
-		}
+		# if (Test-IsElevated) {
+		# 	Write-Host ">>> Resetting WinGet Sources ..."
+		# 	Invoke-CommandLine -Command 'winget' -Arguments "source reset --force --disable-interactivity" | Select-Object -ExpandProperty Output | Write-Host
+		# }
 
 		Write-Host ">>> Installing WinGet Source Cache Package ..."	
 		Install-Package -Path $wingetCache -ErrorAction Stop
