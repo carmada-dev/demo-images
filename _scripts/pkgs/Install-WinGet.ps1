@@ -190,8 +190,14 @@ if (Test-IsPacker) {
 				$paths = @(
 					Join-Path $env:ProgramFiles 'WindowsApps'
 				)
-				
+
 				$paths | ForEach-Object {
+
+					Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
+					Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$_`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F`" /c" `
+						| Select-Object -ExpandProperty Output `
+						| Write-Host
+
 					Write-Host ">>> Dump ACLs: $_"
 					Get-Acl -Path $_ | Format-Table -Wrap -AutoSize | Out-Host
 				}
@@ -201,11 +207,23 @@ if (Test-IsPacker) {
 				$package = $_
 
 				Get-AppxPackage -Name $package.Name | ForEach-Object {
+
+					Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
+					Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$($_.InstallLocation)`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F`" /c" `
+						| Select-Object -ExpandProperty Output `
+						| Write-Host
+
 					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $($_.InstallLocation)"
 					Get-Acl -Path $_.InstallLocation | Format-Table -Wrap -AutoSize | Out-Host
 				}
 
-				Get-AppxProvisionedPackage -Online | Where-Object { ($_.PackageName -eq $package.Name) } | ForEach-Object {
+				Get-AppxProvisionedPackage -Online | Where-Object { ($_.DisplayName -eq $package.Name) } | ForEach-Object {
+
+					Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
+					Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$(Split-Path $_.InstallLocation -Parent)`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F`" /c" `
+						| Select-Object -ExpandProperty Output `
+						| Write-Host
+
 					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
 					Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
 				}
