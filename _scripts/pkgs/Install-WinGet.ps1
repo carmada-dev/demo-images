@@ -206,6 +206,20 @@ if (Test-IsPacker) {
 
 				$package = $_
 
+				Get-AppxProvisionedPackage -Online | Where-Object { ($_.DisplayName -eq $package.Name) } | ForEach-Object {
+
+					Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
+					Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$(Split-Path $_.InstallLocation -Parent)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
+						| Select-Object -ExpandProperty Output `
+						| Write-Host
+
+					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
+					Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
+
+					Write-Host ">>> Remove provisioned package $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
+					$_ | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction Continue
+				}
+
 				Get-AppxPackage -Name $package.Name | ForEach-Object {
 
 					Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
@@ -220,19 +234,6 @@ if (Test-IsPacker) {
 					$_ | Remove-AppxPackage -AllUsers -ErrorAction Continue
 				}
 
-				Get-AppxProvisionedPackage -Online | Where-Object { ($_.DisplayName -eq $package.Name) } | ForEach-Object {
-
-					Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
-					Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$(Split-Path $_.InstallLocation -Parent)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
-						| Select-Object -ExpandProperty Output `
-						| Write-Host
-
-					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
-					Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
-
-					Write-Host ">>> Remove provisioned package $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
-					$_ | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction Continue
-				}
 			}
 
 		if ($packages.Count -gt 0) {
