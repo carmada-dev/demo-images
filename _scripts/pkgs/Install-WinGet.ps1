@@ -184,8 +184,7 @@ if (Test-IsPacker) {
 			}
 		}
 
-		$packages | ForEach-Object	`
-			-Begin {
+		$packages | ForEach-Object -Begin {
 
 				$paths = @(
 					Join-Path $env:ProgramFiles 'WindowsApps'
@@ -201,8 +200,8 @@ if (Test-IsPacker) {
 					Write-Host ">>> Dump ACLs: $_"
 					Get-Acl -Path $_ | Format-Table -Wrap -AutoSize | Out-Host
 				}
-			} `
-			-Process {
+				
+			} -Process {
 
 				$package = $_
 
@@ -220,7 +219,7 @@ if (Test-IsPacker) {
 					$_ | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction Continue
 				}
 
-				Get-AppxPackage -Name $package.Name | ForEach-Object {
+				Get-AppxPackage -AllUsers | Where-Object { ($_.Name -eq $package.Name) } | ForEach-Object {
 
 					Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
 					Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$($_.InstallLocation)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
