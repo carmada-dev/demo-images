@@ -215,6 +215,9 @@ if (Test-IsPacker) {
 
 					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $($_.InstallLocation)"
 					Get-Acl -Path $_.InstallLocation | Format-Table -Wrap -AutoSize | Out-Host
+
+					Write-Host ">>> Remove installed package $($package.Name) ($($_.Version)): $($_.InstallLocation)"
+					$_ | Remove-AppxPackage -AllUsers -ErrorAction Continue
 				}
 
 				Get-AppxProvisionedPackage -Online | Where-Object { ($_.DisplayName -eq $package.Name) } | ForEach-Object {
@@ -226,6 +229,9 @@ if (Test-IsPacker) {
 
 					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
 					Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
+
+					Write-Host ">>> Remove provisioned package $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
+					$_ | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction Continue
 				}
 			}
 
