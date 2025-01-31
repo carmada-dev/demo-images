@@ -234,7 +234,7 @@ if (Test-IsPacker) {
 
 					Write-Host ">>> Remove installed package $($package.Name) ($($_.Version)): $($_.InstallLocation)"
 					# $_ | Remove-AppxPackage -AllUsers -ErrorAction Continue
-					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxPackage -Package '$($_.FullName)' -AllUsers`"" `
+					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxPackage -Package '$($_.PackageName)' -AllUsers`"" `
 						| Select-Object -ExpandProperty Output `
 						| Write-Host
 				}
