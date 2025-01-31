@@ -207,30 +207,36 @@ if (Test-IsPacker) {
 
 				Get-AppxProvisionedPackage -Online | Where-Object { ($_.DisplayName -eq $package.Name) } | ForEach-Object {
 
-					Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
-					Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$(Split-Path $_.InstallLocation -Parent)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
-						| Select-Object -ExpandProperty Output `
-						| Write-Host
+					# Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
+					# Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$(Split-Path $_.InstallLocation -Parent)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
+					# 	| Select-Object -ExpandProperty Output `
+					# 	| Write-Host
 
 					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
 					Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
 
 					Write-Host ">>> Remove provisioned package $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
-					$_ | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction Continue
+					# $_ | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction Continue
+					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxProvisionedPackage -PackageName '$($_.PackageName)' -AllUsers -Online`"" `
+						| Select-Object -ExpandProperty Output `
+						| Write-Host
 				}
 
 				Get-AppxPackage -AllUsers | Where-Object { ($_.Name -eq $package.Name) } | ForEach-Object {
 
-					Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
-					Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$($_.InstallLocation)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
-						| Select-Object -ExpandProperty Output `
-						| Write-Host
+					# Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
+					# Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$($_.InstallLocation)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
+					# 	| Select-Object -ExpandProperty Output `
+					# 	| Write-Host
 
 					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $($_.InstallLocation)"
 					Get-Acl -Path $_.InstallLocation | Format-Table -Wrap -AutoSize | Out-Host
 
 					Write-Host ">>> Remove installed package $($package.Name) ($($_.Version)): $($_.InstallLocation)"
-					$_ | Remove-AppxPackage -AllUsers -ErrorAction Continue
+					# $_ | Remove-AppxPackage -AllUsers -ErrorAction Continue
+					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxPackage -Package '$($_.FullName)' -AllUsers`"" `
+						| Select-Object -ExpandProperty Output `
+						| Write-Host
 				}
 
 			}
