@@ -212,14 +212,22 @@ if (Test-IsPacker) {
 					# 	| Select-Object -ExpandProperty Output `
 					# 	| Write-Host
 
-					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
-					Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
+					# Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
+					# Get-Acl -Path (Split-Path $_.InstallLocation -Parent) | Format-Table -Wrap -AutoSize | Out-Host
 
-					Write-Host ">>> Remove provisioned package $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
-					# $_ | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction Continue
-					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxProvisionedPackage -PackageName '$($_.Name)' -AllUsers -Online`"" `
-						| Select-Object -ExpandProperty Output `
-						| Write-Host
+
+					try {
+						Write-Host ">>> Remove provisioned package $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
+						$_ | Remove-AppxProvisionedPackage -AllUsers -Online
+					}
+					catch {
+						Write-Warning $_.Exception.Message
+					}
+					finally {
+						Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxProvisionedPackage -PackageName '$($_.Name)' -AllUsers -Online`"" `
+							| Select-Object -ExpandProperty Output `
+							| Write-Host
+					}
 				}
 
 				Get-AppxPackage -AllUsers | Where-Object { ($_.Name -eq $package.Name) } | ForEach-Object {
@@ -229,14 +237,21 @@ if (Test-IsPacker) {
 					# 	| Select-Object -ExpandProperty Output `
 					# 	| Write-Host
 
-					Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $($_.InstallLocation)"
-					Get-Acl -Path $_.InstallLocation | Format-Table -Wrap -AutoSize | Out-Host
+					# Write-Host ">>> Dump ACLs for $($package.Name) ($($_.Version)): $($_.InstallLocation)"
+					# Get-Acl -Path $_.InstallLocation | Format-Table -Wrap -AutoSize | Out-Host
 
-					Write-Host ">>> Remove installed package $($package.Name) ($($_.Version)): $($_.InstallLocation)"
-					# $_ | Remove-AppxPackage -AllUsers -ErrorAction Continue
-					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxPackage -Package '$($_.DisplayName)' -AllUsers`"" `
-						| Select-Object -ExpandProperty Output `
-						| Write-Host
+					try {
+						Write-Host ">>> Remove installed package $($package.Name) ($($_.Version)): $($_.InstallLocation)"
+						$_ | Remove-AppxPackage -AllUsers -ErrorAction Continue
+					}
+					catch {
+						Write-Warning $_.Exception.Message
+					}
+					finally {
+						Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxPackage -Package '$($_.DisplayName)' -AllUsers`"" `
+							| Select-Object -ExpandProperty Output `
+							| Write-Host
+					}
 				}
 
 			} -End {
