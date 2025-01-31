@@ -205,7 +205,7 @@ if (Test-IsPacker) {
 
 				$package = $_
 
-				Get-AppxProvisionedPackage -Online | Where-Object { ($_.DisplayName -eq $package.Name) } | ForEach-Object {
+				Get-AppxProvisionedPackage -Online | Where-Object { ($_.DisplayName -eq $package.Name) -and ($_.InstallLocation) } | ForEach-Object {
 
 					# Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
 					# Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$(Split-Path $_.InstallLocation -Parent)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
@@ -222,7 +222,7 @@ if (Test-IsPacker) {
 						| Write-Host
 				}
 
-				Get-AppxPackage -AllUsers | Where-Object { ($_.Name -eq $package.Name) } | ForEach-Object {
+				Get-AppxPackage -AllUsers | Where-Object { ($_.Name -eq $package.Name) -and ($_.InstallLocation) } | ForEach-Object {
 
 					# Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
 					# Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$($_.InstallLocation)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
