@@ -239,6 +239,15 @@ if (Test-IsPacker) {
 						| Write-Host
 				}
 
+			} -End {
+
+				$packagesNames = $packages | Select-Object -ExpandProperty Name -Unique
+
+				Write-Host ">>> Installed Packages ..."
+				Get-AppxPackage -AllUsers | Where-Object { ($packagesNames -contains $_.Name) } | Sort-Object -Property Name | Format-Table -Property Name, Version | Out-Host
+
+				Write-Host ">>> Provisioned Packages ..."
+				Get-AppxProvisionedPackage -Online | Where-Object { ($packagesNames -contains $_.DisplayName) } | Sort-Object -Property DisplayName | Format-Table -Property DisplayName, Version | Out-Host
 			}
 
 		if ($packages.Count -gt 0) {
