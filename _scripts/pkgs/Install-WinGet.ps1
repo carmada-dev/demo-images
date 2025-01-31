@@ -205,7 +205,7 @@ if (Test-IsPacker) {
 
 				$package = $_
 
-				Get-AppxProvisionedPackage -Online | Where-Object { ($_.DisplayName -eq $package.Name) -and ($_.InstallLocation) } | ForEach-Object {
+				Get-AppxProvisionedPackage -Online | Where-Object { ($_.DisplayName -eq $package.Name) } | ForEach-Object {
 
 					# Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
 					# Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$(Split-Path $_.InstallLocation -Parent)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
@@ -217,12 +217,12 @@ if (Test-IsPacker) {
 
 					Write-Host ">>> Remove provisioned package $($package.Name) ($($_.Version)): $(Split-Path $_.InstallLocation -Parent)"
 					# $_ | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction Continue
-					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxProvisionedPackage -PackageName '$($_.PackageName)' -AllUsers -Online`"" `
+					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxProvisionedPackage -PackageName '$($_.Name)' -AllUsers -Online`"" `
 						| Select-Object -ExpandProperty Output `
 						| Write-Host
 				}
 
-				Get-AppxPackage -AllUsers | Where-Object { ($_.Name -eq $package.Name) -and ($_.InstallLocation) } | ForEach-Object {
+				Get-AppxPackage -AllUsers | Where-Object { ($_.Name -eq $package.Name) } | ForEach-Object {
 
 					# Write-Host ">>> Grant fullcontrol to user $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name): $_"
 					# Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$($_.InstallLocation)`" /grant $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F /c" `
@@ -234,7 +234,7 @@ if (Test-IsPacker) {
 
 					Write-Host ">>> Remove installed package $($package.Name) ($($_.Version)): $($_.InstallLocation)"
 					# $_ | Remove-AppxPackage -AllUsers -ErrorAction Continue
-					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxPackage -Package '$($_.PackageName)' -AllUsers`"" `
+					Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxPackage -Package '$($_.DisplayName)' -AllUsers`"" `
 						| Select-Object -ExpandProperty Output `
 						| Write-Host
 				}
