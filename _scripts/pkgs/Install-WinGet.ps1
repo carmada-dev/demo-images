@@ -223,10 +223,15 @@ if (Test-IsPacker) {
 					catch {
 						Write-Warning $_.Exception.Message
 					}
-					finally {
+
+					try {
+						Write-Host ">>> Remove provisioned package $($package.Name) ($($_.Version)) as system: $(Split-Path $_.InstallLocation -Parent)"
 						Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxProvisionedPackage -PackageName '$($_.Name)' -AllUsers -Online`"" `
 							| Select-Object -ExpandProperty Output `
 							| Write-Host
+					}
+					catch {
+						Write-Warning $_.Exception.Message
 					}
 				}
 
@@ -247,10 +252,15 @@ if (Test-IsPacker) {
 					catch {
 						Write-Warning $_.Exception.Message
 					}
-					finally {
+
+					try {
+						Write-Host ">>> Remove installed package $($package.Name) ($($_.Version)) as system: $($_.InstallLocation)"
 						Invoke-CommandLine -AsSystem -Command 'powershell' -Arguments "-ExecutionPolicy Bypass -WindowStyle Hidden -Command `"Remove-AppxPackage -Package '$($_.DisplayName)' -AllUsers`"" `
 							| Select-Object -ExpandProperty Output `
 							| Write-Host
+					}
+					catch {
+						Write-Warning $_.Exception.Message
 					}
 				}
 
