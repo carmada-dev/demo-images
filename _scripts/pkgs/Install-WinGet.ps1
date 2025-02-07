@@ -75,7 +75,7 @@ if ($winget) {
 
 	Write-Host ">>> WinGet is already installed: $winget"
 
-} else if ($wingetStaged) {
+} elseif ($wingetStaged) {
 
 	Invoke-ScriptSection -Title "Register staged WinGet Package Manager" -ScriptBlock {
 
