@@ -95,15 +95,17 @@ if ($winget) {
 		if (-not $winget) {
 
 			Write-Host ">>> Repair WinGet"
+			Invoke-CommandLine -Command 'powershell' -Arguments '-NoLogo -ExecutionPolicy ByPass -Command "& { Install-PackageProvider -Name NuGet -Force | Out-Null ; Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null ; Repair-WinGetPackageManager -AllUsers -Latest -Force }"' -AsSystem | Select-Object -ExpandProperty Output | Write-Host 
+			
+			# Write-Host "- Installing NuGet package provider"
+			# Install-PackageProvider -Name NuGet -Force | Out-Null
 
-			Write-Host "- Installing NuGet package provider"
-			Install-PackageProvider -Name NuGet -Force | Out-Null
+			# Write-Host "- Installing WinGet Powershell Module"
+			# Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
 
-			Write-Host "- Installing WinGet Powershell Module"
-			Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
-
-			Write-Host "- Repairing WinGet"
-			Repair-WinGetPackageManager
+			# Write-Host "- Repairing WinGet"
+			# Repair-WinGetPackageManager -AllUsers -Latest -Force 
+			
 		}
 	}
 
