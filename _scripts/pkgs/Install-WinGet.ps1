@@ -86,6 +86,14 @@ if ($winget) {
 		
 		} catch {
 
+			write-Warning $_.Exception.Message
+		}
+		
+		# retry to get the winget command
+		$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+
+		if (-not $winget) {
+
 			Write-Host ">>> Repair WinGet"
 
 			Write-Host "- Installing NuGet package provider"
