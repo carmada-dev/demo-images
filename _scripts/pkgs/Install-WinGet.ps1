@@ -118,7 +118,7 @@ if ($winget) {
 			}
 		}
 
-		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -WindowStyle Hidden -File `"$scriptPath`"" -AsSystem `
+		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`"" -AsSystem `
 			| Select-Object -ExpandProperty Output `
 			| Write-Host
 		 
@@ -171,7 +171,7 @@ if ($winget) {
 	}
 }
 
-if (Test-IsPacker) {
+if (Test-IsPacker -and -not(Test-IsSystem)) {
 
 	Invoke-ScriptSection -Title "Patching WinGet Config for Packer Mode" -ScriptBlock {
 
