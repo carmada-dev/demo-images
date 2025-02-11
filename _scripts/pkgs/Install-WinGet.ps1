@@ -128,13 +128,28 @@ if ($winget) {
 
 		if ($wingetPackage) {
 
-			Write-Host ">>> Installing WinGet Package Manager"
-			Add-AppxPackage `
-				-Path $wingetPackage `
-				-DependencyPath $wingetDependencies `
-				-ForceTargetApplicationShutdown `
-				-StubPackageOption UsePreference `
-				-ErrorAction Stop
+			try {
+				
+				Write-Host ">>> Installing WinGet Package Manager"
+				Add-AppxPackage `
+					-Path $wingetPackage `
+					-DependencyPath $wingetDependencies `
+					-ForceTargetApplicationShutdown `
+					-StubPackageOption UsePreference `
+					-ErrorAction Stop
+
+			}
+			catch {
+
+				$_.Exception.Message | Write-Warning	
+
+				Install-PackageProvider -Name NuGet -Force | Out-Null
+				Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
+
+				Write-Host ">>> Repairing WinGet Package Manager"
+				Repair-WinGetPackageManager
+				
+			}
 
 			if ($wingetSource) {
 
