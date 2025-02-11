@@ -121,7 +121,26 @@ if ($winget) {
 		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`"" -AsSystem `
 			| Select-Object -ExpandProperty Output `
 			| Write-Host
-		 
+		
+		Invoke-ScriptSection -Title "Patching WinGet Config for Packer Mode" -ScriptBlock {
+
+			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+			$wingetVersion = Invoke-CommandLine -Command $winget -Arguments '--version' -Capture StdOut -Silent | Select-Object -ExpandProperty Output 
+			$wingetPackageFamilyName = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty PackageFamilyName
+	
+			@(
+	
+				"%LOCALAPPDATA%\Packages\$wingetPackageFamilyName\LocalState\settings.json",
+				"%LOCALAPPDATA%\Microsoft\WinGet\Settings\settings.json"
+	
+			) | ForEach-Object { [System.Environment]::ExpandEnvironmentVariables($_) } | Where-Object { Test-Path (Split-Path -Path $_ -Parent) -PathType Container } | ForEach-Object { 
+	
+				Write-Host ">>> Patching WinGet ($winGetVersion) Settings: $_"
+				$adminWinGetConfig | Out-File $_ -Encoding ASCII -Force 
+				
+			}
+		}
+
 	} elseif (Test-IsSystem) {
 
 		Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
@@ -152,7 +171,7 @@ if ($winget) {
 					Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
 
 					Write-Host ">>> Repairing WinGet Package Manager"
-					Repair-WinGetPackageManager
+					Repair-WinGetPackageManager -AllUsers -Latest -Force
 
 				}
 
@@ -171,22 +190,7 @@ if ($winget) {
 	}
 }
 
-if (Test-IsPacker -and -not(Test-IsSystem)) {
+if (Test-IsPacker) {
 
-	Invoke-ScriptSection -Title "Patching WinGet Config for Packer Mode" -ScriptBlock {
 
-		$wingetPackageFamilyName = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty PackageFamilyName
-
-		@(
-
-			"%LOCALAPPDATA%\Packages\$wingetPackageFamilyName\LocalState\settings.json",
-			"%LOCALAPPDATA%\Microsoft\WinGet\Settings\settings.json"
-
-		) | ForEach-Object { [System.Environment]::ExpandEnvironmentVariables($_) } | Where-Object { Test-Path (Split-Path -Path $_ -Parent) -PathType Container } | ForEach-Object { 
-
-			Write-Host ">>> Patching WinGet Settings: $_"
-			$adminWinGetConfig | Out-File $_ -Encoding ASCII -Force 
-			
-		}
-	}
 }

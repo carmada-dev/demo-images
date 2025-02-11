@@ -13,7 +13,9 @@ function Invoke-CommandLine {
         [Parameter(Mandatory=$false)]
         [string[]] $Mask = @(),
         [Parameter(Mandatory=$false)]
-        [switch] $AsSystem
+        [switch] $AsSystem,
+        [Parameter(Mandatory=$false)]
+        [switch] $Silent
     )
 
     $processInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -41,9 +43,11 @@ function Invoke-CommandLine {
         $processInfo.FileName = $psexec
         $processInfo.Arguments = "-accepteula -nobanner -s $Command $Arguments"
 
-        Write-Host "| EXEC $WorkingDirectory> $psexec -accepteula -nobanner -s $Command $($Arguments | ConvertTo-MaskedString -Mask $Mask)"
+        if (-not $Silent) {
+            Write-Host "| EXEC $WorkingDirectory> $psexec -accepteula -nobanner -s $Command $($Arguments | ConvertTo-MaskedString -Mask $Mask)"
+        }
 
-    } else {
+    } elseif (-not $Silent) {
 
         Write-Host "| EXEC $WorkingDirectory> $Command $($Arguments | ConvertTo-MaskedString -Mask $Mask)"
     }
