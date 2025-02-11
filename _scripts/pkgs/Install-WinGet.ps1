@@ -69,56 +69,28 @@ function Install-Package() {
 }
 
 $winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-$wingetStaged = [bool] (Get-AppxPackage -AllUsers | Where-Object { ($_.PackageUserInformation.InstallState -eq 'Staged') -and ($_.PackageFamilyName -eq 'Microsoft.DesktopAppInstaller_8wekyb3d8bbwe') })
+
+$offlineDirectory = (New-Item -Path (Join-Path $env:DEVBOX_HOME 'Offline\WinGet') -ItemType Directory -Force).FullName
+$dependenciesDirectory = (New-Item -Path (Join-Path $offlineDirectory 'Dependencies') -ItemType Directory -Force).FullName
+$sourceDirectory = (New-Item -Path (Join-Path $offlineDirectory 'Source') -ItemType Directory -Force).FullName
+$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 
 if ($winget) {
 
 	Write-Host ">>> WinGet is already installed: $winget"
 
-} elseif ($wingetStaged) {
-
-	Invoke-ScriptSection -Title "Register staged WinGet Package Manager" -ScriptBlock {
-
-		try {
-
-			Write-Host ">>> Register WinGet"
-			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
-		
-		} catch {
-
-			write-Warning $_.Exception.Message
-		}
-		
-		# retry to get the winget command
-		$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-
-		if (-not $winget) {
-
-			Write-Host ">>> Repair WinGet"
-			Invoke-CommandLine -Command 'powershell' -Arguments '-NoLogo -ExecutionPolicy ByPass -Command "& { Install-PackageProvider -Name NuGet -Force | Out-Null ; Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null ; Repair-WinGetPackageManager -AllUsers -Latest -Force }"' -AsSystem | Select-Object -ExpandProperty Output | Write-Host 
-			
-			# Write-Host "- Installing NuGet package provider"
-			# Install-PackageProvider -Name NuGet -Force | Out-Null
-
-			# Write-Host "- Installing WinGet Powershell Module"
-			# Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
-
-			# Write-Host "- Repairing WinGet"
-			# Repair-WinGetPackageManager -AllUsers -Latest -Force 
-			
-		}
-	}
-
 } else {
-
-	$offlineDirectory = (New-Item -Path (Join-Path $env:DEVBOX_HOME 'Offline\WinGet') -ItemType Directory -Force).FullName
-	$dependenciesDirectory = (New-Item -Path (Join-Path $offlineDirectory 'Dependencies') -ItemType Directory -Force).FullName
-	$sourceDirectory = (New-Item -Path (Join-Path $offlineDirectory 'Source') -ItemType Directory -Force).FullName
-	$osType = (&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })
 
 	if (Test-IsPacker) {
 		
 		Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
+
+			$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'xml'
+			$path = Invoke-FileDownload -Url $url -Name 'License.xml' -Retries 5
+			$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
+
+			Write-Host ">>> Moving $path > $destination"
+			Move-Item -Path $path -Destination $destination -Force | Out-Null
 
 			$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
 			$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
@@ -149,29 +121,33 @@ if ($winget) {
 
 	Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
-		Write-Host ">>> Installing WinGet Dependencies"
-		Get-ChildItem -Path $dependenciesDirectory -Filter '*.*' `
-			| Select-Object -ExpandProperty FullName `
-			| ForEach-Object { 
-				Write-Host "- $_"
-				Install-Package -Path $_ -ErrorAction Continue 
-			}
+		$wingetPackage = Get-ChildItem -Path $offlineDirectory -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName -First 1
+		$wingetLicense = Get-ChildItem -Path $offlineDirectory -Filter '*.xml' | Select-Object -ExpandProperty FullName -First 1
+		$wingetDependencies = @( Get-ChildItem -Path $dependenciesDirectory -Filter '*.appx' | Select-Object -ExpandProperty FullName )
+		$wingetSource = Get-ChildItem -Path $sourceDirectory -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1
 
-		Write-Host ">>> Installing WinGet Package Manager"
-		Get-ChildItem -Path $offlineDirectory -Filter '*.*' `
-			| Select-Object -ExpandProperty FullName `
-			| ForEach-Object { 
-				Write-Host "- $_"
-				Install-Package -Path $_ -ErrorAction Continue 
-			}
+		if ($wingetPackage) {
 
-		Write-Host ">>> Installing WinGet Source"
-		Get-ChildItem -Path $sourceDirectory -Filter '*.*' `
-			| Select-Object -ExpandProperty FullName `
-			| ForEach-Object { 
-				Write-Host "- $_"
-				Install-Package -Path $_ -ErrorAction Continue 
+			Write-Host ">>> Installing WinGet Package Manager"
+			Add-AppxPackage `
+				-Path $wingetPackage `
+				-DependencyPath $wingetDependencies `
+				# -LicensePath $wingetLicense `
+				-ForceTargetApplicationShutdown `
+				-StubPackageOption UsePreference `
+				-ErrorAction Stop
+
+			if ($wingetSource) {
+
+				Write-Host ">>> Installing WinGet Package Source"
+				Add-AppxPackage `
+					-Path $wingetSource `
+					-ForceTargetApplicationShutdown `
+					-StubPackageOption UsePreference `
+					-ErrorAction Stop
+					
 			}
+		}
 	}
 }
 
