@@ -68,8 +68,8 @@ function Install-Package() {
 	}
 }
 
+$scriptPath = $MyInvocation.MyCommand.Path
 $winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-
 $offlineDirectory = (New-Item -Path (Join-Path $env:DEVBOX_HOME 'Offline\WinGet') -ItemType Directory -Force).FullName
 $dependenciesDirectory = (New-Item -Path (Join-Path $offlineDirectory 'Dependencies') -ItemType Directory -Force).FullName
 $sourceDirectory = (New-Item -Path (Join-Path $offlineDirectory 'Source') -ItemType Directory -Force).FullName
@@ -117,55 +117,62 @@ if ($winget) {
 				Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
 			}
 		}
-	}
 
-	Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
+		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -WindowStyle Hidden -File `"$scriptPath`"" -AsSystem `
+			| Select-Object -ExpandProperty Output `
+			| Write-Host
+		 
+	} elseif (Test-IsSystem) {
 
-		$wingetPackage = Get-ChildItem -Path $offlineDirectory -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName -First 1
-		$wingetLicense = Get-ChildItem -Path $offlineDirectory -Filter '*.xml' | Select-Object -ExpandProperty FullName -First 1
-		$wingetDependencies = @( Get-ChildItem -Path $dependenciesDirectory -Filter '*.appx' | Select-Object -ExpandProperty FullName )
-		$wingetSource = Get-ChildItem -Path $sourceDirectory -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1
+		Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
-		if ($wingetPackage) {
+			$wingetPackage = Get-ChildItem -Path $offlineDirectory -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName -First 1
+			$wingetLicense = Get-ChildItem -Path $offlineDirectory -Filter '*.xml' | Select-Object -ExpandProperty FullName -First 1
+			$wingetDependencies = @( Get-ChildItem -Path $dependenciesDirectory -Filter '*.appx' | Select-Object -ExpandProperty FullName )
+			$wingetSource = Get-ChildItem -Path $sourceDirectory -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1
 
-			try {
-				
-				Write-Host ">>> Installing WinGet Package Manager"
-				Add-AppxPackage `
-					-Path $wingetPackage `
-					-DependencyPath $wingetDependencies `
-					-ForceTargetApplicationShutdown `
-					-StubPackageOption UsePreference `
-					-ErrorAction Stop
+			if ($wingetPackage) {
 
-			}
-			catch {
+				try {
+					
+					Write-Host ">>> Installing WinGet Package Manager"
+					Add-AppxPackage `
+						-Path $wingetPackage `
+						-DependencyPath $wingetDependencies `
+						-ForceTargetApplicationShutdown `
+						-StubPackageOption UsePreference `
+						-ErrorAction Stop
 
-				$_.Exception.Message | Write-Warning	
+				}
+				catch {
 
-				Install-PackageProvider -Name NuGet -Force | Out-Null
-				Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
+					$_.Exception.Message | Write-Warning	
 
-				Write-Host ">>> Repairing WinGet Package Manager"
-				Repair-WinGetPackageManager
-				
-			}
+					Install-PackageProvider -Name NuGet -Force | Out-Null
+					Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
 
-			if ($wingetSource) {
+					Write-Host ">>> Repairing WinGet Package Manager"
+					Repair-WinGetPackageManager
 
-				Write-Host ">>> Installing WinGet Package Source"
-				Add-AppxPackage `
-					-Path $wingetSource `
-					-ForceTargetApplicationShutdown `
-					-StubPackageOption UsePreference `
-					-ErrorAction Stop
+				}
 
+				if ($wingetSource) {
+
+					Write-Host ">>> Installing WinGet Package Source"
+					Add-AppxPackage `
+						-Path $wingetSource `
+						-ForceTargetApplicationShutdown `
+						-StubPackageOption UsePreference `
+						-ErrorAction Stop
+
+				}
 			}
 		}
 	}
 }
 
 if (Test-IsPacker) {
+
 	Invoke-ScriptSection -Title "Patching WinGet Config for Packer Mode" -ScriptBlock {
 
 		$wingetPackageFamilyName = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty PackageFamilyName
