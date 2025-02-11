@@ -233,8 +233,12 @@ Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 	Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 	Write-Host ">>> Install PowershellGet module"
-	try 	{ Update-Module -Name PowerShellGet -Force -ErrorAction Stop } 
+	try 	{ 
+		Write-Host "- Upgrading PowershellGet module"
+		Update-Module -Name PowerShellGet -Force -ErrorAction Stop
+	} 
 	catch 	{ 
+		Write-Host "- ReInstalling PowershellGet module"
 		try 	{ Install-Module -Name PowerShellGet -AcceptLicense -Force -AllowClobber -ErrorAction Stop }
 		catch 	{ Install-Module -Name PowerShellGet -Force -AllowClobber -ErrorAction Stop }
 	}

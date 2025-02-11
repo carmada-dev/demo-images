@@ -132,7 +132,6 @@ if ($winget) {
 			Add-AppxPackage `
 				-Path $wingetPackage `
 				-DependencyPath $wingetDependencies `
-				# -LicensePath $wingetLicense `
 				-ForceTargetApplicationShutdown `
 				-StubPackageOption UsePreference `
 				-ErrorAction Stop
@@ -145,7 +144,7 @@ if ($winget) {
 					-ForceTargetApplicationShutdown `
 					-StubPackageOption UsePreference `
 					-ErrorAction Stop
-					
+
 			}
 		}
 	}
