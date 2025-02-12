@@ -30,13 +30,7 @@ $adminWinGetConfig = @"
 }
 "@
 
-$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-
-if ($winget) {
-
-	Write-Host ">>> WinGet is already installed: $winget"
-
-} else {
+function Install-WinGet {
 
 	$PsInstallScope = "$(&{ if (Test-IsSystem) { 'AllUsers' } else { 'CurrentUser' } })"
 	$wingetOffline = (Join-Path $env:DEVBOX_HOME 'Offline\WinGet')
@@ -45,7 +39,7 @@ if ($winget) {
 	$wingetClientVersion = "1.9.2411"
 	$wingetConfigVersion = "1.8.1911"
 
-	Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
+	Invoke-ScriptSection -Title "Installing WinGet Package Manager ($PsInstallScope)" -ScriptBlock {
 
 		if (-not (Get-PackageProvider | Where-Object { $_.Name -eq "NuGet" -and $_.Version -gt $nugetProviderVersion })) {
 			Write-Host ">>> Installing NuGet Package Provider: $nugetProviderVersion"
@@ -62,11 +56,11 @@ if ($winget) {
 			powershell.exe -MTA -Command "Install-Module Microsoft.WinGet.Client -Scope $PsInstallScope -RequiredVersion $wingetClientVersion"
 		}
 
-		if (-not (Get-Module -ListAvailable -Name Microsoft.WinGet.Configuration | Where-Object { $_.Version -ge $wingetConfigVersion })) {
-			Write-Host ">>> Installing Microsoft.Winget.Configuration: $wingetConfigVersion"
-			Install-Module Microsoft.WinGet.Configuration -Scope $PsInstallScope -RequiredVersion $wingetConfigVersion
-			powershell.exe -MTA -Command "Install-Module Microsoft.WinGet.Configuration -Scope $PsInstallScope -RequiredVersion $wingetConfigVersion"
-		}
+		# if (-not (Get-Module -ListAvailable -Name Microsoft.WinGet.Configuration | Where-Object { $_.Version -ge $wingetConfigVersion })) {
+		# 	Write-Host ">>> Installing Microsoft.Winget.Configuration: $wingetConfigVersion"
+		# 	Install-Module Microsoft.WinGet.Configuration -Scope $PsInstallScope -RequiredVersion $wingetConfigVersion
+		# 	powershell.exe -MTA -Command "Install-Module Microsoft.WinGet.Configuration -Scope $PsInstallScope -RequiredVersion $wingetConfigVersion"
+		# }
 
 		Write-Host ">>> Installing/Repairing WinGet Package Manager"
 		powershell.exe -MTA -Command "Repair-WinGetPackageManager -Latest -Force -Verbose"
@@ -141,4 +135,23 @@ if ($winget) {
 		} 
 
 	} 
+}
+
+$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+
+if ($winget) {
+
+	Write-Host ">>> WinGet is already installed: $winget"
+
+} else {
+
+	if (Test-IsPacker) {
+
+		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
+			| Select-Object -ExpandProperty Output `
+			| Write-Host
+			
+	}
+
+	Install-WinGet
 } 
