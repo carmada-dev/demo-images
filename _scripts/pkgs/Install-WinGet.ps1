@@ -147,11 +147,26 @@ if ($winget) {
 
 	if (Test-IsPacker) {
 
+		# if executed by Packer elevate the script to SYSTEM and install WinGet for all users
 		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
 			| Select-Object -ExpandProperty Output `
 			| Write-Host
-			
+		
+		$paths = @(
+			[System.Environment]::GetEnvironmentVariable("Path","Machine")
+			[System.Environment]::GetEnvironmentVariable("Path","User")
+		)
+
+		# update the PATH environment variable to include the WinGet installation path
+		$env:Path = $paths -join ';'
+
+		# get the WinGet executable path - this should be available after the PATH update
+		$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 	}
 
-	Install-WinGet
+	if (-not ($winget)) {
+
+		# if WinGet is not installed install it for the current user
+		Install-WinGet
+	}
 } 
