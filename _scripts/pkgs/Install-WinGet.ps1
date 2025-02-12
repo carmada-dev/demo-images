@@ -76,7 +76,7 @@ function Install-WinGet {
 
 				$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
 				$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
-				$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
+				$destination = Join-Path $wingetOffline ([IO.Path]::GetFileName($path))
 
 				Write-Host ">>> Moving $path > $destination"
 				Move-Item -Path $path -Destination $destination -Force | Out-Null
@@ -93,13 +93,13 @@ function Install-WinGet {
 				}
 			}
 
-			Get-ChildItem -Path $offlineDirectory -Filter '*.appx' | Select-Object -ExpandProperty FullName | ForEach-Object {
+			Get-ChildItem -Path $wingetOffline -Filter '*.appx' | Select-Object -ExpandProperty FullName | ForEach-Object {
 
 				Write-Host ">>> Installing WinGet Package Manager Dependency: $_"
 				Add-AppxPackage -Path $_ -ForceApplicationShutdown -ErrorAction Continue
 			}
 
-			Get-ChildItem -Path $offlineDirectory -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName | ForEach-Object {
+			Get-ChildItem -Path $wingetOffline -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName | ForEach-Object {
 
 				Write-Host ">>> Installing WinGet Package Manager: $_"
 				Add-AppxPackage -Path $_ -ForceApplicationShutdown -ErrorAction Continue
