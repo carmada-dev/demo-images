@@ -41,77 +41,41 @@ function Install-WinGet {
 
 	Invoke-ScriptSection -Title "Installing WinGet Package Manager ($PsInstallScope)" -ScriptBlock {
 
-		if (-not (Get-PackageProvider | Where-Object { $_.Name -eq "NuGet" -and $_.Version -gt $nugetProviderVersion })) {
-			Write-Host ">>> Installing NuGet Package Provider: $nugetProviderVersion"
-			Install-PackageProvider -Name NuGet -MinimumVersion $nugetProviderVersion -Force -Scope $PsInstallScope
+		try
+		{
+			Write-Host ">>> Registering WinGet Package Manager"
+			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
 		}
-
-		Write-Host ">>> Set PSGallery as Trusted Repository"
-		Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-    	powershell.exe -MTA -Command "Set-PSRepository -Name PSGallery -InstallationPolicy Trusted"
-
-		if (-not (Get-Module -ListAvailable -Name Microsoft.WinGet.Client | Where-Object { $_.Version -ge $wingetClientVersion })) {
-			Write-Host ">>> Installing Microsoft.Winget.Client: $wingetClientVersion"
-			Install-Module Microsoft.WinGet.Client -Scope $PsInstallScope -RequiredVersion $wingetClientVersion
-			powershell.exe -MTA -Command "Install-Module Microsoft.WinGet.Client -Scope $PsInstallScope -RequiredVersion $wingetClientVersion"
-		}
-
-		# if (-not (Get-Module -ListAvailable -Name Microsoft.WinGet.Configuration | Where-Object { $_.Version -ge $wingetConfigVersion })) {
-		# 	Write-Host ">>> Installing Microsoft.Winget.Configuration: $wingetConfigVersion"
-		# 	Install-Module Microsoft.WinGet.Configuration -Scope $PsInstallScope -RequiredVersion $wingetConfigVersion
-		# 	powershell.exe -MTA -Command "Install-Module Microsoft.WinGet.Configuration -Scope $PsInstallScope -RequiredVersion $wingetConfigVersion"
-		# }
-
-		Write-Host ">>> Installing/Repairing WinGet Package Manager"
-		powershell.exe -MTA -Command "Repair-WinGetPackageManager -Latest -Force -Verbose"
-
-		if (-not (Test-IsSystem)) {
-
-			if (Test-IsPacker -and -not (Test-Path -Path $wingetOffline)) {
-
-				$osType = "$(&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })"
-
-				Write-Host ">>> Creating WinGet Offline Directory: $wingetOffline"
-				New-Item -Path $wingetOffline -ItemType Directory -Force | Out-Null
-
-				$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
-				$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
-				$destination = Join-Path $wingetOffline ([IO.Path]::GetFileName($path))
-
-				Write-Host ">>> Moving $path > $destination"
-				Move-Item -Path $path -Destination $destination -Force | Out-Null
-
-				$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
-				$path = Join-Path (Invoke-FileDownload -Url $url -Expand -Retries 5) $osType
-				
-				Get-ChildItem -Path $path -Filter '*.*' | ForEach-Object {
-
-					$destination = Join-Path $wingetOffline ([IO.Path]::GetFileName($_.FullName))
-
-					Write-Host ">>> Moving $($_.FullName) > $destination"
-					Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
-				}
+		catch
+		{
+			if (-not (Get-PackageProvider | Where-Object { $_.Name -eq "NuGet" -and $_.Version -gt $nugetProviderVersion })) {
+				Write-Host ">>> Installing NuGet Package Provider: $nugetProviderVersion"
+				Install-PackageProvider -Name NuGet -MinimumVersion $nugetProviderVersion -Force -Scope $PsInstallScope
 			}
 
-			Get-ChildItem -Path $wingetOffline -Filter '*.appx' | Select-Object -ExpandProperty FullName | ForEach-Object {
+			Write-Host ">>> Set PSGallery as Trusted Repository"
+			Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+			powershell.exe -MTA -Command "Set-PSRepository -Name PSGallery -InstallationPolicy Trusted"
 
-				Write-Host ">>> Installing WinGet Package Manager Dependency: $_"
-				Add-AppxPackage -Path $_ -ForceApplicationShutdown -ErrorAction Continue
+			if (-not (Get-Module -ListAvailable -Name Microsoft.WinGet.Client | Where-Object { $_.Version -ge $wingetClientVersion })) {
+				Write-Host ">>> Installing Microsoft.Winget.Client: $wingetClientVersion"
+				Install-Module Microsoft.WinGet.Client -Scope $PsInstallScope -RequiredVersion $wingetClientVersion
+				powershell.exe -MTA -Command "Install-Module Microsoft.WinGet.Client -Scope $PsInstallScope -RequiredVersion $wingetClientVersion"
 			}
 
-			Get-ChildItem -Path $wingetOffline -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName | ForEach-Object {
+			Write-Host ">>> Installing/Repairing WinGet Package Manager"
+			powershell.exe -MTA -Command "Repair-WinGetPackageManager -Verbose"
 
-				Write-Host ">>> Installing WinGet Package Manager: $_"
-				Add-AppxPackage -Path $_ -ForceApplicationShutdown -ErrorAction Continue
-			}
+			Write-Host ">>> Revert PSGallery to Untrusted Repository"
+			Set-PSRepository -Name "PSGallery" -InstallationPolicy Untrusted
+			powershell.exe -MTA -Command "Set-PSRepository -Name PSGallery -InstallationPolicy Untrusted"
 		}
 
-		Write-Host ">>> Registering WinGet Package Manager"
-		Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
-
-		Write-Host ">>> Revert PSGallery to Untrusted Repository"
-		Set-PSRepository -Name "PSGallery" -InstallationPolicy Untrusted
-    	powershell.exe -MTA -Command "Set-PSRepository -Name PSGallery -InstallationPolicy Untrusted"
+		$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+		if ($winget) {
+			$wingetVersion = Invoke-CommandLine -Command $winget -Arguments "--version" | Select-Object -ExpandProperty Output 
+			Write-Host ">>> WinGet Installed: $wingetVersion"
+		}
 	}
 
 	if (Test-IsPacker) {
@@ -121,12 +85,12 @@ function Install-WinGet {
 
 			$wingetPackageFamilyName = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty PackageFamilyName
 
-			@(
-
+			$paths = @(
 				"%LOCALAPPDATA%\Packages\$wingetPackageFamilyName\LocalState\settings.json",
 				"%LOCALAPPDATA%\Microsoft\WinGet\Settings\settings.json"
-
-			) | ForEach-Object { [System.Environment]::ExpandEnvironmentVariables($_) } | Where-Object { Test-Path (Split-Path -Path $_ -Parent) -PathType Container } | ForEach-Object { 
+			) 
+			
+			$paths | ForEach-Object { [System.Environment]::ExpandEnvironmentVariables($_) } | Where-Object { Test-Path (Split-Path -Path $_ -Parent) -PathType Container } | ForEach-Object { 
 
 				Write-Host ">>> Patching WinGet ($winGetVersion) Settings: $_"
 				$adminWinGetConfig | Out-File $_ -Encoding ASCII -Force 
@@ -153,7 +117,7 @@ if ($winget) {
 			| Write-Host
 		
 		$paths = @(
-			[System.Environment]::GetEnvironmentVariable("Path","Machine")
+			[System.Environment]::GetEnvironmentVariable("Path","Machine"),
 			[System.Environment]::GetEnvironmentVariable("Path","User")
 		)
 
