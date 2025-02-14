@@ -32,48 +32,23 @@ $adminWinGetConfig = @"
 
 function Install-WinGet {
 
-	$PsInstallScope = "$(&{ if (Test-IsSystem) { 'AllUsers' } else { 'CurrentUser' } })"
-
-	$nugetProviderVersion = "2.8.5.201"
-	$wingetClientVersion = "1.9.2411"
-
-	Invoke-ScriptSection -Title "Installing WinGet Package Manager ($PsInstallScope)" -ScriptBlock {
+	Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
 		try
 		{
 			Write-Host ">>> Registering WinGet Package Manager"
-			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction Stop
+			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
 		}
 		catch
 		{
-			try 
-			{
-				if (-not (Get-PackageProvider | Where-Object { $_.Name -eq "NuGet" -and $_.Version -gt $nugetProviderVersion })) {
-					Write-Host ">>> Installing NuGet Package Provider: $nugetProviderVersion"
-					Install-PackageProvider -Name NuGet -MinimumVersion $nugetProviderVersion -Force -Scope $PsInstallScope
-				}
-	
-				Write-Host ">>> Set PSGallery as Trusted Repository"
-				Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-				# powershell.exe -MTA -Command "Set-PSRepository -Name PSGallery -InstallationPolicy Trusted"
+			Write-Host ">>> Installing NuGet Package Provider"
+			Install-PackageProvider -Name NuGet -Force | Out-Null
 
-				if (-not (Get-Module -ListAvailable -Name Microsoft.WinGet.Client | Where-Object { $_.Version -ge $wingetClientVersion })) {
-					Write-Host ">>> Installing Microsoft.Winget.Client: $wingetClientVersion"
-					Install-Module Microsoft.WinGet.Client -Scope $PsInstallScope -RequiredVersion $wingetClientVersion
-					# powershell.exe -MTA -Command "Install-Module Microsoft.WinGet.Client -Scope $PsInstallScope -RequiredVersion $wingetClientVersion"
-				}
-	
-				Write-Host ">>> Installing/Repairing WinGet Package Manager"
-				Repair-WinGetPackageManager -Verbose
-				# powershell.exe -MTA -Command "Repair-WinGetPackageManager -Verbose"
-	
-			}
-			finally 
-			{
-				Write-Host ">>> Revert PSGallery to Untrusted Repository"
-				Set-PSRepository -Name "PSGallery" -InstallationPolicy Untrusted
-				# powershell.exe -MTA -Command "Set-PSRepository -Name PSGallery -InstallationPolicy Untrusted"
-			}
+			Write-Host ">>> Installing Microsoft.Winget.Client"
+			Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
+
+			Write-Host ">>> Installing/Repairing WinGet Package Manager"
+			Repair-WinGetPackageManager -Verbose
 		}
 		
 
