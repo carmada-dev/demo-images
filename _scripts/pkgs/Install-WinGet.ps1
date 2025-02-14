@@ -42,7 +42,7 @@ function Install-WinGet {
 		try
 		{
 			Write-Host ">>> Registering WinGet Package Manager"
-			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction Stop
 		}
 		catch
 		{
