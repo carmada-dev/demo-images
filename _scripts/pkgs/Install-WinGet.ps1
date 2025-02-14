@@ -48,43 +48,49 @@ function Install-WinGet {
 
 	$dumpTimestamp = Get-Date
 
-	Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
+	try {
+		
+		Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
-		if ((Get-Service -Name AppXSvc).Status -eq 'Stopped') {
-			Write-Host ">>> Starting AppX Deployment Service (AppXSVC)"
-			Start-Service -Name AppXSvc
+			if ((Get-Service -Name AppXSvc).Status -eq 'Stopped') {
+				Write-Host ">>> Starting AppX Deployment Service (AppXSVC)"
+				Start-Service -Name AppXSvc
+			}
+
+			Write-Host ">>> Registering WinGet Package Manager"
+			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
+
+			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+			if (-not $winget) { 
+				
+				Write-Host ">>> Repairing WinGet Package Manager"
+
+				Write-Host "- Installing NuGet Package Provider"
+				Install-PackageProvider -Name NuGet -Force | Out-Null
+			
+				Write-Host "- Installing Microsoft.Winget.Client"
+				Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
+			
+				Write-Host "- Repairing WinGet Package Manager"
+				Repair-WinGetPackageManager -Verbose
+
+			}
+			
+			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+			if (-not $winget) { Write-Warning "!!! WinGet still unavailable" }
 		}
-
-		Write-Host ">>> Registering WinGet Package Manager"
-		Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
+	} 
+	finally {
 
 		$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 		if (-not $winget) { 
 			
-			Write-Host ">>> Repairing WinGet Package Manager"
+			Invoke-ScriptSection -Title "Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational" -ScriptBlock {
 
-			Write-Host "- Installing NuGet Package Provider"
-			Install-PackageProvider -Name NuGet -Force | Out-Null
-		
-			Write-Host "- Installing Microsoft.Winget.Client"
-			Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
-		
-			Write-Host "- Repairing WinGet Package Manager"
-			Repair-WinGetPackageManager -Verbose
-
-		}
-		
-		$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-		if (-not $winget) { Write-Warning "!!! WinGet still unavailable" }
-	}
-
-	if (-not $winget) { 
-		
-		Invoke-ScriptSection -Title "Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational" -ScriptBlock {
-
-			Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-				| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' -and $_.TimeCreated -gt $dumpTimestamp } `
-				| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
+				Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+					| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' -and $_.TimeCreated -gt $dumpTimestamp } `
+					| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
+			}
 		}
 	}
 }
@@ -99,7 +105,6 @@ if ($winget) {
 
 	if (Test-IsPacker) {
 
-		# if executed by Packer elevate the script to SYSTEM and install WinGet for all users
 		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
 			| Select-Object -ExpandProperty Output `
 			| Write-Host
