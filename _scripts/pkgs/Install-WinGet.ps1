@@ -30,7 +30,29 @@ $adminWinGetConfig = @"
 }
 "@
 
+function Repair-WinGet {
+
+	Write-Host ">>> Repairing WinGet Package Manager"
+
+	Write-Host "- Installing NuGet Package Provider"
+	Install-PackageProvider -Name NuGet -Force | Out-Null
+
+	Write-Host "- Installing Microsoft.Winget.Client"
+	Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
+
+	Write-Host "- Repairing WinGet Package Manager"
+	Repair-WinGetPackageManager -Verbose
+}
+
 function Install-WinGet {
+
+	if (Test-IsSystem) {
+
+		Invoke-ScriptSection -Title "Dump Automatic Services" -ScriptBlock {
+			Get-Service | Where-Object { $_.StartType -like 'Automatic' } | Format-Table -Property DisplayName, Name, Status
+			Get-Service | Where-Object { $_.StartType -like 'Automatic' -and $_.Status -eq 'Stopped' } | Start-Service -ErrorAction Continue
+		}
+	}
 
 	Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
@@ -38,28 +60,38 @@ function Install-WinGet {
 		{
 			Write-Host ">>> Registering WinGet Package Manager"
 			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+
+			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+			if (-not $winget) { Repair-WinGet }
 		}
 		catch
 		{
-			Write-Host ">>> Installing NuGet Package Provider"
-			Install-PackageProvider -Name NuGet -Force | Out-Null
-
-			Write-Host ">>> Installing Microsoft.Winget.Client"
-			Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
-
-			Write-Host ">>> Installing/Repairing WinGet Package Manager"
-			Repair-WinGetPackageManager -Verbose
+			Repair-WinGet
 		}
 		
-
 		$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-		if ($winget) {
-			$wingetVersion = Invoke-CommandLine -Command $winget -Arguments "--version" | Select-Object -ExpandProperty Output 
-			Write-Host ">>> WinGet Installed: $wingetVersion"
-		} else {
-			Write-Warning "!!! WinGet still unavailable"
-		}
+		if (-not $winget) { Write-Warning "!!! WinGet still unavailable" }
 	}
+}
+
+$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+
+if ($winget) {
+
+	Write-Host ">>> WinGet is already installed: $winget"
+
+} else {
+
+	if (Test-IsPacker) {
+
+		# if executed by Packer elevate the script to SYSTEM and install WinGet for all users
+		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
+			| Select-Object -ExpandProperty Output `
+			| Write-Host
+		
+	}
+
+	Install-WinGet
 
 	if (Test-IsPacker) {
 
@@ -84,34 +116,4 @@ function Install-WinGet {
 			}
 		} 
 	} 
-}
-
-$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-
-if ($winget) {
-
-	Write-Host ">>> WinGet is already installed: $winget"
-
-} else {
-
-	if (Test-IsPacker) {
-
-		# if executed by Packer elevate the script to SYSTEM and install WinGet for all users
-		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
-			| Select-Object -ExpandProperty Output `
-			| Write-Host
-		
-		# $paths = @(
-		# 	[System.Environment]::GetEnvironmentVariable("Path","Machine"),
-		# 	[System.Environment]::GetEnvironmentVariable("Path","User")
-		# )
-
-		# # update the PATH environment variable to include the WinGet installation path
-		# $env:Path = $paths -join ';'
-
-		# # get the WinGet executable path - this should be available after the PATH update
-		# $winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-	}
-
-	Install-WinGet
 } 
