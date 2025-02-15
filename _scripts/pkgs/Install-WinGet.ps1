@@ -50,51 +50,58 @@ function Install-WinGet {
 		| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
 		|  Select-Object -First 1 -ExpandProperty RecordId
 
-	try {
-		
-		Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
+	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 
-			if ((Get-Service -Name AppXSvc).Status -eq 'Stopped') {
-				Write-Host ">>> Starting AppX Deployment Service (AppXSVC)"
-				Start-Service -Name AppXSvc
+	if (-not $winget) { 
+
+		try {
+			
+			Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
+
+				if ((Get-Service -Name AppXSvc).Status -eq 'Stopped') {
+					Write-Host ">>> Starting AppX Deployment Service (AppXSVC)"
+					Start-Service -Name AppXSvc
+				}
+
+				Write-Host ">>> Registering WinGet Package Manager"
+				Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
+
+				$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+				if (-not $winget) { 
+					
+					Write-Host ">>> Repairing WinGet Package Manager (WinGet not found)"
+
+					Write-Host "- Installing NuGet Package Provider"
+					Install-PackageProvider -Name NuGet -Force | Out-Null
+				
+					Write-Host "- Installing Microsoft.Winget.Client"
+					Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
+				
+					Write-Host "- Run WinGet Package Manager repair"
+					Repair-WinGetPackageManager -Verbose
+
+				}
+				
+				$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+				if (-not $winget) { Write-Warning "!!! WinGet still unavailable" }
 			}
-
-			Write-Host ">>> Registering WinGet Package Manager"
-			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
+		} 
+		finally {
 
 			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 			if (-not $winget) { 
 				
-				Write-Host ">>> Repairing WinGet Package Manager (WinGet not found)"
+				Invoke-ScriptSection -Title "Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational" -ScriptBlock {
 
-				Write-Host "- Installing NuGet Package Provider"
-				Install-PackageProvider -Name NuGet -Force | Out-Null
-			
-				Write-Host "- Installing Microsoft.Winget.Client"
-				Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
-			
-				Write-Host "- Run WinGet Package Manager repair"
-				Repair-WinGetPackageManager -Verbose
-
-			}
-			
-			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-			if (-not $winget) { Write-Warning "!!! WinGet still unavailable" }
-		}
-	} 
-	finally {
-
-		$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-		if (-not $winget) { 
-			
-			Invoke-ScriptSection -Title "Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational" -ScriptBlock {
-
-				Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-					| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) } `
-					| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
+					Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+						| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) } `
+						| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
+				}
 			}
 		}
 	}
+
+	return $winget
 }
 
 $winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
@@ -113,7 +120,22 @@ if ($winget) {
 		
 	# }
 
-	Install-WinGet
+	$retryCnt = 0
+	$retryMax = 10
+
+	while (-not $winget) {
+		
+		$winget = Install-WinGet
+		
+		if (-not $winget) { 
+			if ($retryCnt++ -ge $retryMax) { 
+				throw "Failed to install WinGet Package Manager ($retryMax retries)" 
+			} else {
+				Start-Sleep -Seconds 30
+			}
+		}
+	}
+	
 
 	if (Test-IsPacker) {
 
