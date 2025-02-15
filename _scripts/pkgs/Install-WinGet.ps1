@@ -46,7 +46,9 @@ function Repair-WinGet {
 
 function Install-WinGet {
 
-	$dumpTimestamp = Get-Date
+	$lastRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+		| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
+		|  Select-Object -First 1 -ExpandProperty RecordId
 
 	try {
 		
@@ -63,7 +65,7 @@ function Install-WinGet {
 			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 			if (-not $winget) { 
 				
-				Write-Host ">>> Repairing WinGet Package Manager"
+				Write-Host ">>> Repairing WinGet Package Manager (WinGet not found)"
 
 				Write-Host "- Installing NuGet Package Provider"
 				Install-PackageProvider -Name NuGet -Force | Out-Null
@@ -71,7 +73,7 @@ function Install-WinGet {
 				Write-Host "- Installing Microsoft.Winget.Client"
 				Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
 			
-				Write-Host "- Repairing WinGet Package Manager"
+				Write-Host "- Run WinGet Package Manager repair"
 				Repair-WinGetPackageManager -Verbose
 
 			}
@@ -88,7 +90,7 @@ function Install-WinGet {
 			Invoke-ScriptSection -Title "Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational" -ScriptBlock {
 
 				Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-					| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' -and $_.TimeCreated -gt $dumpTimestamp } `
+					| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) } `
 					| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
 			}
 		}
@@ -103,13 +105,13 @@ if ($winget) {
 
 } else {
 
-	if (Test-IsPacker) {
+	# if (Test-IsPacker) {
 
-		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
-			| Select-Object -ExpandProperty Output `
-			| Write-Host
+	# 	Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
+	# 		| Select-Object -ExpandProperty Output `
+	# 		| Write-Host
 		
-	}
+	# }
 
 	Install-WinGet
 
