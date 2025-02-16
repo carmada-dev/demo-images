@@ -118,21 +118,29 @@ if ($winget) {
 
 	$retryCnt = 0
 	$retryMax = 10
+	$retryDelay = 30
 
 	while (-not $winget) {
 		
 		try
 		{
 			$winget = Install-WinGet
+
+			if (-not $winget) {
+				Write-Warning "!!! WinGet still unavailable"
+			}
 		}
 		catch
 		{
 			if (Test-IsSystem) {
-				Write-Warning $_.Exception.Message
+				Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)"
+				break
 			} elseif (++$retryCnt -gt $retryMax) { 
+				Write-Error "!!! WinGet installation failed: $($_.Exception.Message)"
 				throw 
 			} else {
-				Start-Sleep -Seconds 30
+				Write-Warning "!!! WinGet installation failed - retrying in $retryDelay seconds"
+				Start-Sleep -Seconds $retryDelay
 			}
 		}
 	}
