@@ -48,7 +48,7 @@ function Install-WinGet {
 
 	$lastRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
 		| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
-		|  Select-Object -First 1 -ExpandProperty RecordId
+		| Select-Object -First 1 -ExpandProperty RecordId
 
 	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 
@@ -88,15 +88,11 @@ function Install-WinGet {
 		} 
 		finally {
 
-			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-			if (-not $winget) { 
-				
-				Invoke-ScriptSection -Title "Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational" -ScriptBlock {
+			Invoke-ScriptSection -Title "Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational ($lastRecordId)" -ScriptBlock {
 
-					Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-						| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) } `
-						| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
-				}
+				Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+					| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) } `
+					| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
 			}
 		}
 	}
