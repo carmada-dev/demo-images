@@ -69,7 +69,7 @@ function Install-WinGet {
 				}
 				
 				$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-				if (-not $winget) { Write-Warning "!!! WinGet still unavailable" }
+				if (-not $winget) { throw "WinGet still unavailable" }
 			}
 		} 
 		finally {
@@ -94,14 +94,6 @@ if ($winget) {
 
 } else {
 
-	if (Test-IsPacker) {
-
-		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
-			| Select-Object -ExpandProperty Output `
-			| Write-Host
-		
-	}
-
 	$retryCnt = 0
 	$retryMax = 10
 	$retryDelay = 30
@@ -111,14 +103,10 @@ if ($winget) {
 		try
 		{
 			$winget = Install-WinGet
-			if (-not $winget) { throw "WinGet is not available" }
 		}
 		catch
 		{
-			if (Test-IsSystem) {
-				Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)"
-				break
-			} elseif (++$retryCnt -gt $retryMax) { 
+			if (++$retryCnt -gt $retryMax) { 
 				Write-Error "!!! WinGet installation failed: $($_.Exception.Message)"
 				throw 
 			} else {
@@ -127,7 +115,6 @@ if ($winget) {
 			}
 		}
 	}
-	
 
 	if (Test-IsPacker) {
 
