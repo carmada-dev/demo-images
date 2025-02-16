@@ -30,20 +30,6 @@ $adminWinGetConfig = @"
 }
 "@
 
-function Repair-WinGet {
-
-	Write-Host ">>> Repairing WinGet Package Manager"
-
-	Write-Host "- Installing NuGet Package Provider"
-	Install-PackageProvider -Name NuGet -Force | Out-Null
-
-	Write-Host "- Installing Microsoft.Winget.Client"
-	Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
-
-	Write-Host "- Repairing WinGet Package Manager"
-	Repair-WinGetPackageManager -Verbose
-}
-
 function Install-WinGet {
 
 	$lastRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
@@ -110,7 +96,7 @@ if ($winget) {
 
 	if (Test-IsPacker) {
 
-		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
+		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
 			| Select-Object -ExpandProperty Output `
 			| Write-Host
 		
@@ -125,10 +111,7 @@ if ($winget) {
 		try
 		{
 			$winget = Install-WinGet
-
-			if (-not $winget) {
-				Write-Warning "!!! WinGet still unavailable"
-			}
+			if (-not $winget) { throw "WinGet is not available" }
 		}
 		catch
 		{
