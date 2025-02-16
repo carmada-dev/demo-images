@@ -127,7 +127,9 @@ if ($winget) {
 		}
 		catch
 		{
-			if (++$retryCnt -gt $retryMax) { 
+			if (Test-IsSystem) {
+				Write-Warning $_.Exception.Message
+			} elseif (++$retryCnt -gt $retryMax) { 
 				throw 
 			} else {
 				Start-Sleep -Seconds 30
