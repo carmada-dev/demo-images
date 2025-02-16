@@ -108,24 +108,27 @@ if ($winget) {
 
 } else {
 
-	# if (Test-IsPacker) {
+	if (Test-IsPacker) {
 
-	# 	Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
-	# 		| Select-Object -ExpandProperty Output `
-	# 		| Write-Host
+		Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem `
+			| Select-Object -ExpandProperty Output `
+			| Write-Host
 		
-	# }
+	}
 
 	$retryCnt = 0
 	$retryMax = 10
 
 	while (-not $winget) {
 		
-		$winget = Install-WinGet
-		
-		if (-not $winget) { 
-			if ($retryCnt++ -ge $retryMax) { 
-				throw "Failed to install WinGet Package Manager ($retryMax retries)" 
+		try
+		{
+			$winget = Install-WinGet
+		}
+		catch
+		{
+			if (++$retryCnt -gt $retryMax) { 
+				throw 
 			} else {
 				Start-Sleep -Seconds 30
 			}
