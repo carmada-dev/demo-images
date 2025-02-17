@@ -1,3 +1,4 @@
+
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
@@ -32,14 +33,14 @@ $adminWinGetConfig = @"
 
 function Install-WinGet {
 
-	$lastRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-		| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
-		| Select-Object -First 1 -ExpandProperty RecordId
-
 	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 
 	if (-not $winget) { 
 
+		$lastRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+			| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
+			| Measure-Object -Property RecordId -Maximum
+		
 		try {
 			
 			Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
@@ -69,7 +70,7 @@ function Install-WinGet {
 				}
 				
 				$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-				if (-not $winget) { throw "WinGet still unavailable" }
+				if (-not $winget) { throw "WinGet not unavailable" }
 			}
 		} 
 		finally {
@@ -92,6 +93,14 @@ if ($winget) {
 
 	Write-Host ">>> WinGet is already installed: $winget"
 
+} elseif ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne 'MTA') {
+
+	Get-ExecutionPolicy
+	Write-Warning "!!! WinGet installation requires MTA mode - retrying in new thread"
+	Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$scriptPath`"" `
+		| Select-Object -ExpandProperty Output `
+		| Write-Host
+	
 } else {
 
 	$retryCnt = 0
