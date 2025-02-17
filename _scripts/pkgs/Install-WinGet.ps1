@@ -48,10 +48,10 @@ function Start-Services {
 function Install-WinGet {
 
 	Write-Host ">>> Installing NuGet Package Provider"
-	Install-PackageProvider -Name NuGet -Force | Out-Null
+	Install-PackageProvider -Name NuGet -Force -WarningAction SilentlyContinue | Out-Null
 
 	Write-Host ">>> Installing Microsoft.Winget.Client"
-	Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
+	Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery -WarningAction SilentlyContinue | Out-Null
 
 	Write-Host ">>> Repairing WinGet Package Manager"
 	Repair-WinGetPackageManager -Verbose -Force
