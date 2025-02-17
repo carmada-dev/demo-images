@@ -31,65 +31,6 @@ $adminWinGetConfig = @"
 }
 "@
 
-function Install-WinGet {
-
-	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-
-	if (-not $winget) { 
-
-		$lastRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-			| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
-			| Measure-Object -Property RecordId -Maximum `
-			| Select-Object -ExpandProperty Maximum
-		
-		try {
-			
-			@( 'AppXSVC', 'ClipSVC', 'StateRepository', 'wuauserv', 'InstallService' ) | ForEach-Object {
-				$service = Get-Service -Name $_ -ErrorAction SilentlyContinue
-				if ($service -and ($service.Status -ne 'Running')) {
-					Write-Host ">>> Starting $($service.DisplayName) ($($service.Name))"
-					Start-Service -Name $service.Name 
-				}
-			}
-
-			Write-Host ">>> Dump installed DesktopAppInstaller information"
-			Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' -AllUsers | FL *
-
-			Write-Host ">>> Registering WinGet Package Manager"
-			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
-
-			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-			if (-not $winget) { 
-				
-				Write-Host ">>> Repairing WinGet Package Manager (WinGet not found)"
-
-				Write-Host "- Installing NuGet Package Provider"
-				Install-PackageProvider -Name NuGet -Force | Out-Null
-			
-				Write-Host "- Installing Microsoft.Winget.Client"
-				Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
-			
-				Write-Host "- Run WinGet Package Manager repair"
-				Repair-WinGetPackageManager -Verbose
-
-			}
-			
-			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-			if (-not $winget) { throw "WinGet not unavailable" }
-
-		} 
-		finally {
-
-			Write-Host ">>> Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational ($lastRecordId)"
-			Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-				| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) } `
-				| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
-		}
-	}
-
-	return $winget
-}
-
 $winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 
 if ($winget) {
@@ -97,6 +38,29 @@ if ($winget) {
 	Write-Host ">>> WinGet is already installed: $winget"
 
 } else {
+
+	Invoke-ScriptSection -Title "Preparing WinGet Package Manager" -ScriptBlock {
+
+		Write-Host ">>> Installing NuGet Package Provider"
+		Install-PackageProvider -Name NuGet -Force | Out-Null
+	
+		Write-Host ">>> Installing Microsoft.Winget.Client"
+		Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
+
+		@( 'AppXSVC', 'ClipSVC', 'StateRepository', 'wuauserv', 'InstallService' ) | ForEach-Object {
+			$service = Get-Service -Name $_ -ErrorAction SilentlyContinue
+			if ($service -and ($service.Status -ne 'Running')) {
+				Write-Host ">>> Starting service: $($service.DisplayName) ($($service.Name))"
+				Start-Service -Name $service.Name 
+			}
+		}
+
+		Get-AppxPackage -AllUsers | Where-Object { $_.InstallLocation } | ForEach-Object {
+			$manifest = Join-Path $_.InstallLocation 'AppxManifest.xml'
+			Write-Host ">>> Registering AppX Package: $($_.Name) ($manifest)"
+			Add-AppxPackage -Path $manifest -Register -DisableDevelopmentMode -ErrorAction Continue
+		}
+	}
 
 	Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
@@ -108,7 +72,29 @@ if ($winget) {
 			
 			try
 			{
-				$winget = Install-WinGet
+				$lastRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+					| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
+					| Measure-Object -Property RecordId -Maximum `
+					| Select-Object -ExpandProperty Maximum
+				
+				Write-Host ">>> Registering WinGet Package Manager"
+				Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
+	
+				$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+				if (-not $winget) { 
+					
+					Write-Host ">>> Repairing WinGet Package Manager (WinGet not found)"
+					Repair-WinGetPackageManager -Verbose
+	
+				}
+				
+				Write-Host ">>> Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational ($lastRecordId)"
+				Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+					| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) } `
+					| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
+
+				$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+				if (-not $winget) { throw "WinGet not unavailable" }
 			}
 			catch
 			{
