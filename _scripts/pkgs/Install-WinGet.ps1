@@ -95,9 +95,8 @@ if ($winget) {
 
 } elseif ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne 'MTA') {
 
-	Get-ExecutionPolicy
 	Write-Warning "!!! WinGet installation requires MTA mode - retrying in new thread"
-	Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$scriptPath`"" `
+	Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$($MyInvocation.MyCommand.Path)`"" `
 		| Select-Object -ExpandProperty Output `
 		| Write-Host
 	
