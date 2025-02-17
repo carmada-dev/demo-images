@@ -39,7 +39,8 @@ function Install-WinGet {
 
 		$lastRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
 			| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
-			| Measure-Object -Property RecordId -Maximum
+			| Measure-Object -Property RecordId -Maximum `
+			| Select-Object -ExpandProperty Maximum
 		
 		try {
 			
