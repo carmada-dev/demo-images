@@ -54,7 +54,7 @@ function Install-WinGet {
 	Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery -WarningAction SilentlyContinue | Out-Null
 
 	Write-Host ">>> Repairing WinGet Package Manager"
-	Repair-WinGetPackageManager -Verbose -Force
+	Repair-WinGetPackageManager -Verbose -Force -AllUsers:$(Test-IsSystem) 
 }
 
 $winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
