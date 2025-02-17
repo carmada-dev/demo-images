@@ -52,10 +52,8 @@ function Install-WinGet {
 				}
 			}
 
-			if ((Get-Service -Name AppXSvc).Status -ne 'Running') {
-				Write-Host ">>> Starting AppX Deployment Service (AppXSVC)"
-				Start-Service -Name AppXSvc
-			}
+			Write-Host ">>> Dump installed DesktopAppInstaller information"
+			Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' -AllUsers | FL *
 
 			Write-Host ">>> Registering WinGet Package Manager"
 			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
@@ -114,13 +112,15 @@ if ($winget) {
 			}
 			catch
 			{
+				Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)"
+				
 				if (++$retryCnt -gt $retryMax) { 
-					Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)"
 					throw 
 				} else {
-					Write-Warning "!!! WinGet installation failed: retrying in $retryDelay seconds"
 					Start-Sleep -Seconds $retryDelay
 				}
+
+				Write-Host '----------------------------------------------------------------------------------------------------------'
 			}
 		}
 	}
