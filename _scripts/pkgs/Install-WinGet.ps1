@@ -93,13 +93,6 @@ if ($winget) {
 
 	Write-Host ">>> WinGet is already installed: $winget"
 
-} elseif ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne 'MTA') {
-
-	Write-Warning "!!! WinGet installation requires MTA mode - retrying in new thread"
-	Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$($MyInvocation.MyCommand.Path)`"" `
-		| Select-Object -ExpandProperty Output `
-		| Write-Host
-	
 } else {
 
 	$retryCnt = 0
