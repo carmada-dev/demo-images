@@ -43,44 +43,40 @@ function Install-WinGet {
 		
 		try {
 			
-			Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
-
-				if ((Get-Service -Name AppXSvc).Status -eq 'Stopped') {
-					Write-Host ">>> Starting AppX Deployment Service (AppXSVC)"
-					Start-Service -Name AppXSvc
-				}
-
-				Write-Host ">>> Registering WinGet Package Manager"
-				Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
-
-				$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-				if (-not $winget) { 
-					
-					Write-Host ">>> Repairing WinGet Package Manager (WinGet not found)"
-
-					Write-Host "- Installing NuGet Package Provider"
-					Install-PackageProvider -Name NuGet -Force | Out-Null
-				
-					Write-Host "- Installing Microsoft.Winget.Client"
-					Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
-				
-					Write-Host "- Run WinGet Package Manager repair"
-					Repair-WinGetPackageManager -Verbose
-
-				}
-				
-				$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-				if (-not $winget) { throw "WinGet not unavailable" }
+			if ((Get-Service -Name AppXSvc).Status -eq 'Stopped') {
+				Write-Host ">>> Starting AppX Deployment Service (AppXSVC)"
+				Start-Service -Name AppXSvc
 			}
+
+			Write-Host ">>> Registering WinGet Package Manager"
+			Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction SilentlyContinue
+
+			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+			if (-not $winget) { 
+				
+				Write-Host ">>> Repairing WinGet Package Manager (WinGet not found)"
+
+				Write-Host "- Installing NuGet Package Provider"
+				Install-PackageProvider -Name NuGet -Force | Out-Null
+			
+				Write-Host "- Installing Microsoft.Winget.Client"
+				Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null
+			
+				Write-Host "- Run WinGet Package Manager repair"
+				Repair-WinGetPackageManager -Verbose
+
+			}
+			
+			$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+			if (-not $winget) { throw "WinGet not unavailable" }
+
 		} 
 		finally {
 
-			Invoke-ScriptSection -Title "Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational ($lastRecordId)" -ScriptBlock {
-
-				Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-					| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) } `
-					| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
-			}
+			Write-Host ">>> Dump EventLog - Microsoft-Windows-AppXDeploymentServer/Operational ($lastRecordId)"
+			Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+				| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) } `
+				| Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
 		}
 	}
 
@@ -95,24 +91,27 @@ if ($winget) {
 
 } else {
 
-	$retryCnt = 0
-	$retryMax = 10
-	$retryDelay = 30
+	Invoke-ScriptSection -Title "Installing WinGet Package Manager" -ScriptBlock {
 
-	while (-not $winget) {
-		
-		try
-		{
-			$winget = Install-WinGet
-		}
-		catch
-		{
-			if (++$retryCnt -gt $retryMax) { 
-				Write-Error "!!! WinGet installation failed: $($_.Exception.Message)"
-				throw 
-			} else {
-				Write-Warning "!!! WinGet installation failed - retrying in $retryDelay seconds"
-				Start-Sleep -Seconds $retryDelay
+		$retryCnt = 0
+		$retryMax = 10
+		$retryDelay = 30
+
+		while (-not $winget) {
+			
+			try
+			{
+				$winget = Install-WinGet
+			}
+			catch
+			{
+				if (++$retryCnt -gt $retryMax) { 
+					Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)"
+					throw 
+				} else {
+					Write-Warning "!!! WinGet installation failed: retrying in $retryDelay seconds"
+					Start-Sleep -Seconds $retryDelay
+				}
 			}
 		}
 	}
