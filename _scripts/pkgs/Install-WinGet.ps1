@@ -81,6 +81,11 @@ if ($winget) {
 			| Write-Host
 	}
 
+	Invoke-ScriptSection -Title "Dump Context Information - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
+	
+		Get-AppxPackage 'Microsoft.VCLibs.140.00.UWPDesktop' -AllUsers
+	}
+
 	Invoke-ScriptSection -Title "Installing WinGet Package Manager - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
 
 		$retryCnt = 0
