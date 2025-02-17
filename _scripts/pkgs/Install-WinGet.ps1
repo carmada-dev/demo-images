@@ -44,7 +44,15 @@ function Install-WinGet {
 		
 		try {
 			
-			if ((Get-Service -Name AppXSvc).Status -eq 'Stopped') {
+			@( 'AppXSVC', 'ClipSVC', 'StateRepository', 'wuauserv', 'InstallService' ) | ForEach-Object {
+				$service = Get-Service -Name $_ -ErrorAction SilentlyContinue
+				if ($service -and ($service.Status -ne 'Running')) {
+					Write-Host ">>> Starting $($service.DisplayName) ($($service.Name))"
+					Start-Service -Name $service.Name 
+				}
+			}
+
+			if ((Get-Service -Name AppXSvc).Status -ne 'Running') {
 				Write-Host ">>> Starting AppX Deployment Service (AppXSVC)"
 				Start-Service -Name AppXSvc
 			}
