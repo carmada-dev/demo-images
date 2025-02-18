@@ -104,7 +104,7 @@ function Install-WinGet {
 			}
 
 			Write-Host ">>> Repairing WinGet Package Manager"
-			Repair-WinGetPackageManager -Verbose -Force -Latest -AllUsers:$(Test-IsElevated) 
+			Repair-WinGetPackageManager -Verbose -AllUsers:$(Test-IsElevated) 
 
 			break # installation succeeded - exit the loop
 		}
