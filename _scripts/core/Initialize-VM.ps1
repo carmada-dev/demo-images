@@ -235,7 +235,8 @@ Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 		Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 
 		Write-Host ">>> Install PowershellGet module"
-		Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers
+		Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers -WarningAction SilentlyContinue
+		powershell.exe -NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -Command '&{ Import-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers }'
 	}
 	finally {
 		Write-Host ">>> Rollback the PSGallery repository policy"

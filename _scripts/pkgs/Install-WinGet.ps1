@@ -77,11 +77,31 @@ function Install-WinGet {
 
 		try {
 
-			Write-Host ">>> Installing NuGet Package Provider"
-			Install-PackageProvider -Name NuGet -Force | Out-Null
+			if (-not (Get-PackageProvider -Name NuGet -ListAvailable)) {
 
-			Write-Host ">>> Installing Microsoft.Winget.Client"
-			Install-Module -Name Microsoft.WinGet.Client -Repository PSGallery -Force | Out-Null
+				# we should never get here, as the NuGet provider install is part of the 
+				# Initialize-VM script that runs right after the Packer VM is created
+				
+				Write-Host ">>> Installing NuGet Package Provider"
+				Install-PackageProvider -Name NuGet -Force | Out-Null
+			}
+
+			if (-not (Get-Module -Name Microsoft.Winget.Client -ListAvailable)) {
+
+				try {
+
+					Write-Host ">>> Trust the PSGallery repository temporarily"
+					Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+
+					Write-Host ">>> Installing Microsoft.Winget.Client"
+					Install-Module -Name Microsoft.WinGet.Client -Repository PSGallery -Force | Out-Null
+
+				} finally {
+
+					Write-Host ">>> Reset the PSGallery repository to its original state"
+					Set-PSRepository -Name "PSGallery" -InstallationPolicy Untrusted
+				}
+			}
 
 			Write-Host ">>> Repairing WinGet Package Manager"
 			Repair-WinGetPackageManager -Verbose -Force -AllUsers:$(Test-IsSystem) 
