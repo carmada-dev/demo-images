@@ -121,7 +121,8 @@ if ($winget) {
 				}
 
 				Write-Host '----------------------------------------------------------------------------------------------------------'
-
+				Write-Warning $_.Exception.Message
+				
 				if (++$retryCnt -gt $retryMax) { 
 					throw 
 				} else {
