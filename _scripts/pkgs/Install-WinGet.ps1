@@ -50,7 +50,7 @@ function Resolve-WinGet {
 	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 
 	if (-not $winget) { 
-		$process = Invoke-CommandLine -Command "where" -Arguments "winget"
+		$process = Invoke-CommandLine -Command "where" -Arguments "winget" -Silent
 		if ($process.ExitCode -eq 0) { $winget = $process.Output }
 	}
 
@@ -59,14 +59,57 @@ function Resolve-WinGet {
 
 function Install-WinGet {
 
-	Write-Host ">>> Installing NuGet Package Provider"
-	Install-PackageProvider -Name NuGet -Force -WarningAction SilentlyContinue | Out-Null
+	param (
+		[Parameter(Mandatory=$false)]
+		[int] $Retries = 0,
+		[Parameter(Mandatory=$false)]
+		[int] $RetryDelay = 30
+	)
 
-	Write-Host ">>> Installing Microsoft.Winget.Client"
-	Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery -WarningAction SilentlyContinue | Out-Null
+	$retry = 0
 
-	Write-Host ">>> Repairing WinGet Package Manager"
-	Repair-WinGetPackageManager -Verbose -Force -AllUsers:$(Test-IsSystem) 
+	while ($retry++ -le $Retries) 
+	{
+		$lastEventRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+			| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
+			| Measure-Object -Property RecordId -Maximum `
+			| Select-Object -ExpandProperty Maximum
+
+		try {
+
+			Write-Host ">>> Installing NuGet Package Provider"
+			Install-PackageProvider -Name NuGet -Force -WarningAction SilentlyContinue | Out-Null
+
+			Write-Host ">>> Installing Microsoft.Winget.Client"
+			Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery -WarningAction SilentlyContinue | Out-Null
+
+			Write-Host ">>> Repairing WinGet Package Manager"
+			Repair-WinGetPackageManager -Verbose -Force -AllUsers:$(Test-IsSystem) 
+
+			break # installation succeeded - exit the loop
+		}
+		catch {
+
+			# as log as we are covered by the maximum number of retries, we just log the error as a warning
+			if ($retry -le $Retries) { Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)" }
+
+			$eventRecords = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
+				| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastEventRecordId) }
+
+			if ($eventRecords) {
+				Write-Host '----------------------------------------------------------------------------------------------------------'
+				$eventRecords | Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
+			}
+
+			# maximung retreis exhausted - lets blow it up
+			if ($retry -gt $Retries) { throw }
+
+			Write-Host '=========================================================================================================='
+			Write-Host ">>> Retry: $retry / $Retries - Delay: $RetryDelay seconds"
+			Write-Host '=========================================================================================================='
+			Start-Sleep -Seconds $RetryDelay
+		}
+	}
 
 	return Resolve-WinGet
 }
@@ -75,18 +118,9 @@ $winget = Resolve-WinGet
 
 if ($winget) {
 
-	Write-Host ">>> WinGet is already installed: $winget"
-
-} elseif (Test-IsSystem) {
-
-	Invoke-ScriptSection -Title "Installing WinGet Package Manager - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
-
-		# ensure all required services are running
-		Start-Services
-
-		# install the WinGet package manager and publish the winget path to the global scope
-		(Get-Variable -Name winget -Scope Global).Value = Install-WinGet
-	}
+	Write-Host ">>> WinGet is already installed"
+	Write-Host "- Path: $winget"
+	Write-Host "- Version: $(Invoke-CommandLine -Command $winget -Arguments '-v' -Silent | Select-Object -ExpandProperty Output)"
 
 } else {
 
@@ -98,7 +132,7 @@ if ($winget) {
 
 		if ($process.ExitCode -ne 0) {
 			# something went wrong - throw an exception to stop the script 
-			throw "WinGet installation failed with exit code $($process.ExitCode)"
+			throw "WinGet installation failed as SYSTEM with exit code $($process.ExitCode)"
 		} else {
 			# retrieve the winget path 
 			$winget = Resolve-WinGet
@@ -114,51 +148,12 @@ if ($winget) {
 
 		Invoke-ScriptSection -Title "Installing WinGet Package Manager - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
 
-			$retryCnt = 0
-			$retryMax = 10
-			$retryDelay = 30
-
 			# ensure all required services are running
 			Start-Services
 
-			while (-not $winget) {
-				
-				$lastRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-					| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
-					| Measure-Object -Property RecordId -Maximum `
-					| Select-Object -ExpandProperty Maximum
+			# install the WinGet package manager and assign the returned path to the global variable for further processing
+			(Get-Variable -Name winget -Scope Global).Value = Install-WinGet -Retries 10 -RetryDelay 60
 
-				try
-				{
-					$winget = Install-WinGet
-					
-					if ($winget) {
-						Write-Host ">>> WinGet installed: $winget"
-					} else { 
-						throw "WinGet not unavailable" 
-					}
-				}
-				catch
-				{
-					Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)"
-
-					$records = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-						| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastRecordId) }
-
-					if ($records) {
-						Write-Host '----------------------------------------------------------------------------------------------------------'
-						$records | Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
-					}
-
-					if (++$retryCnt -gt $retryMax) { 
-						throw 
-					} else {
-						Write-Host '----------------------------------------------------------------------------------------------------------'
-						Start-Sleep -Seconds $retryDelay
-					}
-
-				}
-			}
 		}
 	}
 } 
