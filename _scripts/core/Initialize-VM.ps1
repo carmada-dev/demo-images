@@ -227,20 +227,19 @@ Invoke-ScriptSection -Title 'Expand System Partition' -ScriptBlock {
 Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
 
 	Write-Host ">>> Installing NuGet package provider" 
-	Install-PackageProvider -Name NuGet -Force | Out-Null
+	Install-PackageProvider -Name NuGet -Force -Scope AllUsers | Out-Null
 
-	Write-Host ">>> Register PSGallery as a trusted repository"
-	Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+	try {
 
-	Write-Host ">>> Install PowershellGet module"
-	try 	{ 
-		Write-Host "- Upgrading PowershellGet module"
-		Update-Module -Name PowerShellGet -Force -ErrorAction Stop
-	} 
-	catch 	{ 
-		Write-Host "- ReInstalling PowershellGet module"
-		try 	{ Install-Module -Name PowerShellGet -AcceptLicense -Force -AllowClobber -ErrorAction Stop }
-		catch 	{ Install-Module -Name PowerShellGet -Force -AllowClobber -ErrorAction Stop }
+		Write-Host ">>> Trust the PSGallery repository temporarily"
+		Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+
+		Write-Host ">>> Install PowershellGet module"
+		Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers
+	}
+	finally {
+		Write-Host ">>> Rollback the PSGallery repository policy"
+		Set-PSRepository -Name "PSGallery" -InstallationPolicy Untrusted
 	}
 }
 

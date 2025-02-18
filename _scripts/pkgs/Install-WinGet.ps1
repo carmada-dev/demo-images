@@ -78,10 +78,10 @@ function Install-WinGet {
 		try {
 
 			Write-Host ">>> Installing NuGet Package Provider"
-			Install-PackageProvider -Name NuGet -Force -WarningAction SilentlyContinue | Out-Null
+			Install-PackageProvider -Name NuGet -Force | Out-Null
 
 			Write-Host ">>> Installing Microsoft.Winget.Client"
-			Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery -WarningAction SilentlyContinue | Out-Null
+			Install-Module -Name Microsoft.WinGet.Client -Repository PSGallery -Force | Out-Null
 
 			Write-Host ">>> Repairing WinGet Package Manager"
 			Repair-WinGetPackageManager -Verbose -Force -AllUsers:$(Test-IsSystem) 
@@ -115,7 +115,7 @@ function Install-WinGet {
 }
 
 $resumeOnFailedSystemInstall = $true
-$winget = Resolve-WinGet
+$global:winget = Resolve-WinGet
 
 if ($winget) {
 
@@ -135,14 +135,14 @@ if ($winget) {
 
 			if ($process.ExitCode -eq 0) {
 				# retrieve the winget path 
-				$winget = Resolve-WinGet
+				$global:winget = Resolve-WinGet
 			} elseif (-not $resumeOnFailedSystemInstall) {
 				# something went wrong - throw an exception to stop the script 
 				throw "WinGet installation failed as SYSTEM with exit code $($process.ExitCode)"
 			}
 		}
 
-		if (-not $winget) {
+		if (-not $global:winget) {
 
 			Invoke-ScriptSection -Title "Installing WinGet Package Manager - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
 
@@ -150,7 +150,7 @@ if ($winget) {
 				Start-Services
 
 				# install the WinGet package manager and assign the returned path to the global variable for further processing
-				(Get-Variable -Name winget -Scope Global).Value = Install-WinGet -Retries 1 -RetryDelay 60
+				$global:winget = Install-WinGet -Retries 1 -RetryDelay 60
 
 			}
 		}
@@ -167,11 +167,11 @@ if ($winget) {
 	}
 }
 
-if ($winget) {
+if ($global:winget) {
 
 	Write-Host ">>> WinGet is now installed"
 	Write-Host "- Path: $winget"
-	Write-Host "- Version: $(Invoke-CommandLine -Command $winget -Arguments '-v' -Silent | Select-Object -ExpandProperty Output)"
+	Write-Host "- Version: $(Invoke-CommandLine -Command $global:winget -Arguments '-v' -Silent | Select-Object -ExpandProperty Output)"
 
 	if (Test-IsPacker -or Test-IsSystem) {
 
