@@ -39,7 +39,7 @@ function Invoke-ScriptSection {
     catch
     {
         Write-Host $sglLine
-        Write-Error $_        
+        Write-Error $_.Exception        
 
         $failed = $true
     }
