@@ -114,6 +114,7 @@ function Install-WinGet {
 	return Resolve-WinGet
 }
 
+$resumeOnFailedSystemInstall = $true
 $winget = Resolve-WinGet
 
 if ($winget) {
@@ -132,12 +133,12 @@ if ($winget) {
 			$process = Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem 
 			$process.Output | Write-Host
 
-			if ($process.ExitCode -ne 0) {
-				# something went wrong - throw an exception to stop the script 
-				throw "WinGet installation failed as SYSTEM with exit code $($process.ExitCode)"
-			} else {
+			if ($process.ExitCode -eq 0) {
 				# retrieve the winget path 
 				$winget = Resolve-WinGet
+			} elseif (-not $resumeOnFailedSystemInstall) {
+				# something went wrong - throw an exception to stop the script 
+				throw "WinGet installation failed as SYSTEM with exit code $($process.ExitCode)"
 			}
 		}
 
@@ -149,7 +150,7 @@ if ($winget) {
 				Start-Services
 
 				# install the WinGet package manager and assign the returned path to the global variable for further processing
-				(Get-Variable -Name winget -Scope Global).Value = Install-WinGet -Retries 5 -RetryDelay 60
+				(Get-Variable -Name winget -Scope Global).Value = Install-WinGet -Retries 1 -RetryDelay 60
 
 			}
 		}
