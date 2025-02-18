@@ -91,7 +91,7 @@ function Install-WinGet {
 		catch {
 
 			# as log as we are covered by the maximum number of retries, we just log the error as a warning
-			if ($retry -le $Retries) { Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)" }
+			if ($retry -le $Retries) { Write-Warning "!!! WinGet installation failed: $($_.Exception)" }
 
 			$eventRecords = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
 				| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastEventRecordId) }
@@ -124,59 +124,74 @@ if ($winget) {
 
 } else {
 
-	if (Test-IsPacker) {
+	try
+	{
+		if (Test-IsPacker) {
 
-		# invoke the script as SYSTEM to ensure the WinGet installation is available to all users
-		$process = Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem 
-		$process.Output | Write-Host
+			# invoke the script as SYSTEM to ensure the WinGet installation is available to all users
+			$process = Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem 
+			$process.Output | Write-Host
 
-		if ($process.ExitCode -ne 0) {
-			# something went wrong - throw an exception to stop the script 
-			throw "WinGet installation failed as SYSTEM with exit code $($process.ExitCode)"
-		} else {
-			# retrieve the winget path 
-			$winget = Resolve-WinGet
-		}
-	}
-
-	if (-not $winget) {
-
-		Invoke-ScriptSection -Title "Dump Context Information - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
-	
-			Get-AppxPackage 'Microsoft.VCLibs.140.00.UWPDesktop' -AllUsers
-		}
-
-		Invoke-ScriptSection -Title "Installing WinGet Package Manager - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
-
-			# ensure all required services are running
-			Start-Services
-
-			# install the WinGet package manager and assign the returned path to the global variable for further processing
-			(Get-Variable -Name winget -Scope Global).Value = Install-WinGet -Retries 10 -RetryDelay 60
-
-		}
-	}
-} 
-
-if ($winget -and (Test-IsPacker -or Test-IsSystem)) {
-
-	Invoke-ScriptSection -Title "Patching WinGet Config to prefer machine scope by default" -ScriptBlock {
-
-		$wingetPackageFamilyName = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty PackageFamilyName
-
-		$paths = @(
-			"%LOCALAPPDATA%\Packages\$wingetPackageFamilyName\LocalState\settings.json",
-			"%LOCALAPPDATA%\Microsoft\WinGet\Settings\settings.json"
-		) 
-		
-		$paths | ForEach-Object { [System.Environment]::ExpandEnvironmentVariables($_) } | ForEach-Object { 
-			$folder = Split-Path -Path $_ -Parent
-			if (Test-Path $folder -PathType Container) {
-				Write-Host ">>> Patching WinGet Settings: $_"
-				$adminWinGetConfig | Out-File $_ -Encoding ASCII -Force 
+			if ($process.ExitCode -ne 0) {
+				# something went wrong - throw an exception to stop the script 
+				throw "WinGet installation failed as SYSTEM with exit code $($process.ExitCode)"
 			} else {
-				Write-Warning "!!! Folder not found: $folder"
+				# retrieve the winget path 
+				$winget = Resolve-WinGet
 			}
 		}
-	} 
+
+		if (-not $winget) {
+
+			Invoke-ScriptSection -Title "Installing WinGet Package Manager - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
+
+				# ensure all required services are running
+				Start-Services
+
+				# install the WinGet package manager and assign the returned path to the global variable for further processing
+				(Get-Variable -Name winget -Scope Global).Value = Install-WinGet -Retries 5 -RetryDelay 60
+
+			}
+		}
+	}
+	catch {
+
+		Invoke-ScriptSection -Title "Dump Context Information - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
+			
+			Write-Host ">>> Appx Packages for All Users" 
+			Get-AppxPackage 'Microsoft.VCLibs.140.00.UWPDesktop' -AllUsers -ErrorAction SilentlyContinue | Format-List 
+		}
+
+		throw # re-throw the exception to stop the script
+	}
+}
+
+if ($winget) {
+
+	Write-Host ">>> WinGet is now installed"
+	Write-Host "- Path: $winget"
+	Write-Host "- Version: $(Invoke-CommandLine -Command $winget -Arguments '-v' -Silent | Select-Object -ExpandProperty Output)"
+
+	if (Test-IsPacker -or Test-IsSystem) {
+
+		Invoke-ScriptSection -Title "Patching WinGet Config to prefer machine scope by default" -ScriptBlock {
+
+			$wingetPackageFamilyName = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty PackageFamilyName
+
+			$paths = @(
+				"%LOCALAPPDATA%\Packages\$wingetPackageFamilyName\LocalState\settings.json",
+				"%LOCALAPPDATA%\Microsoft\WinGet\Settings\settings.json"
+			) 
+			
+			$paths | ForEach-Object { [System.Environment]::ExpandEnvironmentVariables($_) } | ForEach-Object { 
+				$folder = Split-Path -Path $_ -Parent
+				if (Test-Path $folder -PathType Container) {
+					Write-Host ">>> Patching WinGet Settings: $_"
+					$adminWinGetConfig | Out-File $_ -Encoding ASCII -Force 
+				} else {
+					Write-Warning "!!! Folder not found: $folder"
+				}
+			}
+		} 
+	}
 } 
