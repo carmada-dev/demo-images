@@ -149,7 +149,7 @@ if ($winget) {
 
 	try
 	{
-		if (Test-IsPacker -and $elevateInstallationAsSystem) {
+		if ($elevateInstallationAsSystem -and (Test-IsPacker)) {
 
 			# invoke the script as SYSTEM to ensure the WinGet installation is available to all users
 			$process = Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem 
