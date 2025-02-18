@@ -85,6 +85,33 @@ $downloadArtifact = {
 	}
 }
 
+Invoke-ScriptSection -Title "Register Powershell Gallery" -ScriptBlock {
+
+	# CAUTION - Don't move this section down the sequence of config sections in this file !!!
+
+	# We are going to install the NuGet package provider and the PowerShellGet module from the PSGallery.
+	# Especially the latter requires to be NOT loaded into the current process when we install an updated version.
+
+	Write-Host ">>> Installing NuGet package provider" 
+	Install-PackageProvider -Name NuGet -Force -Scope AllUsers | Out-Null
+
+	try {
+
+		Write-Host ">>> Trust the PSGallery repository temporarily"
+		Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+
+		Write-Host ">>> Install PowershellGet module"
+		Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers -WarningAction SilentlyContinue
+
+		# Start a new session to install the PowerShellGet module - this will cover the case where the module is already loaded in the current session
+		powershell.exe -NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -Command '&{ Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers }'
+	}
+	finally {
+		Write-Host ">>> Rollback the PSGallery repository policy"
+		Set-PSRepository -Name "PSGallery" -InstallationPolicy Untrusted
+	}
+}
+
 Invoke-ScriptSection -Title 'Setting DevBox environment variables' -ScriptBlock {
 
 	[Environment]::SetEnvironmentVariable("DEVBOX_HOME", $devboxHome, [System.EnvironmentVariableTarget]::Machine)
@@ -223,26 +250,6 @@ Invoke-ScriptSection -Title 'Expand System Partition' -ScriptBlock {
 # 		| Select-Object -ExpandProperty Output `
 # 		| Write-Host
 # }
-
-Invoke-ScriptSection -Title "Prepare Powershell Gallery" -ScriptBlock {
-
-	Write-Host ">>> Installing NuGet package provider" 
-	Install-PackageProvider -Name NuGet -Force -Scope AllUsers | Out-Null
-
-	try {
-
-		Write-Host ">>> Trust the PSGallery repository temporarily"
-		Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-
-		Write-Host ">>> Install PowershellGet module"
-		Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers -WarningAction SilentlyContinue
-		powershell.exe -NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -Command '&{ Import-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers }'
-	}
-	finally {
-		Write-Host ">>> Rollback the PSGallery repository policy"
-		Set-PSRepository -Name "PSGallery" -InstallationPolicy Untrusted
-	}
-}
 
 $Artifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath 'Artifacts'
 if (Test-Path -Path $Artifacts -PathType Container) {
