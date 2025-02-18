@@ -118,6 +118,8 @@ function Install-WinGet {
 
 			if ($eventRecords) {
 				Write-Host '----------------------------------------------------------------------------------------------------------'
+				Write-Host ">>> AppX Deployment Server Events"
+				Write-Host '----------------------------------------------------------------------------------------------------------'
 				$eventRecords | Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
 			}
 
