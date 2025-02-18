@@ -104,7 +104,7 @@ function Install-WinGet {
 			}
 
 			Write-Host ">>> Repairing WinGet Package Manager"
-			Repair-WinGetPackageManager -Verbose -Force -AllUsers:$(Test-IsSystem) 
+			Repair-WinGetPackageManager -Verbose -Force -Latest -AllUsers:$(Test-IsElevated) 
 
 			break # installation succeeded - exit the loop
 		}
@@ -134,7 +134,9 @@ function Install-WinGet {
 	return Resolve-WinGet
 }
 
+$elevateInstallationAsSystem = $false
 $resumeOnFailedSystemInstall = $true
+
 $global:winget = Resolve-WinGet
 
 if ($winget) {
@@ -147,7 +149,7 @@ if ($winget) {
 
 	try
 	{
-		if (Test-IsPacker) {
+		if (Test-IsPacker -and $elevateInstallationAsSystem) {
 
 			# invoke the script as SYSTEM to ensure the WinGet installation is available to all users
 			$process = Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem 
