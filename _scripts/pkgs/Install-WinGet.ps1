@@ -36,6 +36,27 @@ $adminWinGetConfig = @"
 }
 "@
 
+function Get-ActivityIdFromException {
+    param (
+        [Parameter(Mandatory = $true)]
+        [System.Exception]$Exception
+    )
+
+    if ($Exception -is [System.AggregateException]) {
+        foreach ($innerException in $Exception.InnerExceptions) {
+            $activityId = Get-ActivityIdFromException -Exception $innerException
+            if ($activityId) { return $activityId }
+        }
+    } else {
+        while ($Exception) {
+            if ($Exception.PSObject.Properties['ActivityId']) { return $Exception.ActivityId }
+            $Exception = $Exception.InnerException
+        }
+    }
+
+    return $null  # Return null if no ActivityId is found
+}
+
 function Start-Services {
 
 	Write-Host ">>> Starting Services"
@@ -75,6 +96,8 @@ function Install-WinGet {
 
 	while ($retry++ -le $Retries) 
 	{
+		$timestamp = Get-Date
+
 		try {
 
 			if (-not (Get-PackageProvider -Name NuGet -ListAvailable)) {
@@ -110,29 +133,54 @@ function Install-WinGet {
 		}
 		catch {
 
-			$errorMessage = $_.Exception.ToString()
+			# by default we dump the original exception here - regardless of the retry count
+			Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)"
+			
+			$activityId = Get-ActivityIdFromException -Exception $_.Exception
 
-			# as log as we are covered by the maximum number of retries, we just log the error as a warning
-			if ($retry -le $Retries) { Write-Warning "!!! WinGet installation failed: $errorMessage" }
+			if ($activityId -and (Test-IsElevated)) {
 
-			# extract the activity ID from the error message to dump the Appx logs
-			$activityId = [regex]::Match($errorMessage, "\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b").Value
+				Start-Sleep -Seconds 60 # wait a bit before dumping the logs - the event log might not be ready yet
 
-			if ($activityId) {
-				Write-Host '----------------------------------------------------------------------------------------------------------'
-				Write-Host ">>> Dump Appx Logs for Activity ID: $activityId"
-				Write-Host '----------------------------------------------------------------------------------------------------------'
-				Get-AppxLog -ActivityId $activityId | Format-Table
+				$eventRecords = Get-AppxLog -ActivityId $activityId 
+				
+				if ($eventRecords) {
+
+					Write-Host '----------------------------------------------------------------------------------------------------------'
+					Write-Host ">>> Dump Appx Logs for Activity ID: $activityId"
+					Write-Host '----------------------------------------------------------------------------------------------------------'
+					
+					$eventRecords | Format-Table -AutoSize 
+
+				} else {
+					
+					Write-Host '----------------------------------------------------------------------------------------------------------'
+					Write-Host ">>> Dump Event Log 'Microsoft-Windows-AppXDeployment/Operational' since: $timestamp"
+					Write-Host '----------------------------------------------------------------------------------------------------------'
+
+					Get-WinEvent -FilterHashtable @{
+						LogName = 'Microsoft-Windows-AppXDeployment/Operational'
+						StartTime = $timestamp
+					} | Format-Table -AutoSize
+				}
+				
 			}
 
-			# maximung retreis exhausted - lets blow it up
-			if ($retry -gt $Retries) { throw }
+			# maximung retries exhausted - lets blow it up
+			if ($retry -le $Retries) { 
+				
+				Write-Host '=========================================================================================================='
+				Write-Host ">>> Retry: $retry / $Retries - Delay: $RetryDelay seconds"
+				Write-Host '=========================================================================================================='
 
-			# wait for the retry delay before trying again
-			Write-Host '=========================================================================================================='
-			Write-Host ">>> Retry: $retry / $Retries - Delay: $RetryDelay seconds"
-			Write-Host '=========================================================================================================='
-			Start-Sleep -Seconds $RetryDelay
+				# wait for the retry delay before trying again
+				Start-Sleep -Seconds $RetryDelay
+
+				# continue with the next iteration
+				continue
+			}
+
+			throw # re-throw the exception to stop the script
 		}
 	}
 
@@ -177,7 +225,7 @@ if ($winget) {
 				Start-Services
 
 				# install the WinGet package manager and assign the returned path to the global variable for further processing
-				$global:winget = Install-WinGet -Retries 1 -RetryDelay 60
+				$global:winget = Install-WinGet -Retries 0 -RetryDelay 60
 
 			}
 		}
