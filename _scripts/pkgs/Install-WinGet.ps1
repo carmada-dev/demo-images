@@ -66,7 +66,7 @@ function Start-Services {
 		if ($service) {
 	
 			if (-not ($service.StartType -like 'Automatic')) {
-				Write-Host "- Set Service $($service.DisplayName) ($($service.Name)) to 'Automatic'"
+				Write-Host "- Set Service $($service.DisplayName) ($($service.Name)) to 'Automatic' (currentlys: $($service.StartType))"
 				Set-Service -Name $service.Name -StartupType Automatic
 			}
 
