@@ -136,23 +136,33 @@ function Install-WinGet {
 			# by default we dump the original exception here - regardless of the retry count
 			Write-Warning "!!! WinGet installation failed: $($_.Exception.Message)"
 			
-			$activityId = Get-ActivityIdFromException -Exception $_.Exception
-
-			if ($activityId -and (Test-IsElevated)) {
+			if (Test-IsElevated) {
+				
+				$activityId = Get-ActivityIdFromException -Exception $_.Exception
+				$dumpByTimestamp = (-not $activityId)
 
 				Start-Sleep -Seconds 60 # wait a bit before dumping the logs - the event log might not be ready yet
 
-				$eventRecords = Get-AppxLog -ActivityId $activityId 
-				
-				if ($eventRecords) {
+				if ($activityId) {
 
-					Write-Host '----------------------------------------------------------------------------------------------------------'
-					Write-Host ">>> Dump Appx Logs for Activity ID: $activityId"
-					Write-Host '----------------------------------------------------------------------------------------------------------'
+					$eventRecords = Get-AppxLog -ActivityId $activityId 
 					
-					$eventRecords | Format-Table -AutoSize 
+					if ($eventRecords) {
 
-				} else {
+						Write-Host '----------------------------------------------------------------------------------------------------------'
+						Write-Host ">>> Dump Appx Logs for Activity ID: $activityId"
+						Write-Host '----------------------------------------------------------------------------------------------------------'
+						
+						$eventRecords | Format-Table -AutoSize 
+
+					} else {
+						
+						# fallback to the timestamp based dump if no records are found by the activity ID
+						$dumpByTimestamp = $true
+					}
+				}
+
+				if ($dumpByTimestamp) {
 					
 					Write-Host '----------------------------------------------------------------------------------------------------------'
 					Write-Host ">>> Dump Event Log 'Microsoft-Windows-AppXDeployment/Operational' since: $timestamp"
@@ -163,7 +173,6 @@ function Install-WinGet {
 						StartTime = $timestamp
 					} | Format-Table -AutoSize
 				}
-				
 			}
 
 			# maximung retries exhausted - lets blow it up
