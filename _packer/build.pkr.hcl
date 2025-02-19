@@ -31,8 +31,6 @@ build {
   # =============================================================================================
 
   provisioner "powershell" {
-    elevated_user     = build.User
-    elevated_password = build.Password
     environment_vars = setunion(local.environment, [
       "ADMIN_USERNAME=${build.User}",
       "ADMIN_PASSWORD=${build.Password}",
