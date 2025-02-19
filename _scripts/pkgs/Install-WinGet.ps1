@@ -60,13 +60,20 @@ function Get-ActivityIdFromException {
 function Start-Services {
 
 	Write-Host ">>> Starting Services"
-	@( 'AppXSVC', 'ClipSVC', 'StateRepository', 'wuauserv', 'InstallService' ) | ForEach-Object {
+	@( 'EventLog', 'AppXSVC', 'ClipSVC', 'StateRepository', 'wuauserv', 'InstallService' ) | ForEach-Object {
 	
 		$service = Get-Service -Name $_ -ErrorAction SilentlyContinue
-		if ($service -and ($service.Status -ne 'Running')) {
+		if ($service) {
 	
-			Write-Host "- Service: $($service.DisplayName) ($($service.Name))"
-			Start-Service -Name $service.Name 
+			if (-not ($service.StartType -like 'Automatic')) {
+				Write-Host "- Set Service $($service.DisplayName) ($($service.Name)) to 'Automatic'"
+				Set-Service -Name $service.Name -StartupType Automatic
+			}
+
+			if ($service.Status -ne 'Running') {
+				Write-Host "- Start Service $($service.DisplayName) ($($service.Name))"
+				Start-Service -Name $service.Name 
+			}
 		}
 	}
 }
@@ -163,7 +170,7 @@ function Install-WinGet {
 				}
 
 				if ($dumpByTimestamp) {
-					
+
 					Write-Host '----------------------------------------------------------------------------------------------------------'
 					Write-Host ">>> Dump Event Log 'Microsoft-Windows-AppXDeployment/Operational' since: $timestamp"
 					Write-Host '----------------------------------------------------------------------------------------------------------'
@@ -171,7 +178,7 @@ function Install-WinGet {
 					Get-WinEvent -FilterHashtable @{
 						LogName = 'Microsoft-Windows-AppXDeployment/Operational'
 						StartTime = $timestamp
-					} | Format-Table -AutoSize
+					} -ErrorAction SilentlyContinue | Format-Table -AutoSize
 				}
 			}
 
