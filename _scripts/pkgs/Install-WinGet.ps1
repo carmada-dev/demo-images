@@ -117,7 +117,7 @@ function Install-WinGet {
 				Write-Host '----------------------------------------------------------------------------------------------------------'
 				Write-Host ">>> Dump Appx Logs for Activity ID: $activityId"
 				Write-Host '----------------------------------------------------------------------------------------------------------'
-				Get-AppPackageLog -ActivityID $activityId
+				Get-AppxLog -ActivityId $activityId | Format-Table
 			}
 
 			# maximung retreis exhausted - lets blow it up
