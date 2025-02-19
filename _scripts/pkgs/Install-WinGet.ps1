@@ -65,14 +65,11 @@ function Start-Services {
 		$service = Get-Service -Name $_ -ErrorAction SilentlyContinue
 		if ($service) {
 	
-			if (-not ($service.StartType -like 'Automatic')) {
-				Write-Host "- Set Service $($service.DisplayName) ($($service.Name)) to 'Automatic' (currentlys: $($service.StartType))"
-				Set-Service -Name $service.Name -StartupType Automatic
-			}
-
 			if ($service.Status -ne 'Running') {
-				Write-Host "- Start Service $($service.DisplayName) ($($service.Name))"
+				Write-Host "- Starting Service $($service.DisplayName) ($($service.Name))"
 				Start-Service -Name $service.Name 
+			} else {
+				Write-Host "- Service $($service.DisplayName) ($($service.Name)) is already running"
 			}
 		}
 	}
