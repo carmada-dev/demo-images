@@ -200,7 +200,7 @@ function Install-WinGet {
 	return Resolve-WinGet
 }
 
-$elevateInstallationAsSystem = $false
+$elevateInstallationAsSystem = $true
 $resumeOnFailedSystemInstall = $true
 
 $global:winget = Resolve-WinGet
