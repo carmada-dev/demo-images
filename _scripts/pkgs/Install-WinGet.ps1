@@ -1,3 +1,8 @@
+if (([System.Threading.Thread]::CurrentThread.ApartmentState) -ne 'MTA') {
+	# re-launch the script in a new thread with the MTA apartment state to avoid any issues with COM objects
+	powershell.exe -NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File $($MyInvocation.MyCommand.Path)
+	exit $LastExitCode
+}
 
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
@@ -163,7 +168,7 @@ if ($winget) {
 				throw "WinGet installation failed as SYSTEM with exit code $($process.ExitCode)"
 			}
 		}
-
+		
 		if (-not $global:winget) {
 
 			Invoke-ScriptSection -Title "Installing WinGet Package Manager - $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)" -ScriptBlock {
