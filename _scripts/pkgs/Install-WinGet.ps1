@@ -70,11 +70,6 @@ function Install-WinGet {
 
 	while ($retry++ -le $Retries) 
 	{
-		$lastEventRecordId = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-			| Where-Object { $_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational' } `
-			| Measure-Object -Property RecordId -Maximum `
-			| Select-Object -ExpandProperty Maximum
-
 		try {
 
 			if (-not (Get-PackageProvider -Name NuGet -ListAvailable)) {
@@ -95,14 +90,14 @@ function Install-WinGet {
 
 					Write-Host ">>> Installing Microsoft.Winget.Client"
 					Install-Module -Name Microsoft.WinGet.Client -Repository PSGallery -Force | Out-Null
-
+					
 				} finally {
 
 					Write-Host ">>> Reset the PSGallery repository to its original state"
 					Set-PSRepository -Name "PSGallery" -InstallationPolicy Untrusted
 				}
 			}
-
+			
 			Write-Host ">>> Repairing WinGet Package Manager"
 			Repair-WinGetPackageManager -Verbose -AllUsers:$(Test-IsElevated) 
 
@@ -110,22 +105,25 @@ function Install-WinGet {
 		}
 		catch {
 
+			$errorMessage = $_.Exception.ToString()
+
 			# as log as we are covered by the maximum number of retries, we just log the error as a warning
-			if ($retry -le $Retries) { Write-Warning "!!! WinGet installation failed: $($_.Exception)" }
+			if ($retry -le $Retries) { Write-Warning "!!! WinGet installation failed: $errorMessage" }
 
-			$eventRecords = Get-WinEvent -ProviderName 'Microsoft-Windows-AppXDeployment-Server' `
-				| Where-Object { ($_.LogName -eq 'Microsoft-Windows-AppXDeploymentServer/Operational') -and ($_.RecordId -gt $lastEventRecordId) }
+			# extract the activity ID from the error message to dump the Appx logs
+			$activityId = [regex]::Match($errorMessage, "\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b").Value
 
-			if ($eventRecords) {
+			if ($activityId) {
 				Write-Host '----------------------------------------------------------------------------------------------------------'
-				Write-Host ">>> AppX Deployment Server Events"
+				Write-Host ">>> Dump Appx Logs for Activity ID: $activityId"
 				Write-Host '----------------------------------------------------------------------------------------------------------'
-				$eventRecords | Format-List TimeCreated, @{ name='Operation'; expression={ $_.OpcodeDisplayName } }, Message 
+				Get-AppPackageLog -ActivityID $activityId
 			}
 
 			# maximung retreis exhausted - lets blow it up
 			if ($retry -gt $Retries) { throw }
 
+			# wait for the retry delay before trying again
 			Write-Host '=========================================================================================================='
 			Write-Host ">>> Retry: $retry / $Retries - Delay: $RetryDelay seconds"
 			Write-Host '=========================================================================================================='
