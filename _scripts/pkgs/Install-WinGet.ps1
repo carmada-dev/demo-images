@@ -270,90 +270,96 @@ if ($winget) {
 				
 				} catch {
 
-					$taskName = 'Install WinGet'
-					$taskPath = '\'
-
-					if (Test-IsPacker) {
-
-						$taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NonInteractive -WindowStyle Hidden -File $($MyInvocation.MyCommand.Path) -ScheduledTask"
-						$taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
-						$taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew 
-						$taskTriggers = @( New-ScheduledTaskTrigger -AtLogOn -RandomDelay (New-TimeSpan -Minutes 5) )
-				
-						Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal | Out-Null
-					}
-
-					$task = Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue
-
-					if ($task) {
+					if (Test-IsPacker -and (-not $ScheduledTask)) {
 
 						Write-Host '=========================================================================================================='
 						Write-Host ">>> Using Scheduled Task to install WinGet Package Manager"
 						Write-Host '=========================================================================================================='
 
-						Write-Host ">>> Executing task $taskName ..."
-						Start-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
-						
-						$timeout = (Get-Date).AddMinutes(30) # wait for the task to finish for a
-						$running = $false
-						$exitCode = 0
+						$taskName = 'Install WinGet'
+						$taskPath = '\'
+						$task = Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue
 
-						while ($true) {
-						
-							if ($timeout -lt (Get-Date)) { Throw "Timeout waiting for $taskName to finish" }
-							$task = Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction SilentlyContinue
+						if (-not $task) {
 							
-							if (-not($task)) { 
+							$taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$($MyInvocation.MyCommand.Path)`" -ScheduledTask"
+							$taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
+							$taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew 
+							$taskTriggers = @( New-ScheduledTaskTrigger -AtLogOn -RandomDelay (New-TimeSpan -Minutes 5) )
+					
+							Write-Host ">>> Creating task $taskName ..."
+							Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal | Out-Null
+
+							$task = Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue							
+						}
+
+						if ($task) {
+
+							Write-Host ">>> Executing task $taskName ..."
+							Start-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+							
+							$timeout = (Get-Date).AddMinutes(30) # wait for the task to finish for a
+							$running = $false
+							$exitCode = 0
+
+							while ($true) {
+							
+								if ($timeout -lt (Get-Date)) { Throw "Timeout waiting for $taskName to finish" }
+								$task = Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction SilentlyContinue
 								
-								throw "Scheduled task $taskName does not exist anymore"
-							
-							} elseif ($running) {
-	
-								if ($task.State -ne 'Running') { 
-									$exitCode = $task | Get-ScheduledTaskInfo | Select-Object -ExpandProperty LastTaskResult
-									break 
+								if (-not($task)) { 
+									
+									throw "Scheduled task $taskName does not exist anymore"
+								
+								} elseif ($running) {
+		
+									if ($task.State -ne 'Running') { 
+										$exitCode = $task | Get-ScheduledTaskInfo | Select-Object -ExpandProperty LastTaskResult
+										break 
+									}
+		
+									Write-Host ">>> Waiting for $taskName to finish ..."
+									Start-Sleep -Seconds 5
+		
+								} else {
+		
+									$running = $running -or ($task.State -eq 'Running')
+									if ($running) { Write-Host ">>> Task $taskName starts running ..." }
 								}
-	
-								Write-Host ">>> Waiting for $taskName to finish ..."
-								Start-Sleep -Seconds 5
-	
-							} else {
-	
-								$running = $running -or ($task.State -eq 'Running')
-								if ($running) { Write-Host ">>> Task $taskName starts running ..." }
 							}
-						}
-						
-						if ($exitCode -eq 0) {
-							Write-Host ">>> Executing task $taskName completed successfully"
-						} else {
-							Write-Warning "!!! Executing task $taskName failed with exit code $exitCode"
-						}
-						
-						$scheduledTaskTranscript = ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".task.log"))
-						if (Test-Path -Path $scheduledTaskTranscript -PathType Leaf) {
+							
+							if ($exitCode -eq 0) {
+								Write-Host ">>> Executing task $taskName completed successfully"
+							} else {
+								Write-Warning "!!! Executing task $taskName failed with exit code $exitCode"
+							}
+							
+							$scheduledTaskTranscript = [system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".task.log")
 
-							Write-Host '----------------------------------------------------------------------------------------------------------'
-							Write-Host ">>> Scheduled Task Transcript: $scheduledTaskTranscript"
-							Write-Host '----------------------------------------------------------------------------------------------------------'
+							if (Test-Path -Path $scheduledTaskTranscript -PathType Leaf) {
 
-							Get-Content -Path $scheduledTaskTranscript | Write-Host
+								Write-Host '----------------------------------------------------------------------------------------------------------'
+								Write-Host ">>> Scheduled Task Transcript: $scheduledTaskTranscript"
+								Write-Host '----------------------------------------------------------------------------------------------------------'
 
-						} else {
+								Get-Content -Path $scheduledTaskTranscript | Write-Host
 
-							Write-Warning "!!! Scheduled Task Transcript not found: $scheduledTaskTranscript"
-						}
+							} else {
 
-						if ($exitCode -eq 0) {
-							# retrieve the winget path 
-							$global:winget = Get-WinGet
-						} else {
-							# something went wrong - throw an exception to stop the script 
-							throw "WinGet installation using Scheduled Task failed with exit code $exitCode"
-						}
+								Write-Warning "!!! Scheduled Task Transcript not found: $scheduledTaskTranscript"
+							}
 
-					} else {
+							if ($exitCode -eq 0) {
+								# retrieve the winget path 
+								$global:winget = Get-WinGet
+							} else {
+								# something went wrong - throw an exception to stop the script 
+								throw "WinGet installation using Scheduled Task failed with exit code $exitCode"
+							}
+						} 
+					}
 
+					if (-not $global:winget) {
 						# re-throw the exception to stop the script
 						throw
 					}
