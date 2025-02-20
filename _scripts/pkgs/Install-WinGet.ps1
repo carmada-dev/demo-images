@@ -83,7 +83,36 @@ function Start-Services {
 	}
 }
 
-function Resolve-WinGet {
+function Write-EventLog {
+
+	param (
+		[Parameter(Mandatory=$false)]
+		[string] $ActivityId,
+		[Parameter(Mandatory=$false)]
+		[datetime] $TimeStamp
+	)
+
+	if ($ActivityId) {
+
+		Write-Host '----------------------------------------------------------------------------------------------------------'
+		Write-Host ">>> Event Log for Activity ID: $ActivityId"
+		Write-Host '----------------------------------------------------------------------------------------------------------'
+
+		Get-AppxLog -ActivityId $ActivityId | Format-Table -AutoSize 
+
+	} elseif ($TimeStamp) {
+		Write-Host '----------------------------------------------------------------------------------------------------------'
+		Write-Host ">>> Event Log by Timestamp: $TimeStamp"
+		Write-Host '----------------------------------------------------------------------------------------------------------'
+
+		Get-WinEvent -FilterHashtable @{
+			LogName = 'Microsoft-Windows-AppXDeployment/Operational'
+			StartTime = $timestamp
+		} -ErrorAction SilentlyContinue | Format-Table -AutoSize
+	}
+}
+
+function Get-WinGet {
 	
 	$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 
@@ -161,11 +190,7 @@ function Install-WinGet {
 					
 					if ($eventRecords) {
 
-						Write-Host '----------------------------------------------------------------------------------------------------------'
-						Write-Host ">>> Dump Appx Logs for Activity ID: $activityId"
-						Write-Host '----------------------------------------------------------------------------------------------------------'
-						
-						$eventRecords | Format-Table -AutoSize 
+						Write-EventLog -ActivityId $activityId
 
 					} else {
 						
@@ -176,14 +201,7 @@ function Install-WinGet {
 
 				if ($dumpByTimestamp) {
 
-					Write-Host '----------------------------------------------------------------------------------------------------------'
-					Write-Host ">>> Dump Event Log 'Microsoft-Windows-AppXDeployment/Operational' since: $timestamp"
-					Write-Host '----------------------------------------------------------------------------------------------------------'
-
-					Get-WinEvent -FilterHashtable @{
-						LogName = 'Microsoft-Windows-AppXDeployment/Operational'
-						StartTime = $timestamp
-					} -ErrorAction SilentlyContinue | Format-Table -AutoSize
+					Write-EventLog -TimeStamp $timestamp
 				}
 			}
 
@@ -205,13 +223,13 @@ function Install-WinGet {
 		}
 	}
 
-	return Resolve-WinGet
+	return Get-WinGet
 }
 
 $elevateInstallationAsSystem = $false
 $resumeOnFailedSystemInstall = $true
 
-$global:winget = Resolve-WinGet
+$global:winget = Get-WinGet
 
 if ($winget) {
 
@@ -231,7 +249,7 @@ if ($winget) {
 
 			if ($process.ExitCode -eq 0) {
 				# retrieve the winget path 
-				$global:winget = Resolve-WinGet
+				$global:winget = Get-WinGet
 			} elseif (-not $resumeOnFailedSystemInstall) {
 				# something went wrong - throw an exception to stop the script 
 				throw "WinGet installation failed as SYSTEM with exit code $($process.ExitCode)"
@@ -278,7 +296,8 @@ if ($winget) {
 						
 						$timeout = (Get-Date).AddMinutes(30) # wait for the task to finish for a
 						$running = $false
-	
+						$exitCode = 0
+
 						while ($true) {
 						
 							if ($timeout -lt (Get-Date)) { Throw "Timeout waiting for $taskName to finish" }
@@ -290,7 +309,10 @@ if ($winget) {
 							
 							} elseif ($running) {
 	
-								if ($task.State -ne 'Running') { break }
+								if ($task.State -ne 'Running') { 
+									$exitCode = $task | Get-ScheduledTaskInfo | Select-Object -ExpandProperty LastTaskResult
+									break 
+								}
 	
 								Write-Host ">>> Waiting for $taskName to finish ..."
 								Start-Sleep -Seconds 5
@@ -302,13 +324,33 @@ if ($winget) {
 							}
 						}
 						
-						Write-Host ">>> Executing task $taskName completed"
+						if ($exitCode -eq 0) {
+							Write-Host ">>> Executing task $taskName completed successfully"
+						} else {
+							Write-Warning "!!! Executing task $taskName failed with exit code $exitCode"
+						}
 						
-						Write-Host '----------------------------------------------------------------------------------------------------------'
-						Write-Host ">>> Dump Event Log 'Microsoft-Windows-AppXDeployment/Operational' since: $timestamp"
-						Write-Host '----------------------------------------------------------------------------------------------------------'
+						$scheduledTaskTranscript = ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".task.log"))
+						if (Test-Path -Path $scheduledTaskTranscript -PathType Leaf) {
 
-						Get-Content -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".task.log")) | Write-Host
+							Write-Host '----------------------------------------------------------------------------------------------------------'
+							Write-Host ">>> Scheduled Task Transcript: $scheduledTaskTranscript"
+							Write-Host '----------------------------------------------------------------------------------------------------------'
+
+							Get-Content -Path $scheduledTaskTranscript | Write-Host
+
+						} else {
+
+							Write-Warning "!!! Scheduled Task Transcript not found: $scheduledTaskTranscript"
+						}
+
+						if ($exitCode -eq 0) {
+							# retrieve the winget path 
+							$global:winget = Get-WinGet
+						} else {
+							# something went wrong - throw an exception to stop the script 
+							throw "WinGet installation using Scheduled Task failed with exit code $exitCode"
+						}
 
 					} else {
 
