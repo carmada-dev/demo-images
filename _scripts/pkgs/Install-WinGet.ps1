@@ -1,3 +1,8 @@
+param (
+	[Parameter(Mandatory = $false)]
+	[switch] $ScheduledTask
+)
+
 if (([System.Threading.Thread]::CurrentThread.ApartmentState) -ne 'MTA') {
 	# re-launch the script in a new thread with the MTA apartment state to avoid any issues with COM objects
 	powershell.exe -NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File $($MyInvocation.MyCommand.Path)
@@ -12,6 +17,9 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 if (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
 	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Install-WinGet.ps1'
+} elseif ($ScheduledTask) {
+    Write-Host ">>> Initializing transcript (Scheduled Task)"
+    Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".task.log")) -Force - -IncludeInvocationHeader; 
 } else { 
     Write-Host ">>> Initializing transcript"
     Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 
@@ -200,7 +208,7 @@ function Install-WinGet {
 	return Resolve-WinGet
 }
 
-$elevateInstallationAsSystem = $true
+$elevateInstallationAsSystem = $false
 $resumeOnFailedSystemInstall = $true
 
 $global:winget = Resolve-WinGet
@@ -215,7 +223,7 @@ if ($winget) {
 
 	try
 	{
-		if ($elevateInstallationAsSystem -and (Test-IsPacker)) {
+		if ($elevateInstallationAsSystem -and (Test-IsPacker) -and (-not $ScheduledTask)) {
 
 			# invoke the script as SYSTEM to ensure the WinGet installation is available to all users
 			$process = Invoke-CommandLine -Command "powershell" -Arguments "-NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -File `"$($MyInvocation.MyCommand.Path)`"" -AsSystem 
@@ -237,9 +245,77 @@ if ($winget) {
 				# ensure all required services are running
 				Start-Services
 
-				# install the WinGet package manager and assign the returned path to the global variable for further processing
-				$global:winget = Install-WinGet -Retries 0 -RetryDelay 60
+				try {
 
+					# install the WinGet package manager and assign the returned path to the global variable for further processing
+					$global:winget = Install-WinGet -Retries 0 -RetryDelay 60
+				
+				} catch {
+
+					$taskName = 'Install WinGet'
+					$taskPath = '\'
+
+					if (Test-IsPacker) {
+
+						$taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NonInteractive -WindowStyle Hidden -File $($MyInvocation.MyCommand.Path) -ScheduledTask"
+						$taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
+						$taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew 
+						$taskTriggers = @( New-ScheduledTaskTrigger -AtLogOn -RandomDelay (New-TimeSpan -Minutes 5) )
+				
+						Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal | Out-Null
+					}
+
+					$task = Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue
+
+					if ($task) {
+
+						Write-Host '=========================================================================================================='
+						Write-Host ">>> Using Scheduled Task to install WinGet Package Manager"
+						Write-Host '=========================================================================================================='
+
+						Write-Host ">>> Executing task $taskName ..."
+						Start-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+						
+						$timeout = (Get-Date).AddMinutes(30) # wait for the task to finish for a
+						$running = $false
+	
+						while ($true) {
+						
+							if ($timeout -lt (Get-Date)) { Throw "Timeout waiting for $taskName to finish" }
+							$task = Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction SilentlyContinue
+							
+							if (-not($task)) { 
+								
+								throw "Scheduled task $taskName does not exist anymore"
+							
+							} elseif ($running) {
+	
+								if ($task.State -ne 'Running') { break }
+	
+								Write-Host ">>> Waiting for $taskName to finish ..."
+								Start-Sleep -Seconds 5
+	
+							} else {
+	
+								$running = $running -or ($task.State -eq 'Running')
+								if ($running) { Write-Host ">>> Task $taskName starts running ..." }
+							}
+						}
+						
+						Write-Host ">>> Executing task $taskName completed"
+						
+						Write-Host '----------------------------------------------------------------------------------------------------------'
+						Write-Host ">>> Dump Event Log 'Microsoft-Windows-AppXDeployment/Operational' since: $timestamp"
+						Write-Host '----------------------------------------------------------------------------------------------------------'
+
+						Get-Content -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".task.log")) | Write-Host
+
+					} else {
+
+						# re-throw the exception to stop the script
+						throw
+					}
+				}
 			}
 		}
 	}
