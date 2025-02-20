@@ -303,7 +303,7 @@ if ($winget) {
 					if ($task) {
 
 						Write-Host ">>> Executing task $taskName ..."
-						Start-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+						$task | Start-ScheduledTask -ErrorAction Stop
 						
 						$timeout = (Get-Date).AddMinutes(30) # wait for the task to finish for a
 						$running = $false
@@ -343,7 +343,7 @@ if ($winget) {
 						
 						$scheduledTaskTranscript = [system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".task.log")
 
-						if (Test-Path -Path $scheduledTaskTranscript -PathType Leaf) {
+						if (Test-Path -Path $scheduledTaskTranscript -PathType Leaf -ErrorAction SilentlyContinue) {
 
 							Write-Host '----------------------------------------------------------------------------------------------------------'
 							Write-Host ">>> Scheduled Task Transcript: $scheduledTaskTranscript"
