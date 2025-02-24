@@ -189,12 +189,12 @@ if (Test-IsPacker) {
 		# something went wrong - lets blow it up
 		if ($exitCode -ne 0) { throw "WinGet installation using Scheduled Task $taskFullname failed with exit code $exitCode" } 
 			
-		$winget = Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+		$winget = (Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source) 
 		
 		# winget is still not available - lets blow it
 		if (-not $winget) { throw "WinGet is not available - check logs" }
 
-		$wingetVersion = Invoke-CommandLine -Command 'winget' -Arguments '--version' -Silent | Select-Object -ExpandProperty Output
+		$wingetVersion = (Invoke-CommandLine -Command 'winget' -Arguments '--version' -Silent | Select-Object -ExpandProperty Output) -replace ("`r?`n", '')
 
 		Write-Host '----------------------------------------------------------------------------------------------------------'
 		Write-Host ">>> WinGet ($wingetVersion) is available at $winget"
