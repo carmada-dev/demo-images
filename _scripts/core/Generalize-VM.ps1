@@ -29,7 +29,7 @@ Invoke-ScriptSection -Title 'Remove APPX packages' -ScriptBlock {
 
 	Get-AppxPackage | ForEach-Object {
 		Write-Host "- $($_.PackageFullName)"
-		Remove-AppxPackage -Package $_.PackageFullName -ErrorAction SilentlyContinue
+		Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction Continue
 	}
 }
 
