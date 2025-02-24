@@ -27,9 +27,15 @@ Invoke-ScriptSection -Title 'Enable Active Setup Tasks' -ScriptBlock {
 
 Invoke-ScriptSection -Title 'Remove APPX packages' -ScriptBlock {
 
-	Get-AppxPackage | ForEach-Object {
-		Write-Host "- $($_.PackageFullName)"
-		Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction Continue
+	Get-AppxPackage -AllUsers | ForEach-Object {
+		
+		Write-Host ">>> $($_.PackageFullName)"
+
+		Write-Host "- Removing APPX package"
+		Remove-AppxPackage -Package ($_.PackageFullName) -AllUsers -ErrorAction Continue
+
+		Write-Host "- Removing APPX package (provisioned)"
+		Remove-AppxProvisionedPackage -Online -PackageName ($_.PackageFullName) -ErrorAction Continue
 	}
 }
 
