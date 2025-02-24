@@ -145,7 +145,7 @@ if (Test-IsPacker) {
 		while ($true) {
 		
 			# check if timeout is reached - if so, blow it up				
-			if ($timeout -le (Get-Date)) { Throw "Timeout waiting for $taskFullname to finish" }
+			if ($timeout -lt (Get-Date)) { Throw "Timeout waiting for $taskFullname to finish" }
 
 			$task = Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue
 			
@@ -194,8 +194,33 @@ if (Test-IsPacker) {
 		# winget is still not available - lets blow it
 		if (-not $winget) { throw "WinGet is not available - check logs" }
 
-		Write-Host ">>> WinGet is available now: $winget"
+		$wingetVersion = Invoke-CommandLine -Command 'winget' -Arguments '--version' -Silent | Select-Object -ExpandProperty Output
+
+		Write-Host '----------------------------------------------------------------------------------------------------------'
+		Write-Host ">>> WinGet ($wingetVersion) is available at $winget"
 	}
+
+	Invoke-ScriptSection -Title "Patching WinGet Config for Packer Mode" -ScriptBlock {
+
+		$wingetPackageFamilyName = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty PackageFamilyName
+
+		$wingetSettings = @(
+
+			"%LOCALAPPDATA%\Packages\$wingetPackageFamilyName\LocalState\settings.json",
+			"%LOCALAPPDATA%\Microsoft\WinGet\Settings\settings.json"
+
+		) | ForEach-Object { [System.Environment]::ExpandEnvironmentVariables($_) } | Where-Object { Test-Path (Split-Path -Path $_ -Parent) -PathType Container } 
+		
+		# at least one of the winget settings location must exist - otherwise blow it up
+		if (-not $wingetSettings) { throw "Could not find WinGet settings location" }
+		
+		$wingetSettings | ForEach-Object { 
+
+			Write-Host ">>> Patching WinGet Settings: $_"
+			$adminWinGetConfig | Out-File $_ -Encoding ASCII -Force 
+			
+		}
+	} 
 
 } else {
 
