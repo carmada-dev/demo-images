@@ -134,5 +134,3 @@ Are there any legal requirements that need to be considered? (e.g., archiving, s
 
 ## Next Steps
 - [Implementation of the Dev Box PoC](devbox-poc.md)
--	Implement Infrastructure as Code (IaC) for the general DevBox configuration (DevCenter, Projects, networking, identities, etc.).
--	Establish GitOps for the DevBox configuration, new projects, and other related processes.
