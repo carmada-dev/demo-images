@@ -1,4 +1,4 @@
-# What do we need for a Dev Box PoC?
+# Preparing a Dev Box PoC
 
 This document is a collection of information and links to resources that are needed to prepare a Microsoft DevBox PoC.
 
