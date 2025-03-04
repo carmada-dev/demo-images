@@ -6,6 +6,30 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 	Import-Module -Name $_
 } 
 
+Invoke-ScriptSection -Title 'Application Packages Cleanup' -ScriptBlock {
+
+	$taskScript = { 
+		
+		Get-AppxPackage -AllUsers | ForEach-Object {
+	
+			Write-Host ">>> $($_.PackageFullName)"
+						
+			Write-Host "- Removing APPX package (provisioned)"
+			Remove-AppxProvisionedPackage -Online -PackageName ($_.PackageFullName) -ErrorAction SilentlyContinue
+
+			Write-Host "- Removing APPX package"
+			Remove-AppxPackage -Package ($_.PackageFullName) -AllUsers -ErrorAction SilentlyContinue
+		}
+	}
+
+	$exitCode = $taskScript | Invoke-AsScheduledTask -TaskName 'Remove-AppxPackages' -Debug
+	if ($exitCode -ne 0) { throw "Cleaning up Application Packages failed with exit code $exitCode" } 
+}
+
+Invoke-ScriptSection -Title 'Enable Active Setup Tasks' -ScriptBlock {
+	Enable-ActiveSetup
+}
+
 Invoke-ScriptSection -Title 'Set DevBox access permissions' -ScriptBlock {
 	
 	if (-not(Get-Module -ListAvailable -Name NTFSSecurity))
@@ -21,24 +45,6 @@ Invoke-ScriptSection -Title 'Set DevBox access permissions' -ScriptBlock {
 	Get-ChildItem -Path $env:DEVBOX_HOME -Recurse | Enable-NTFSAccessInheritance
 }
 
-Invoke-ScriptSection -Title 'Enable Active Setup Tasks' -ScriptBlock {
-	Enable-ActiveSetup
-}
-
-Invoke-ScriptSection -Title 'Remove APPX packages' -ScriptBlock {
-
-	Get-AppxPackage -AllUsers | ForEach-Object {
-		
-		Write-Host ">>> $($_.PackageFullName)"
-
-		Write-Host "- Removing APPX package"
-		Remove-AppxPackage -Package ($_.PackageFullName) -AllUsers -ErrorAction Continue
-
-		Write-Host "- Removing APPX package (provisioned)"
-		Remove-AppxProvisionedPackage -Online -PackageName ($_.PackageFullName) -ErrorAction Continue
-	}
-}
-
 Invoke-ScriptSection -Title 'Cleanup Event Logs' -ScriptBlock {
 
 	$logs = Get-EventLog -List | Select-Object -ExpandProperty Log
@@ -49,8 +55,7 @@ Invoke-ScriptSection -Title 'Cleanup Event Logs' -ScriptBlock {
 	Write-Host ">>> Clear all logs"
 	Clear-EventLog -LogName $logs
 	
-	Get-EventLog -List `
-	| Format-Table	Log, `
+	Get-EventLog -List | Format-Table Log, `
 		@{L='Current Size KB'; E={ [System.Math]::ceiling((Get-WmiObject -Class Win32_NTEventLogFile -filter "LogFileName = '$($_.Log)'").FileSize / 1KB) }}, `
 		@{L='Maximum Size KB'; E={ $_.MaximumKilobytes }}, `
 		@{L='Overflow Action'; E={ $_.OverflowAction }}
@@ -127,7 +132,18 @@ Invoke-ScriptSection -Title 'Waiting for Windows Services' -ScriptBlock {
 }
 
 Invoke-ScriptSection -Title 'Generalizing System' -ScriptBlock {
+
+	Write-Host '>>> Cleaning up Sysprep logs ...'
+	@( "$Env:SystemRoot\System32\Sysprep", "$Env:SystemRoot\Panther" ) | Where-Object { Test-Path $_ -PathType Container} | ForEach-Object { 
+		Get-ChildItem -Path $_ -Filter '*.log' -Recurse -Force -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object { 
+			Write-Host "- $_"
+			Remove-Item -Path $_ -Recurse -Force -ErrorAction SilentlyContinue 
+		}
+	}
+
+	Write-Host '>>> Running Sysprep ...'
 	& $env:SystemRoot\System32\Sysprep\Sysprep.exe /generalize /oobe /mode:vm /quiet /quit
+	
 	Write-Host '>>> Waiting for generalized state ...'
 	while($true) { 
 		$imageState = Get-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\State | Select-Object -ExpandProperty ImageState

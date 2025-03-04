@@ -6,106 +6,89 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 	Import-Module -Name $_
 } 
 
-if (Test-IsPacker) {
-	Write-Host ">>> Register ActiveSetup"
-	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Install-WinGet.ps1'
-} else { 
-    Write-Host ">>> Initializing transcript"
-    Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 
-}
-function Convert-ScriptBlockToCommandString() {
-
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [scriptblock] $ScriptBlock
-    )
-
-    # Convert the script block to a string
-    $scriptString = $ScriptBlock.ToString()
-
-    # Remove block comments (starting with <# and ending with #>)
-    $scriptString = $scriptString -replace '(?s)<#.*?#>', ''
-
-    # Remove single-line comments (starting with #)
-    $scriptString = $scriptString -replace '(?m)^\s*#.*$', ''
-
-    # Remove indentation
-    $scriptString = $scriptString -replace '(?m)^\s*', ''
-
-    # Remove emtpy lines
-    $scriptString = $scriptString -replace '(?m)^\r\n', ''
-
-    return $scriptString
-}
-
 $offlineDirectory = Join-Path $env:DEVBOX_HOME 'offline\winget'
 
 if (Test-IsPacker) {
 
-	$taskFullname = '\Install-WinGet'
-	$taskName = $taskFullname | Split-Path -Leaf
-	$taskPath = $taskFullname | Split-Path -Parent
-	$taskLog = Join-Path $env:TEMP ("$taskFullname.log" -replace ' ', '_')
+	Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
 
-	if (-not (Test-Path -Path $offlineDirectory -PathType Container)) {
+		Write-Host ">>> Creating WinGet Offline Directory"
+		New-Item -Path $offlineDirectory -ItemType Directory -Force | Out-Null
 
-		Invoke-ScriptSection -Title "Downloading WinGet Package Manager" -ScriptBlock {
+		$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
+		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
+		$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
 
-			Write-Host ">>> Creating WinGet Offline Directory"
-			New-Item -Path $offlineDirectory -ItemType Directory -Force | Out-Null
+		Write-Host ">>> Moving $path > $destination"
+		Move-Item -Path $path -Destination $destination -Force | Out-Null
 
-			$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'msixbundle'
-			$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
-			$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
+		$url = "https://cdn.winget.microsoft.com/cache/source.msix"
+		$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
+		$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
 
-			Write-Host ">>> Moving $path > $destination"
-			Move-Item -Path $path -Destination $destination -Force | Out-Null
+		Write-Host ">>> Moving $path > $destination"
+		Move-Item -Path $path -Destination $destination -Force | Out-Null
 
-			$url = "https://cdn.winget.microsoft.com/cache/source.msix"
-			$path = Invoke-FileDownload -Url $url -Name ([IO.Path]::GetFileName($url)) -Retries 5
-			$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($path))
+		$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
+		$path = Invoke-FileDownload -Url $url -Expand -Retries 5
+		
+		$os = "$(&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })"
+		$osPath = Get-ChildItem -Path $path -Filter $os -Recurse -Force `
+			| Where-Object { $_.PSIsContainer } `
+			| Select-Object -First 1 -ExpandProperty FullName
 
-			Write-Host ">>> Moving $path > $destination"
-			Move-Item -Path $path -Destination $destination -Force | Out-Null
-
-			$url = Get-GitHubLatestReleaseDownloadUrl -Organization 'microsoft' -Repository 'winget-cli' -Asset 'DesktopAppInstaller_Dependencies.zip'
-			$path = Join-Path (Invoke-FileDownload -Url $url -Expand -Retries 5) "$(&{ if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' } })"
-			
-			Get-ChildItem -Path $path -Filter '*.*' | ForEach-Object {
+		if ($osPath) {
+			Write-Host ">>> Found architecture specific files in $osPath"
+			Get-ChildItem -Path $osPath -Filter '*.appx' -Force | ForEach-Object {
 				$destination = Join-Path $offlineDirectory ([IO.Path]::GetFileName($_.FullName))
 				Write-Host ">>> Moving $($_.FullName) > $destination"
 				Move-Item -Path $_.FullName -Destination $destination -Force | Out-Null
 			}
+		} else {
+			Write-Host ">>> No architecture specific files found in $path"
 		}
-	} 
+	}
 
-	Invoke-ScriptSection "Register Scheduled Task $taskFullname" -ScriptBlock {
+	Invoke-ScriptSection "Install WinGet Package Manager" -ScriptBlock {
 
-		$taskScript = ({
+		$taskScript = {
 
 			# if winget is already installed - exit
 			if (Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source) { exit 0 }
-
-			# ensure task log directory exists
-			New-Item -Path (Split-Path '[TASKLOG]' -Parent) -ItemType Directory -Force | Out-Null
-
-			# start task log using transcript
-			Start-Transcript -Path '[TASKLOG]' -Force
 
 			if (Test-Path '[WINGETOFFLINE]' -PathType Container) {
 
 				Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.appx' | Select-Object -ExpandProperty FullName | ForEach-Object {
 					Write-Host ">>> Installing WinGet Dependency: $_"
+
+					Add-AppxProvisionedPackage `
+						-Online  -SkipLicense `
+						-PackagePath "$_" `
+						-ErrorAction SilentlyContinue | Out-Null
+
 					Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
 				}
 			
 				Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object {
 					Write-Host ">>> Installing WinGet Package Manager: $_"
+
+					Add-AppxProvisionedPackage `
+						-Online  -SkipLicense `
+						-PackagePath "$_" `
+						-DependencyPackagePath @(Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.appx' | Select-Object -ExpandProperty FullName) `
+						-ErrorAction SilentlyContinue | Out-Null
+
 					Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
 				}
 			
 				Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object {
 					Write-Host ">>> Installing WinGet Package Source: $_"
+
+					Add-AppxProvisionedPackage `
+						-Online  -SkipLicense `
+						-PackagePath "$_" `
+						-ErrorAction SilentlyContinue | Out-Null
+
 					Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
 				}
 
@@ -118,109 +101,17 @@ if (Test-IsPacker) {
 			
 			Write-Host ">>> Repairing WinGet Package Manager"
 			Repair-WinGetPackageManager -Verbose
-
-		} | Convert-ScriptBlockToCommandString) -replace ('\[TASKLOG\]', $taskLog) -replace ('\[WINGETOFFLINE\]', $offlineDirectory)
-		
-		$taskScript | Write-Host
-		$taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $([Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes(($taskScript))))"
-		$taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
-		$taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew 
-		$taskTriggers = @( New-ScheduledTaskTrigger -AtLogOn )
-		
-		Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal		
-	}
-
-	Invoke-ScriptSection "Run Scheduled Task $taskFullname" -ScriptBlock {
-
-		$task = Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue	
-		if (-not $task) { throw "Scheduled task $taskFullname does not exist" }
-
-		Write-Host ">>> Executing task $taskFullname ..."
-		$task | Start-ScheduledTask -ErrorAction Stop
-		
-		$timeout = (Get-Date).AddMinutes(5)
-		$running = $false
-		$exitCode = 0
-
-		while ($true) {
-		
-			# check if timeout is reached - if so, blow it up				
-			if ($timeout -lt (Get-Date)) { Throw "Timeout waiting for $taskFullname to finish" }
-
-			$task = Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue
-			
-			# check if task is still available - if not, blow it up 
-			if (-not($task)) { throw "Scheduled task $taskFullname does not exist anymore" }
-			
-			if ($running) {
-
-				if ($task.State -ne 'Running') { 
-					$exitCode = $task | Get-ScheduledTaskInfo | Select-Object -ExpandProperty LastTaskResult
-					Write-Host ">>> Task $taskFullname finished with exit code $exitCode"
-					break # exit the loop
-				}
-
-				Write-Host ">>> Waiting for $taskFullname to finish ..."
-				Start-Sleep -Seconds 5 # give the task some time to finish
-
-			} else {
-
-				$running = $running -or ($task.State -eq 'Running') # determine if we are in running state
-				if ($running) { 
-					Write-Host ">>> Task $taskFullname starts running ..." 
-				} else {
-					Write-Host ">>> Task $taskFullname is in state $($task.State) ..."
-				}
-			}
 		}
+		
+		$exitCode = $taskScript | Invoke-AsScheduledTask -TaskName 'Install-WinGet' -ScriptTokens @{ 'WINGETOFFLINE' = $offlineDirectory } 
+		if ($exitCode -ne 0) { throw "WinGet installation using Scheduled Task failed with exit code $exitCode" }
 
-		if ($task) {
-			Write-Host ">>> Unregister Scheduled Task $taskFullname"
-			$task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
-		}
-
-		if (Test-Path -Path $taskLog -PathType Leaf) {
-			Write-Host '----------------------------------------------------------------------------------------------------------'
-			Write-Host ">>> Scheduled Task Transcript: $taskLog"
-			Write-Host '----------------------------------------------------------------------------------------------------------'
-			Get-Content -Path $taskLog | Write-Host
-		} 
-
-		# something went wrong - lets blow it up
-		if ($exitCode -ne 0) { throw "WinGet installation using Scheduled Task $taskFullname failed with exit code $exitCode" } 
-			
 		$winget = (Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source) 
-		
-		# winget is still not available - lets blow it
-		if (-not $winget) { throw "WinGet is not available - check logs" }
+		if (-not $winget) { throw "WinGet is still not available - check logs" }
 
 		$wingetVersion = (Invoke-CommandLine -Command 'winget' -Arguments '--version' -Silent | Select-Object -ExpandProperty Output) -replace ("`r?`n", '')
-
-		Write-Host '----------------------------------------------------------------------------------------------------------'
 		Write-Host ">>> WinGet ($wingetVersion) is available at $winget"
 	}
-
-	Invoke-ScriptSection -Title "Patching WinGet Config for Packer Mode" -ScriptBlock {
-
-		$wingetPackageFamilyName = Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' | Select-Object -ExpandProperty PackageFamilyName
-
-		$wingetSettings = @(
-
-			"%LOCALAPPDATA%\Packages\$wingetPackageFamilyName\LocalState\settings.json",
-			"%LOCALAPPDATA%\Microsoft\WinGet\Settings\settings.json"
-
-		) | ForEach-Object { [System.Environment]::ExpandEnvironmentVariables($_) } | Where-Object { Test-Path (Split-Path -Path $_ -Parent) -PathType Container } 
-		
-		# at least one of the winget settings location must exist - otherwise blow it up
-		if (-not $wingetSettings) { throw "Could not find WinGet settings location" }
-		
-		$wingetSettings | ForEach-Object { 
-
-			Write-Host ">>> Patching WinGet Settings: $_"
-			$adminWinGetConfig | Out-File $_ -Encoding ASCII -Force 
-			
-		}
-	} 
 
 } else {
 

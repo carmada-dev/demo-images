@@ -85,12 +85,28 @@ $downloadArtifact = {
 	}
 }
 
+Invoke-ScriptSection -Title 'Setting DevBox environment variables' -ScriptBlock {
+
+	[Environment]::SetEnvironmentVariable("DEVBOX_HOME", $devboxHome, [System.EnvironmentVariableTarget]::Machine)
+	Get-ChildItem -Path Env:DEVBOX_* | ForEach-Object { [Environment]::SetEnvironmentVariable($_.Name, $_.Value, [System.EnvironmentVariableTarget]::Machine) }
+	Get-ChildItem -Path Env:DEVBOX_* | Out-String | Write-Host
+}
+
+Invoke-ScriptSection -Title 'Enable AutoLogon' -ScriptBlock {
+
+	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name AutoAdminLogon -Value 1 -type String
+	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name DefaultUsername -Value "$Env:ADMIN_USERNAME" -type String
+	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name DefaultPassword -Value "$Env:ADMIN_PASSWORD" -type String
+	Write-Host "done"
+}
+
+Invoke-ScriptSection -Title 'Disable User Access Control' -ScriptBlock {
+
+	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name EnableLUA -Value 0 -type DWord
+	Write-Host "done"
+}
+
 Invoke-ScriptSection -Title "Register Powershell Gallery" -ScriptBlock {
-
-	# CAUTION - Don't move this section down the sequence of config sections in this file !!!
-
-	# We are going to install the NuGet package provider and the PowerShellGet module from the PSGallery.
-	# Especially the latter requires to be NOT loaded into the current process when we install an updated version.
 
 	Write-Host ">>> Installing NuGet package provider" 
 	Install-PackageProvider -Name NuGet -Force -Scope AllUsers | Out-Null
@@ -105,18 +121,12 @@ Invoke-ScriptSection -Title "Register Powershell Gallery" -ScriptBlock {
 
 		# Start a new session to install the PowerShellGet module - this will cover the case where the module is already loaded in the current session
 		powershell.exe -NoLogo -Mta -ExecutionPolicy $(Get-ExecutionPolicy) -Command '&{ Install-Module -Name PowerShellGet -Force -AllowClobber -Scope AllUsers }'
-	}
-	finally {
+
+	} finally {
+
 		Write-Host ">>> Rollback the PSGallery repository policy"
 		Set-PSRepository -Name "PSGallery" -InstallationPolicy Untrusted
 	}
-}
-
-Invoke-ScriptSection -Title 'Setting DevBox environment variables' -ScriptBlock {
-
-	[Environment]::SetEnvironmentVariable("DEVBOX_HOME", $devboxHome, [System.EnvironmentVariableTarget]::Machine)
-	Get-ChildItem -Path Env:DEVBOX_* | ForEach-Object { [Environment]::SetEnvironmentVariable($_.Name, $_.Value, [System.EnvironmentVariableTarget]::Machine) }
-	Get-ChildItem -Path Env:DEVBOX_* | Out-String | Write-Host
 }
 
 Invoke-ScriptSection -Title 'Downloading Tools' -ScriptBlock {
@@ -141,28 +151,6 @@ Invoke-ScriptSection -Title 'Disable Defrag Schedule' -ScriptBlock {
 	Get-ScheduledTask ScheduledDefrag | Disable-ScheduledTask | Out-String | Write-Host
 }
 
-Invoke-ScriptSection -Title 'Enable AutoLogon' -ScriptBlock {
-
-	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name AutoAdminLogon -Value 1 -type String
-	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name DefaultUsername -Value "$Env:ADMIN_USERNAME" -type String
-	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name DefaultPassword -Value "$Env:ADMIN_PASSWORD" -type String
-	Write-Host "done"
-}
-
-Invoke-ScriptSection -Title 'Disable User Access Control' -ScriptBlock {
-
-	Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name EnableLUA -Value 0 -type DWord
-	Write-Host "done"
-}
-
-Invoke-ScriptSection -Title 'Deleting Sysprep Logs' -ScriptBlock {
-
-	Remove-Item -Path $env:SystemRoot\Panther -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
-	Remove-Item -Path $env:SystemRoot\System32\Sysprep\Panther -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
-	Remove-Item -Path $Env:SystemRoot\System32\Sysprep\unattend.xml -Force -ErrorAction SilentlyContinue | Out-Null
-	Write-Host "done"
-}
-
 Invoke-ScriptSection -Title 'Disable OneDrive Folder Backup' -ScriptBlock {
 	
 	$OneDriveRegKeyPath = "HKLM:\SOFTWARE\Policies\Microsoft\OneDrive"
@@ -183,23 +171,16 @@ Invoke-ScriptSection -Title 'Enable Windows Developer Mode' -ScriptBlock {
 	Invoke-CommandLine -Command 'reg' -Arguments 'add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Appx" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"' | Select-Object -ExpandProperty Output | Write-Host
 }
 
-Invoke-ScriptSection -Title 'List existing Appx packages' -ScriptBlock {
-	Get-AppxPackage | Format-Table Name, Version, Status, InstallLocation
-}
-
-Invoke-ScriptSection -Title 'Prepare Hibernate Support' -ScriptBlock {
+Invoke-ScriptSection -Title 'Enable Hibernate Support' -ScriptBlock {
 
 	Write-Host ">>> Enable Virtual Machine Platform feature ..." 
 	Get-WindowsOptionalFeature -Online `
 		| Where-Object { $_.FeatureName -like "*VirtualMachinePlatform*" -and $_.State -ne "Enabled" } `
 		| Enable-WindowsOptionalFeature -Online -All -NoRestart `
 		| Out-Null
-}
-
-Invoke-ScriptSection -Title 'Enable Hibernate Support' -ScriptBlock {
-
+	
+	Write-Host ">>> Enable Hibernation ..."
 	Invoke-CommandLine -Command 'powercfg' -Arguments '/hibernate on' | Select-Object -ExpandProperty Output | Write-Host   
-	Write-Host "done"
 }
 
 Invoke-ScriptSection -Title 'Expand System Partition' -ScriptBlock {
@@ -213,43 +194,6 @@ Invoke-ScriptSection -Title 'Expand System Partition' -ScriptBlock {
 		Write-Host ">>> No need to resize !!!"
 	}
 }
-
-# Invoke-ScriptSection -Title 'Restore WindowsApp Permissions' -ScriptBlock {
-
-# 	$programFiles = [Environment]::GetFolderPath('ProgramFiles')
-# 	$windowsApps = Join-Path $programFiles 'WindowsApps'
-# 	$icaclsConfig = Join-Path $env:TEMP 'icacls.config'
-
-# @"
-# windowsapps
-# D:PAI(A;;FA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;OICIIO;GA;;;S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464)(A;;0x1200a9;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;OICIIO;GXGR;;;S-1-15-3-1024-3635283841-2530182609-996808640-1887759898-3848208603-3313616867-983405619-2501854204)(A;;FA;;;SY)(A;OICIIO;GA;;;SY)(A;CI;0x1200a9;;;BA)(A;OICI;0x1200a9;;;LS)(A;OICI;0x1200a9;;;NS)(A;OICI;0x1200a9;;;RC)(XA;;0x1200a9;;;BU;(Exists WIN://SYSAPPID))
-# "@ | Out-File -FilePath $icaclsConfig -Force
-
-# 	# take over temporary ownership of the WindowsApps folder
-# 	Invoke-CommandLine -AsSystem -Command 'takeown' -Arguments "/f `"$windowsApps`"" `
-# 		| Select-Object -ExpandProperty Output `
-# 		| Write-Host
-
-# 	# reset the permissions of the WindowsApps folder
-# 	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$programFiles`" /restore `"$icaclsConfig`" /c" `
-# 		| Select-Object -ExpandProperty Output `
-# 		| Write-Host
-
-# 	# set the owner of the WindowsApps folder back to TrustedInstaller
-# 	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps`" /setowner `"nt service\trustedinstaller`" /c" `
-# 		| Select-Object -ExpandProperty Output `
-# 		| Write-Host
-
-# 	# grant current user full control of the WindowsApps folder
-# 	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps`" /grant `"$([System.Security.Principal.WindowsIdentity]::GetCurrent().Name):F`" /c" `
-# 		| Select-Object -ExpandProperty Output `
-# 		| Write-Host
-
-# 	# inherit permissions on all files and folders in the WindowsApps folder
-# 	Invoke-CommandLine -AsSystem -Command 'icacls' -Arguments "`"$windowsApps\*`" /reset /c /t" `
-# 		| Select-Object -ExpandProperty Output `
-# 		| Write-Host
-# }
 
 $Artifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath 'Artifacts'
 if (Test-Path -Path $Artifacts -PathType Container) {
