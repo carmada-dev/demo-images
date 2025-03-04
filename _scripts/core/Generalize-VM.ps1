@@ -6,26 +6,6 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 	Import-Module -Name $_
 } 
 
-Invoke-ScriptSection -Title 'Application Packages Cleanup' -ScriptBlock {
-
-	$taskScript = { 
-		
-		Get-AppxPackage -AllUsers | ForEach-Object {
-	
-			Write-Host ">>> $($_.PackageFullName)"
-						
-			Write-Host "- Removing APPX package (provisioned)"
-			Remove-AppxProvisionedPackage -Online -PackageName ($_.PackageFullName) -ErrorAction SilentlyContinue
-
-			Write-Host "- Removing APPX package"
-			Remove-AppxPackage -Package ($_.PackageFullName) -AllUsers -ErrorAction SilentlyContinue
-		}
-	}
-
-	$exitCode = $taskScript | Invoke-AsScheduledTask -TaskName 'Remove-AppxPackages' -Debug
-	if ($exitCode -ne 0) { throw "Cleaning up Application Packages failed with exit code $exitCode" } 
-}
-
 Invoke-ScriptSection -Title 'Enable Active Setup Tasks' -ScriptBlock {
 	Enable-ActiveSetup
 }
