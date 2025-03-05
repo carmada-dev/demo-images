@@ -71,7 +71,7 @@ jobs:
 
       - name: Trigger Image Build
         uses: actions/github-script@v7
-        if: github.event_name == 'schedule' || contains(steps.image.outputs.imageCommit, '#FORCE') || steps.image.outputs.imageChanged == 'true'
+        if: github.event_name == 'schedule' || contains(steps.image.outputs.imageCommit, '#ALL') || contains(steps.image.outputs.imageCommit, '#${{ steps.image.outputs.imageName }}') || steps.image.outputs.imageChanged == 'true'
         with:
           debug: true
           script: |
