@@ -6,7 +6,6 @@ on:
     branches: [ "main" ]
   schedule:
     - cron: '0 0 * * *' # every day at midnight
-  workflow_dispatch:
     
 jobs:
   prepare:
@@ -55,15 +54,23 @@ jobs:
 
       - name: Download Source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: Resolve Image Name
+      - name: Resolve Image Information
         id: image
         run: |
           echo "imageName=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
+          if git diff --name-only HEAD^ HEAD | grep -q "^/$(echo '${{ matrix.image }}' | sed 's|^\.*||')"; then
+            echo "imageChanged=true" >> $GITHUB_OUTPUT
+          else
+            echo "imageChanged=false" >> $GITHUB_OUTPUT
+          fi
           cat $GITHUB_OUTPUT
 
       - name: Trigger Image Build
         uses: actions/github-script@v7
+        if: ${{ github.event_name == 'schedule' }} || ${{ steps.image.outputs.imageChanged == 'true' }}
         with:
           debug: true
           script: |
