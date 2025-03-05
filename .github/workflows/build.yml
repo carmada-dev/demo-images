@@ -71,7 +71,11 @@ jobs:
 
       - name: Trigger Image Build
         uses: actions/github-script@v7
-        if: github.event_name == 'schedule' || contains(steps.image.outputs.imageCommit, '#ALL') || contains(steps.image.outputs.imageCommit, '#${{ steps.image.outputs.imageName }}') || steps.image.outputs.imageChanged == 'true'
+        if: |
+          github.event_name == 'schedule' || # we are building all images if the run was triggered by a schedule
+          contains(steps.image.outputs.imageCommit | toLowerCase(), '#ALL#' | toLowerCase()) || # we are building all images if the commit message contains '#ALL#'
+          contains(steps.image.outputs.imageCommit | toLowerCase(), '#${{ steps.image.outputs.imageName }}#' | toLowerCase()) || # we are building the image if the commit message contains the image name
+          steps.image.outputs.imageChanged == 'true' # we are building the image if the image has changed
         with:
           debug: true
           script: |
