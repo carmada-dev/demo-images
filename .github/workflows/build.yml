@@ -60,22 +60,24 @@ jobs:
       - name: Resolve Image Information
         id: image
         run: |
-          echo "imageCommit=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
           echo "imageName=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
           if git diff --name-only HEAD^ HEAD | grep -q "^/$(echo '${{ matrix.image }}' | sed 's|^\.*||')"; then
             echo "imageChanged=true" >> $GITHUB_OUTPUT
           else
             echo "imageChanged=false" >> $GITHUB_OUTPUT
           fi
+          if git log -1 --pretty=%B | grep -qi "#ALL#"; then
+            echo "imageMatch=true" >> $GITHUB_OUTPUT
+          elif git log -1 --pretty=%B | grep -qi "#$(basename "${{ matrix.image }}")#"; then
+            echo "imageMatch=true" >> $GITHUB_OUTPUT
+          else
+            echo "imageMatch=false" >> $GITHUB_OUTPUT
+          fi
           cat $GITHUB_OUTPUT
 
       - name: Trigger Image Build
         uses: actions/github-script@v7
-        if: |
-          github.event_name == 'schedule' || # we are building all images if the run was triggered by a schedule
-          contains(steps.image.outputs.imageCommit | toLowerCase(), '#ALL#' | toLowerCase()) || # we are building all images if the commit message contains '#ALL#'
-          contains(steps.image.outputs.imageCommit | toLowerCase(), '#${{ steps.image.outputs.imageName }}#' | toLowerCase()) || # we are building the image if the commit message contains the image name
-          steps.image.outputs.imageChanged == 'true' # we are building the image if the image has changed
+        if: github.event_name == 'schedule' || steps.image.outputs.imageChanged == 'true' || steps.image.outputs.imageMatch == 'true' 
         with:
           debug: true
           script: |
