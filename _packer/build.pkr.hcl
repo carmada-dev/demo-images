@@ -140,8 +140,7 @@ build {
     environment_vars  = local.environment
     scripts           = setunion(
       ["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
-      local.resolved.prepare,
-      fileset("${local.path.imageRoot}", "../_scripts/auto/prepare/[^(x_)]*.ps1")
+      local.resolved.prepare
     ) 
   }
   
@@ -178,8 +177,7 @@ build {
     environment_vars  = local.environment
     scripts           = setunion(
       ["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
-      local.resolved.configure,
-      fileset("${local.path.imageRoot}", "../_scripts/auto/configure/[^(x_)]*.ps1")
+      local.resolved.configure
     ) 
   }
 
