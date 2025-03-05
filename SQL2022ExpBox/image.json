@@ -12,7 +12,7 @@
 		"publisher": "MicrosoftVisualStudio",
 		"offer": "windowsplustools",
 		"sku": "base-win11-gen2",
-		"version": "2024.09.12"
+		"version": "latest"
 	},
 
 	"gallery": {

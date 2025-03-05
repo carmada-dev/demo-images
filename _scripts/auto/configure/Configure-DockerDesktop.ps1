@@ -1,9 +1,17 @@
+$ProgressPreference = 'SilentlyContinue'	# hide any progress output
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
 } 
 
-if (Test-IsPacker) {
+$dockerExe = Get-Command 'docker.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
+
+if (-not $dockerExe) {
+    Write-Host ">>> Not applicable: Docker Desktop not installed"
+    exit 0
+} elseif (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
 	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Configure-DockerDesktop.ps1'
 } else { 
@@ -11,19 +19,9 @@ if (Test-IsPacker) {
     Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 
 }
 
-$ProgressPreference = 'SilentlyContinue'	# hide any progress output
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
 # ==============================================================================
 
 Invoke-ScriptSection -Title "Configure Docker Desktop" -ScriptBlock {
-
-    $dockerExe = Get-Command 'docker.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
-
-    if ( -not($dockerExe) ) {
-        Write-ErrorMessage '!!! Docker could not be found.'
-        exit 1
-    }
 
     # $dockerComposeExe = Get-ChildItem -Path $dockerApp.Location -Filter "docker-compose.exe" -Recurse | Select-Object -First 1 -ExpandProperty Fullname
     # $dockerDaemonExe = Get-ChildItem -Path $dockerApp.Location -Filter "dockerd.exe" -Recurse | Select-Object -First 1 -ExpandProperty Fullname

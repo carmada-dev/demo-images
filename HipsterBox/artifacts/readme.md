@@ -1,1 +1,0 @@
-placeholder [click](../../README.md#image-specific-artifacts)

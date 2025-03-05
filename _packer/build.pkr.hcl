@@ -141,6 +141,16 @@ build {
     scripts           = local.resolved.prepare
   }
 
+  provisioner "powershell" {
+    elevated_user     = build.User
+    elevated_password = build.Password
+    environment_vars  = local.environment
+    scripts           = setunion(
+      ["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
+      fileset("${local.path.imageRoot}", "../_scripts/auto/prepare/[^(x_)]*.ps1")
+    ) 
+  }
+  
   provisioner "windows-restart" {
     check_registry    = true
     restart_timeout   = "30m"
@@ -173,6 +183,16 @@ build {
     elevated_password = build.Password
     environment_vars  = local.environment
     scripts           = local.resolved.configure
+  }
+
+  provisioner "powershell" {
+    elevated_user     = build.User
+    elevated_password = build.Password
+    environment_vars  = local.environment
+    scripts           = setunion(
+      ["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
+      fileset("${local.path.imageRoot}", "../_scripts/auto/configure/[^(x_)]*.ps1")
+    ) 
   }
 
   provisioner "windows-restart" {

@@ -1,17 +1,19 @@
+$ProgressPreference = 'SilentlyContinue'	# hide any progress output
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
 	Write-Host ">>> Importing PowerShell Module: $_"
 	Import-Module -Name $_
 } 
 
-$ProgressPreference = 'SilentlyContinue'	# hide any progress output
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$git = Get-Command 'git.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
+
+if (-not $git) {
+    Write-Host ">>> Not applicable: Git not installed"
+    exit 0
+}
 
 # ==============================================================================
-
-if ( -not(Get-Command 'git') ) {
-    Write-ErrorMessage '!!! Git could not be found.'
-    exit 1
-}
 
 if (Test-IsPacker) {
     
