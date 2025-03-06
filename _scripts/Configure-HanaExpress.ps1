@@ -13,7 +13,7 @@ if (-not $docker) {
     exit 0
 } elseif (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
-	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Configure-DockerDesktop.ps1'
+	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Configure-HanaExpress.ps1'
 } else { 
     Write-Host ">>> Initializing transcript"
     Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 

@@ -6,6 +6,16 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 	Import-Module -Name $_
 } 
 
+if (Test-IsPacker) {
+	Write-Host ">>> Register ActiveSetup"
+	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Install-WinGet.ps1'
+} else { 
+    Write-Host ">>> Initializing transcript"
+    Start-Transcript -Path ([system.io.path]::ChangeExtension($MyInvocation.MyCommand.Path, ".log")) -Append -Force -IncludeInvocationHeader; 
+}
+
+# ==============================================================================
+
 $offlineDirectory = Join-Path $env:DEVBOX_HOME 'offline\winget'
 
 if (Test-IsPacker) {
