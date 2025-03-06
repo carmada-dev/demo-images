@@ -173,8 +173,7 @@
 		],
 		"features": [
 			"Microsoft-Windows-Subsystem-Linux",
-			"VirtualMachinePlatform",
-			"Containers"
+			"VirtualMachinePlatform"
 		],
 		"prepare": [
 			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
@@ -194,10 +193,8 @@
 			"--backend=hyper-v"
 		],
 		"features": [
-			"Microsoft-Windows-Subsystem-Linux",
-			"VirtualMachinePlatform",
-			"Containers",
-			"Microsoft-Hyper-V-All"
+			"Microsoft-Hyper-V-All",
+			"Containers"
 		],
 		"prepare": [
 
