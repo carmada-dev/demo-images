@@ -169,9 +169,7 @@
 		"override": [
 			"install",
 			"--quiet",
-			"--accept-license",
-			"--backend=wsl-2",
-			"--always-run-service"
+			"--accept-license"
 		],
 		"features": [
 			"Microsoft-Windows-Subsystem-Linux",
@@ -193,8 +191,7 @@
 			"install",
 			"--quiet",
 			"--accept-license",
-			"--backend=hyper-v",
-			"--always-run-service"
+			"--backend=hyper-v"
 		],
 		"features": [
 			"Microsoft-Windows-Subsystem-Linux",
@@ -203,7 +200,7 @@
 			"Microsoft-Hyper-V-All"
 		],
 		"prepare": [
-			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
+
 		],
 		"configure": [
 			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1"
