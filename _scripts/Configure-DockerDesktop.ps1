@@ -47,8 +47,12 @@ Invoke-ScriptSection -Title "Configure Docker Desktop" -ScriptBlock {
             $dockerDesktopSettingsJson.AutoStart = $true
             $dockerDesktopSettingsJson.DisplayedOnboarding = $true
         
-            Write-Host ">>> Patched Docker Desktop config ..."
-            $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Tee-Object -FilePath $dockerDesktopSettings | Write-Host       
+            $utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+            $dockerDesktopSettingsContent = $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100
+        
+            Write-Host ">>> Patching Docker Desktop config ..."
+            [System.IO.File]::WriteAllLines($dockerDesktopSettings, $dockerDesktopSettingsContent, $utf8NoBomEncoding)
+            $dockerDesktopSettingsContent | Write-Host    
         }
 
         $dockerDesktopService = Get-Service -Name 'com.docker.service' -ErrorAction SilentlyContinue
