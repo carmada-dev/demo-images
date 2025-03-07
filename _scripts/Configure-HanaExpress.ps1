@@ -34,6 +34,12 @@ if (Test-IsPacker) {
         Write-Host ">>> Saving SAP HANA Express Docker image ..."
         Invoke-CommandLine -Command $docker -Arguments "save saplabs/hanaexpress --output '$image'" | Select-Object -ExpandProperty Output | Write-Host
 
+        if (Test-Path $image) {
+            $imageSize = (Get-Item $image).Length / 1GB
+            Write-Host ">>> HANA Express Docker image saved to $image ($imageSize GB)"
+        } else {
+            Write-Host ">>> Failed to save HANA Express Docker image"
+        }
     }
 
 } else {
