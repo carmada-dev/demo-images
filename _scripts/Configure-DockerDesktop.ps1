@@ -6,14 +6,13 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 	Import-Module -Name $_
 } 
 
-$docker = Get-Command 'docker.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
-$dockerDesktop = "$(if ($docker) { Join-Path (Split-Path $docker -Parent) 'docker desktop.exe'} else { $null })"
-$dockerDesktopSettings = Get-ChildItem (Join-Path $env:APPDATA 'Docker') -Filter 'settings-store.json' -Recurse -Force -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Fullname
+$dockerKey = Get-ChildItem 'HKLM:\SOFTWARE\Docker Inc.\Docker' -ErrorAction SilentlyContinue | Select-Object -Last 1
+$dockerAppPath = $dockerKey | Get-ItemPropertyValue -Name AppPath -ErrorAction SilentlyContinue
+$dockerBinPath = $dockerKey | Get-ItemPropertyValue -Name BinPath -ErrorAction SilentlyContinue
 
-while ($dockerDesktop -and -not (Test-Path $dockerDesktop)) {
-    $path = Split-Path $dockerDesktop -Parent | Split-Path -Parent
-    $dockerDesktop = "$(if ($path) { Join-Path $path (Split-Path $dockerDesktop -Leaf) } else { $null })" 
-}
+$docker = Join-Path $dockerBinPath 'docker.exe' -ErrorAction SilentlyContinue
+$dockerDesktop = Join-Path $dockerAppPath 'docker desktop.exe' -ErrorAction SilentlyContinue
+$dockerDesktopSettings = Get-ChildItem (Join-Path $env:APPDATA 'Docker') -Filter 'settings-store.json' -Recurse -Force -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Fullname
 
 if (-not $docker) {
     Write-Host ">>> Not applicable: Docker not installed"
@@ -63,14 +62,14 @@ Invoke-ScriptSection -Title "Configure Docker Desktop" -ScriptBlock {
         }
 
         Write-Host ">>> Starting Docker Desktop ..."
-        Invoke-CommandLine -Command 'start' -Arguments "`"$dockerDesktop`"" | Select-Object -ExpandProperty Output | Write-Host
+        Invoke-CommandLine -Command 'start' -Arguments "`"`" `"$dockerDesktop`"" | Select-Object -ExpandProperty Output | Write-Host
 
         $timeout = (get-date).AddMinutes(5)
 
         while ($true) {
 
             $result = Invoke-CommandLine -Command $docker -Arguments 'info' -ErrorAction SilentlyContinue 
-            
+
             if ($result.ExitCode -eq 0) { 
                 Write-Host ">>> Docker Desktop is running"
                 break 
