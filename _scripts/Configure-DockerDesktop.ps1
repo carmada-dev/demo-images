@@ -86,7 +86,7 @@ Invoke-ScriptSection -Title "Starting Docker Desktop" -ScriptBlock {
 
     while ($true) {
 
-        $result = Invoke-CommandLine -Command $docker -Arguments 'info' -ErrorAction SilentlyContinue 
+        $result = Invoke-CommandLine -Command $docker -Arguments 'info' -Silent -ErrorAction SilentlyContinue 
 
         if ($result.ExitCode -eq 0) { 
             Write-Host ">>> Docker Desktop is running"
