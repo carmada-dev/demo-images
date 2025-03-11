@@ -15,7 +15,9 @@ function Invoke-CommandLine {
         [Parameter(Mandatory=$false)]
         [switch] $AsSystem,
         [Parameter(Mandatory=$false)]
-        [switch] $Silent
+        [switch] $Silent,
+        [Parameter(Mandatory=$false)]
+        [switch] $NoWait
     )
 
     $processInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -56,16 +58,19 @@ function Invoke-CommandLine {
 
         $process.StartInfo = $processInfo
         $process.Start() | Out-Null
+        $process.WaitForInputIdle()
+        if (-not $NoWait) {
 
-        $output = (&{ if ($Capture -eq 'StdOut') { $process.StandardOutput.ReadToEnd() } else { $process.StandardError.ReadToEnd() } })
-        $errout = (&{ if ($Capture -eq 'StdErr') { $null } else { $process.StandardError.ReadToEnd() } })
+            $output = (&{ if ($Capture -eq 'StdOut') { $process.StandardOutput.ReadToEnd() } else { $process.StandardError.ReadToEnd() } })
+            $errout = (&{ if ($Capture -eq 'StdErr') { $null } else { $process.StandardError.ReadToEnd() } })
 
-        $process.WaitForExit()
+            $process.WaitForExit()
 
-        [PSCustomObject]@{
-            Output 	 = [string] $output
-            Error    = [string] $errout
-            ExitCode = $process.ExitCode
+            [PSCustomObject]@{
+                Output 	 = [string] $output
+                Error    = [string] $errout
+                ExitCode = $process.ExitCode
+            }
         }
     }
 }
