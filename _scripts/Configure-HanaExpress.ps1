@@ -6,12 +6,7 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 	Import-Module -Name $_
 } 
 
-$docker = Get-Command 'docker' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
-
-if (-not $docker) {
-    Write-Host ">>> Not applicable: Docker not installed"
-    exit 0
-} elseif (Test-IsPacker) {
+if (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
 	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Configure-HanaExpress.ps1'
 } else { 
@@ -21,40 +16,7 @@ if (-not $docker) {
 
 # ==============================================================================
 
-$dockerKey = Get-ChildItem 'HKLM:\SOFTWARE\Docker Inc.\Docker' -ErrorAction SilentlyContinue | Select-Object -Last 1
-$dockerDesktop = Join-Path ($dockerKey | Get-ItemPropertyValue -Name AppPath -ErrorAction SilentlyContinue) 'docker desktop.exe' -ErrorAction SilentlyContinue
-
-if ($dockerDesktop) {
-
-    if (Get-Process -Name 'Docker Desktop' -ErrorAction SilentlyContinue) {
-
-        Write-Host ">>> Docker Desktop is already running"
-
-    } else {
-
-        Write-Host ">>> Starting Docker Desktop ..."
-        Start-Process -FilePath $dockerDesktop -ErrorAction SilentlyContinue | Out-Null
-
-        $timeout = (get-date).AddMinutes(5)
-        Start-Sleep -Seconds 10 # give it a moment to start
-
-        while ($true) {
-
-            $result = Invoke-CommandLine -Command $docker -Arguments 'info' -ErrorAction SilentlyContinue 
-
-            if ($result.ExitCode -eq 0) { 
-                Write-Host ">>> Docker Desktop is running"
-                break 
-            } elseif ((Get-Date) -le $timeout) { 
-                Write-Host ">>> Waiting for Docker Desktop to start"
-                Start-Sleep -Seconds 5
-            } else { 
-                # we reach our timeout - blow it up
-                throw "Docker Desktop failed to start"                
-            }
-        } 
-    }
-}
+Start-Docker
 
 $imageName = 'saplabs/hanaexpress:latest'
 $imageArchive = Join-Path $env:DEVBOX_HOME ("Offline\Docker\Images\$imageName.tar".Replace('/', '\').Replace(':', '_'))
@@ -97,14 +59,11 @@ if (Test-IsPacker) {
 
     Invoke-ScriptSection -Title "Configuring HANA Express" -ScriptBlock {
   
-        $utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-
         $hanaHome = New-Item -Path (Join-Path [Environment]::GetFolderPath("MyDocuments") 'HANA Express') -ItemType Directory -Force -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
-        $hanaSettings = Join-Path $hanaHome 'settings.json'
-        $hanaSettingsContent = @{ "master_password" = "$(New-Password)" } | ConvertTo-Json -Depth 100
+        $hanaSettings = Join-Path $hanaHome 'settings.json'        
 
         Write-Host ">>> Configure HANA Express ..."
-        [System.IO.File]::WriteAllLines($hanaSettings, $hanaSettingsContent, $utf8NoBomEncoding)
+        @{ "master_password" = "$(New-Password)" } | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $hanaSettings
 
         Write-Host ">>> Create configuration Shortcut ..."
         New-Shortcut -Path (Join-Path ([System.Environment]::GetFolderPath("Desktop")) -ChildPath "HANA Express Config.lnk") -Target $hanaSettings

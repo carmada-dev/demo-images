@@ -31,6 +31,9 @@ Invoke-ScriptSection -Title "Installing WSL2" -ScriptBlock {
 		Write-Host ">>> Installing WSL2 kernel update ..."
 		Invoke-CommandLine -Command 'msiexec' -Arguments "/I $installer /quiet /norestart" | Select-Object -ExpandProperty Output | Write-Host
 
+		Write-Host ">>> Installing WSL2 ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--install" | Select-Object -ExpandProperty Output | Write-Host
+
 		Write-Host ">>> Setting default WSL version to 2 ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--set-default-version 2" | Select-Object -ExpandProperty Output | Write-Host
 
