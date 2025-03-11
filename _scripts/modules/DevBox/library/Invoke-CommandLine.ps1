@@ -58,7 +58,7 @@ function Invoke-CommandLine {
 
         $process.StartInfo = $processInfo
         $process.Start() | Out-Null
-        $process.WaitForInputIdle()
+
         if (-not $NoWait) {
 
             $output = (&{ if ($Capture -eq 'StdOut') { $process.StandardOutput.ReadToEnd() } else { $process.StandardError.ReadToEnd() } })
