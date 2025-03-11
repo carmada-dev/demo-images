@@ -47,7 +47,7 @@ function Start-Docker() {
 
     param (
         [Parameter(Mandatory=$false)]
-        [Validationset('DockerDesktop', 'Podman')]
+        [ValidateSet('DockerDesktop', 'Podman')]
         [string] $Tool
     )
 
@@ -59,7 +59,7 @@ function Start-Docker() {
     }
 
     $result = Invoke-CommandLine -Command $docker -Arguments 'info' -Silent -ErrorAction SilentlyContinue
-    
+
     if ($result.ExitCode -eq 0) { 
         Write-Host ">>> Docker is already running"
         return $true 

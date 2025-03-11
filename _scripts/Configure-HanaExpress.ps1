@@ -16,60 +16,36 @@ if (Test-IsPacker) {
 
 # ==============================================================================
 
-Start-Docker
+$docker = Get-Command 'docker' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
+if (-not $docker) { throw "Could not find docker CLI" }
 
-$imageName = 'saplabs/hanaexpress:latest'
-$imageArchive = Join-Path $env:DEVBOX_HOME ("Offline\Docker\Images\$imageName.tar".Replace('/', '\').Replace(':', '_'))
-$imageHome = (Split-Path $imageArchive -Parent)
+if (-not (Test-IsPacker) -and (Start-Docker)) {
 
-Write-Host ">>> Ensure Offline Docker Image folder exists ($imageHome) ..."
-New-Item -Path $imageHome -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+    $containerImage = 'saplabs/hanaexpress:latest'
+    $containerName = 'HANA-Express'
+    $containerHome = (New-Item -Path (Join-Path $env:DEVBOX_HOME "Docker\$containerName") -ItemType Directory -Force).FullName
 
-if (Test-IsPacker) {
+    $containerOptions = @(
+        "-p 39013:39013",
+        "-p 39017:39017", 
+        "-p 39041-39045:39041-39045", 
+        "-p 1128-1129:1128-1129", 
+        "-p 59013-59014:59013-59014",
+        "-d",
+        "-v ${$containerHome}:/hana/mounts",
+        "--ulimit nofile=1048576:1048576",
+        "--sysctl kernel.shmmax=1073741824",
+        "--sysctl net.ipv4.ip_local_port_range='40000 60999'",
+        "--sysctl kernel.shmmni=524288",
+        "--sysctl kernel.shmall=8388608",
+        "--name '$containerName'"
+    ) -join ' '
 
-    Invoke-ScriptSection -Title "Preload HANA Express" -ScriptBlock {
-        
-        Write-Host ">>> Pulling SAP HANA Express Docker image ($imageName) ..."
-        Invoke-CommandLine -Command $docker -Arguments "pull $imageName" | Select-Object -ExpandProperty Output | Write-Host
+    $containerArguments = @(
+        "--passwords-url file:///hana/mounts/settings.json",
+        "--agree-to-sap-license"
+    ) -join ' '
 
-        Write-Host ">>> Saving SAP HANA Express Docker image ($imageArchive) ..."
-        Invoke-CommandLine -Command $docker -Arguments "save $imageName --output `"$imageArchive`"" | Select-Object -ExpandProperty Output | Write-Host
-
-        if (-not (Test-Path $imageArchive)) {
-            # saving the image failed - blow it up
-            throw "Failed to save HANA Express Docker image at $imageArchive"
-        }
-
-        $imageSize = (Get-Item $imageArchive).Length / 1GB
-        Write-Host ">>> HANA Express Docker image saved ($imageArchive - $imageSize GB)"
-    }
-
-} else {
-
-    Invoke-ScriptSection -Title "Import HANA Express" -ScriptBlock {
-        
-        if (Test-Path $imageArchive) {
-            Write-Host ">>> Loading SAP HANA Express Docker image ($imageArchive) ..."
-            Invoke-CommandLine -Command $docker -Arguments "load -i `"$imageArchive`"" | Select-Object -ExpandProperty Output | Write-Host
-        } else {
-            Write-Host ">>> Pulling SAP HANA Express Docker image ($imageName) ..."
-            Invoke-CommandLine -Command $docker -Arguments "pull $imageName" | Select-Object -ExpandProperty Output | Write-Host
-        }
-    }
-
-    Invoke-ScriptSection -Title "Configuring HANA Express" -ScriptBlock {
-  
-        $hanaHome = New-Item -Path (Join-Path [Environment]::GetFolderPath("MyDocuments") 'HANA Express') -ItemType Directory -Force -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
-        $hanaSettings = Join-Path $hanaHome 'settings.json'        
-
-        Write-Host ">>> Configure HANA Express ..."
-        @{ "master_password" = "$(New-Password)" } | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $hanaSettings
-
-        Write-Host ">>> Create configuration Shortcut ..."
-        New-Shortcut -Path (Join-Path ([System.Environment]::GetFolderPath("Desktop")) -ChildPath "HANA Express Config.lnk") -Target $hanaSettings
-
-        Write-Host ">>> Starting HANA Express ..."
-        Invoke-CommandLine -Command $docker -Arguments "run -p 39013:39013 -p 39017:39017 -p 39041-39045:39041-39045 -p 1128-1129:1128-1129 -p 59013-59014:59013-59014 -d -v ${$hanaHome}:/hana/mounts --ulimit nofile=1048576:1048576 --sysctl kernel.shmmax=1073741824 --sysctl net.ipv4.ip_local_port_range='40000 60999' --sysctl kernel.shmmni=524288 --sysctl kernel.shmall=8388608 --name 'HANA-Express' $imageName --passwords-url file:///hana/mounts/settings.json --agree-to-sap-license" | Select-Object -ExpandProperty Output | Write-Host
-    
-    }
+    Write-Host ">>> Starting HANA Express ..."
+    Invoke-CommandLine -Command $docker -Arguments "run $containerOptions $containerImage $containerArguments" -NoWait
 }

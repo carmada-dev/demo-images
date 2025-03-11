@@ -16,7 +16,7 @@ if (Test-IsPacker) {
 
 # ==============================================================================
 
-$offlineDirectory = Join-Path $env:DEVBOX_HOME 'offline\winget'
+$offlineDirectory = Join-Path $env:DEVBOX_HOME 'Offline\WinGet'
 
 if (Test-IsPacker) {
 
