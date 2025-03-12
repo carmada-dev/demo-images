@@ -179,7 +179,8 @@
 			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
 		],
 		"configure": [
-			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1"
+			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1",
+			"[IMAGEROOT]/../_scripts/Configure-DockerCompose.ps1"
 		]
 	},
 
@@ -200,7 +201,8 @@
 
 		],
 		"configure": [
-			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1"
+			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1",
+			"[IMAGEROOT]/../_scripts/Configure-DockerCompose.ps1"
 		]
 	},
 

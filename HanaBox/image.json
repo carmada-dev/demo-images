@@ -55,6 +55,5 @@
 	],
 
 	"configure": [
-		"[IMAGEROOT]/../_scripts/Configure-HanaExpress.ps1"
 	]
 }
