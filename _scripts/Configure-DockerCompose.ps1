@@ -19,32 +19,41 @@ if (Test-IsPacker) {
 $dockerCompose = Get-Command 'docker-compose' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
 if (-not $dockerCompose) { throw 'Could not find docker-compose.exe' }
 
-if (-not (Test-IsPacker) -and (Start-Docker)) {
+if (-not (Test-IsPacker)) {
 
-    # ensure docker artifacts directory exists
-    $dockerArtifacts = (New-Item -Path (Join-Path $env:DEVBOX_HOME 'Artifacts\Docker') -ItemType Directory -Force).FullName
+    Invoke-ScriptSection -Title "Configure Docker Compose" -ScriptBlock {
 
-    $dockerEnvironment = @{
-        "ROOT" = "/$($workingDirectory.Replace('\', '/').Replace(':', ''))"
-    }
+        if ( -and (Start-Docker)) {
 
-    Get-ChildItem -Path $dockerArtifacts -Filter 'compose.yml' -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
+            # ensure docker artifacts directory exists
+            $dockerArtifacts = (New-Item -Path (Join-Path $env:DEVBOX_HOME 'Artifacts\Docker') -ItemType Directory -Force).FullName
 
-        $envVars = "$(Get-Content -Path (Join-Path (Split-Path $_ -Parent) '.env') -Raw -ErrorAction SilentlyContinue)"
+            $dockerEnvironment = @{
+                "ROOT" = "/$($workingDirectory.Replace('\', '/').Replace(':', ''))"
+            }
 
-        $envVars = (($envVars -split "`r?`n" | Where-Object { 
-            if ([string]::IsNullOrWhiteSpace($_)) { return $false }
-            $key = "$(($_ -split '=') | Select-Object -First 1 -ErrorAction SilentlyContinue)".Trim()
-            return (-not $dockerEnvironment.ContainsKey($key))
-        }) + ($dockerEnvironment.Keys | ForEach-Object { "$_=$($dockerEnvironment[$_])" })) | Out-String
-        
-        $envVars | Set-Utf8Content -Path (Join-Path (Split-Path $_ -Parent) '.env') -ErrorAction SilentlyContinue
+            Get-ChildItem -Path $dockerArtifacts -Filter 'compose.yml' -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
 
-        Invoke-CommandLine `
-            -Command $dockerCompose `
-            -Arguments "up --wait" `
-            -WorkingDirectory (Split-Path $_ -Parent) `
-            -NoWait
-        
+                $envFile = Join-Path (Split-Path $_ -Parent) '.env'
+                $envVars = "$(Get-Content -Path $envFile -Raw -ErrorAction SilentlyContinue)"
+
+                $envVars = (($envVars -split "`r?`n" | Where-Object { 
+                    if ([string]::IsNullOrWhiteSpace($_)) { return $false }
+                    $key = "$(($_ -split '=') | Select-Object -First 1 -ErrorAction SilentlyContinue)".Trim()
+                    return (-not $dockerEnvironment.ContainsKey($key))
+                }) + ($dockerEnvironment.Keys | ForEach-Object { "$_=$($dockerEnvironment[$_])" })) | Out-String
+                
+                Write-Host ">>> Writing environment variables to .env file: $envFile"
+                $envVars | Set-Utf8Content -Path $envFile -ErrorAction SilentlyContinue
+
+                Write-Host ">>> Starting Docker Compose at $(Split-Path $_ -Parent) ..."
+                Invoke-CommandLine `
+                    -Command $dockerCompose `
+                    -Arguments "up --wait" `
+                    -WorkingDirectory (Split-Path $_ -Parent) `
+                    -NoWait
+                
+            }
+        }
     }
 }
