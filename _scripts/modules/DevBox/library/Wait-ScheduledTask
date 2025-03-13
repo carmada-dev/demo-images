@@ -7,6 +7,7 @@ function Wait-ScheduledTask {
         [timespan] $Timeout = (New-TimeSpan -Minutes 5)
     )
 
+    $taskFullname = "$($Task.Path)$($Task.TaskName)"
     $timeoutEnd = (Get-Date).Add($Timeout)
     $running = $false
 
@@ -15,7 +16,7 @@ function Wait-ScheduledTask {
         if ($timeoutEnd -lt (Get-Date)) { 
         
             # we ran into a timeout - blow it up				
-            throw "Scheduled Task $TaskFullname timed out after $Timeout minutes" 
+            throw "Scheduled Task $taskFullname timed out after $Timeout minutes" 
         
         } else {
 
@@ -27,7 +28,7 @@ function Wait-ScheduledTask {
         if (-not($Task)) { 
 
             # the Task does not exist anymore - blow it up
-            throw "Scheduled Task $TaskFullname does not exist anymore" 
+            throw "Scheduled Task $taskFullname does not exist anymore" 
 
         }
         elseif ($running) {
@@ -35,12 +36,12 @@ function Wait-ScheduledTask {
             if ($Task.State -ne 'Running') { 
 
                 $exitCode = $Task | Get-ScheduledTaskInfo | Select-Object -ExpandProperty LastTaskResult
-                Write-Host ">>> Scheduled Task $TaskFullname finished with exit code $exitCode"
+                Write-Host ">>> Scheduled Task $taskFullname finished with exit code $exitCode"
                 
                 break # exit the loop
             }
 
-            Write-Host ">>> Waiting for Scheduled Task $TaskFullname to finish ..."
+            Write-Host ">>> Waiting for Scheduled Task $taskFullname to finish ..."
             Start-Sleep -Seconds 5 # give the Task some time to finish
 
         } else {
@@ -48,9 +49,9 @@ function Wait-ScheduledTask {
             $running = $running -or ($Task.State -eq 'Running') # determine if we are in running state
 
             if ($running) { 
-                Write-Host ">>> Scheduled Task $TaskFullname starts running ..." 
+                Write-Host ">>> Scheduled Task $taskFullname starts running ..." 
             } else {
-                Write-Host ">>> Scheduled Task $TaskFullname is in state $($Task.State) ..."
+                Write-Host ">>> Scheduled Task $taskFullname is in state $($Task.State) ..."
             }
         }
     }
