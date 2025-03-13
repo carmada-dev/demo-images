@@ -18,26 +18,34 @@ if (Test-IsPacker) {
 
 Invoke-ScriptSection -Title "Configure Docker Desktop" -ScriptBlock {
 
+    $configureDockerDesktopServiceScriptBlock = {
+        $dockerDesktopService = Get-Service -Name 'com.docker.service' -ErrorAction SilentlyContinue
+        if ($dockerDesktopService) {
+            $dockerDesktopService | Set-Service -StartupType 'Automatic' -ErrorAction SilentlyContinue | Out-Null
+            $dockerDesktopService | Start-Service -ErrorAction SilentlyContinue | Out-Null
+        }
+    }
+
     if (Test-IsPacker) {
         
         $dockerUsersMembers = Get-LocalGroupMember -Group "docker-users" -ErrorAction SilentlyContinue
         if ($dockerUsersMembers -and -not ($dockerUsersMembers -like "NT AUTHORITY\Authenticated Users")) {
-
             Write-Host ">>> Adding 'Authenticated Users' to docker-users group ..."
             Add-LocalGroupMember -Group "docker-users" -Member "NT AUTHORITY\Authenticated Users"
         }
 
+        Write-Host ">>> Registering Docker Desktop Service Configuration task ..."
+        $taskScript = $configureDockerDesktopServiceScriptBlock | Convert-ScriptBlockToString -EncodeBase64
+        $taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $taskScript"
+        $taskPrincipal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+        $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -Priority 0 -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -DontStopIfGoingOnBatteries -DontStopOnIdleEnd
+        $taskTriggers = @( New-ScheduledTaskTrigger -AtLogOn )
+        $task = Register-ScheduledTask -Force -TaskName 'Configure-DockerDesktopService' -TaskPath '\' -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal
+
+        Write-Host ">>> Triggering Docker Desktop Service Configuration task ..."
+        $task | Start-ScheduledTask -ErrorAction Stop | Out-Null
+        $task | Wait-ScheduledTask 
     } 
-
-    $dockerDesktopService = Get-Service -Name 'com.docker.service' -ErrorAction SilentlyContinue
-    if ($dockerDesktopService) {
-
-        Write-Host ">>> Setting Docker Desktop Service to start automatically ..."
-        $dockerDesktopService | Set-Service -StartupType 'Automatic' -ErrorAction SilentlyContinue | Out-Null
-    
-        Write-Host ">>> Starting Docker Desktop Service ..."
-        $dockerDesktopService | Start-Service -ErrorAction SilentlyContinue | Out-Null
-    }
 
     $dockerDesktopSettings = Join-Path $env:APPDATA 'Docker\settings-store.json'
 
