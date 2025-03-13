@@ -16,10 +16,10 @@ if (Test-IsPacker) {
 
 # ==============================================================================
 
-Invoke-ScriptSection -Title "Configure Docker Desktop" -ScriptBlock {
-
-    if (Test-IsPacker) {
+if (Test-IsPacker) {
         
+    Invoke-ScriptSection -Title "Configure Docker Users" -ScriptBlock {
+
         $dockerUsersMembers = Get-LocalGroupMember -Group "docker-users" -ErrorAction SilentlyContinue
         if ($dockerUsersMembers -and -not ($dockerUsersMembers -like "NT AUTHORITY\Authenticated Users")) {
             Write-Host ">>> Adding 'Authenticated Users' to docker-users group ..."
@@ -27,44 +27,45 @@ Invoke-ScriptSection -Title "Configure Docker Desktop" -ScriptBlock {
         }
 
     } 
+}
+
+
+Invoke-ScriptSection -Title "Starting Docker Desktop" -ScriptBlock {
+
+    Start-Docker -Tool 'DockerDesktop'
+}
+
+Invoke-ScriptSection -Title "Configure Docker Desktop" -ScriptBlock {
 
     $dockerDesktopSettings = Join-Path $env:APPDATA 'Docker\settings-store.json'
 
-    # if the docker desktop settings file does not exist, start docker desktop to create it
-    if (-not (Test-Path $dockerDesktopSettings -ErrorAction SilentlyContinue)) { Start-Docker -Tool 'DockerDesktop' }
-
-    try {
+    if (Test-Path -Path $dockerDesktopSettings -PathType Leaf) {
 
         Write-Host ">>> Loading Docker Desktop settings file: $dockerDesktopSettings"
         $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw | ConvertFrom-Json
 
         if ($dockerDesktopSettingsJson | Get-Member -Name 'AutoStart' -ErrorAction SilentlyContinue) {
+            Write-Host "- Updating AutoStart property (true) in Docker Desktop settings file"
             $dockerDesktopSettingsJson.AutoStart = $true
         } else {
+            Write-Host "- Adding AutoStart property (true) to Docker Desktop settings file"
             $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'AutoStart' -Value $true
         }
 
         if ($dockerDesktopSettingsJson | Get-Member -Name 'DisplayedOnboarding' -ErrorAction SilentlyContinue) {
+            Write-Host "- Updating DisplayedOnboarding property (true) in Docker Desktop settings file"
             $dockerDesktopSettingsJson.DisplayedOnboarding = $true
         } else {
+            Write-Host "- Adding DisplayedOnboarding property (true) to Docker Desktop settings file"
             $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'DisplayedOnboarding' -Value $true
         }
 
         Write-Host ">>> Updating Docker Desktop settings file: $dockerDesktopSettings"
         $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings -PassThru | Write-Host    
-    }
-    finally {
-        
-        Write-Host ">>> Kill all existing Docker Desktop processes ..."
-        while ($true) {
-            $processes = Get-Process -Name 'Docker Desktop' | Stop-Process -Force -PassThru -ErrorAction SilentlyContinue
-            if ($processes.Count -eq 0) { break } else { Start-Sleep -Seconds 5 }
-        } 
+
+    } else {
+
+        throw "Could not find Docker Desktop settings file: $dockerDesktopSettings"
     }
 }
 
-Invoke-ScriptSection -Title "Starting Docker Desktop" -ScriptBlock {
-
-    # start docker desktop
-    Start-Docker -Tool 'DockerDesktop'
-}
