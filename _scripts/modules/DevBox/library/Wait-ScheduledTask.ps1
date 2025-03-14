@@ -14,10 +14,11 @@ function Wait-ScheduledTask {
     $running = $false
     $exitCode = 0
 
-    if ($Start) { 
+    if (-not($Task)) { throw "Scheduled Task must be provided" }
 
+    if ($Start) { 
         Write-Host ">>> Starting Scheduled Task $taskFullname ($Timeout minutes timeout)"
-        $Task | Start-ScheduledTask -ErrorAction Stop | Out-Null
+        $Task | Start-ScheduledTask -ErrorAction Stop 
     }
 
     while ($true) {
@@ -61,6 +62,11 @@ function Wait-ScheduledTask {
                 Write-Host ">>> Scheduled Task $taskFullname is in state $($Task.State) ..."
             }
         }
+    }
+
+    if ($exitCode -ne 0) { 
+        Write-Host ">>> Scheduled Task $taskFullname event log trace:"
+        Get-WinEvent -LogName 'Microsoft-Windows-TaskScheduler/Operational' -ErrorAction SilentlyContinue | Where-Object Message -like "*$($Task.TaskName)*"
     }
 
     return $exitCode
