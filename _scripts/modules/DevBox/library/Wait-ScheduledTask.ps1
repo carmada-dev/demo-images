@@ -18,6 +18,9 @@ function Wait-ScheduledTask {
 
         ">>> Starting Scheduled Task $taskFullname ($Timeout minutes timeout)"
         $Task | Start-ScheduledTask -ErrorAction Stop | Out-Null
+
+        # wait a bit to ensure the Task is in running state
+        Start-Sleep -Seconds 5 
     }
 
     while ($true) {
@@ -30,8 +33,7 @@ function Wait-ScheduledTask {
         } else {
 
             # refresh the Task to ensure we deal with the latest state         
-            $Task = Get-ScheduledTask -TaskName $Task.TaskName -TaskPath $Task.TaskPath -ErrorAction SilentlyContinue            
-        
+            $Task = Get-ScheduledTask -TaskName $Task.TaskName -TaskPath $Task.TaskPath -ErrorAction SilentlyContinue                    
         }
 
         if (-not($Task)) { 
@@ -39,8 +41,7 @@ function Wait-ScheduledTask {
             # the Task does not exist anymore - blow it up
             throw "Scheduled Task $taskFullname does not exist anymore" 
 
-        }
-        elseif ($running) {
+        } elseif ($running) {
 
             if ($Task.State -ne 'Running') { 
 
@@ -51,7 +52,7 @@ function Wait-ScheduledTask {
             }
 
             Write-Host ">>> Waiting for Scheduled Task $taskFullname to finish ..."
-            Start-Sleep -Seconds 1 # give the Task some time to finish
+            Start-Sleep -Seconds 5 # give the Task some time to finish
 
         } else {
 
