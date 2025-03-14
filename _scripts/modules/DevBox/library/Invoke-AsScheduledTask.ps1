@@ -28,8 +28,6 @@ function Invoke-AsScheduledTask {
     Write-Host '----------------------------------------------------------------------------------------------------------'
     Write-Host $taskScript
     Write-Host '----------------------------------------------------------------------------------------------------------'
-    Write-Host ($taskScript | ConvertTo-Base64)
-    Write-Host '----------------------------------------------------------------------------------------------------------'
 
     $taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $($taskScript | ConvertTo-Base64)"
     $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
@@ -43,6 +41,11 @@ function Invoke-AsScheduledTask {
 
         Write-Host ">>> Executing Scheduled Task $taskFullname ($Timeout minutes timeout)"
         $exitCode = $task | Wait-ScheduledTask -Start
+
+    } catch {
+
+        Write-Error $_.Exception
+        $exitCode = 1
 
     } finally {
 

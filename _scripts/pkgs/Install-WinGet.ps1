@@ -68,42 +68,50 @@ if (Test-IsPacker) {
 
 			if (Test-Path '[WINGETOFFLINE]' -PathType Container) {
 
-				Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.appx' | Select-Object -ExpandProperty FullName | ForEach-Object {
-					Write-Host ">>> Installing WinGet Dependency: $_"
+				try {
 
-					Add-AppxProvisionedPackage `
-						-Online  -SkipLicense `
-						-PackagePath "$_" `
-						-ErrorAction SilentlyContinue | Out-Null
+					Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.appx' | Select-Object -ExpandProperty FullName | ForEach-Object {
+						Write-Host ">>> Installing WinGet Dependency: $_"
 
-					Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
+						Add-AppxProvisionedPackage `
+							-Online  -SkipLicense `
+							-PackagePath "$_" `
+							-ErrorAction SilentlyContinue | Out-Null
+
+						Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
+					}
+				
+					Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object {
+						Write-Host ">>> Installing WinGet Package Manager: $_"
+
+						Add-AppxProvisionedPackage `
+							-Online  -SkipLicense `
+							-PackagePath "$_" `
+							-DependencyPackagePath @(Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.appx' | Select-Object -ExpandProperty FullName) `
+							-ErrorAction SilentlyContinue | Out-Null
+
+						Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
+					}
+				
+					Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object {
+						Write-Host ">>> Installing WinGet Package Source: $_"
+
+						Add-AppxProvisionedPackage `
+							-Online  -SkipLicense `
+							-PackagePath "$_" `
+							-ErrorAction SilentlyContinue | Out-Null
+
+						Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
+					}
+
+				} catch {
+
+					Write-Host $_.Exception
+
+				} finally {
+
+					if (Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source) { exit 0 }
 				}
-			
-				Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.msixbundle' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object {
-					Write-Host ">>> Installing WinGet Package Manager: $_"
-
-					Add-AppxProvisionedPackage `
-						-Online  -SkipLicense `
-						-PackagePath "$_" `
-						-DependencyPackagePath @(Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.appx' | Select-Object -ExpandProperty FullName) `
-						-ErrorAction SilentlyContinue | Out-Null
-
-					Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
-				}
-			
-				Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object {
-					Write-Host ">>> Installing WinGet Package Source: $_"
-
-					Add-AppxProvisionedPackage `
-						-Online  -SkipLicense `
-						-PackagePath "$_" `
-						-ErrorAction SilentlyContinue | Out-Null
-
-					Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
-				}
-
-				# if winget is already installed - exit
-				if (Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source) { exit 0 }
 			}
 
 			Write-Host ">>> Installing Microsoft.WinGet.Client PowerShell module"
