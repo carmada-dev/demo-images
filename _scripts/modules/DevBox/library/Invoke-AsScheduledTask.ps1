@@ -49,9 +49,6 @@ function Invoke-AsScheduledTask {
 
         if ($transcriptContent) {
 
-            # cleanup transcript content - get only the actual content if possible
-            if ($transcriptContent -match "(?s)^(?:.*?\*{22}.*?\r?\n){2}(.*?)(?:\*{22}.*?\r?\n|$)") { $transcriptContent = $Matches[1] }
-            
             Write-Host '----------------------------------------------------------------------------------------------------------'
             Write-Host $transcriptContent
             Write-Host '----------------------------------------------------------------------------------------------------------'

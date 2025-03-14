@@ -43,7 +43,7 @@ function Convert-ScriptBlockToString {
 
     if ($Transcript) {
         $scriptHeader = "Start-Transcript -Path '$Transcript' -Force; try { "
-        $scriptFooter = "} finally { Stop-Transcript -ErrorAction SilentlyContinue }"
+        $scriptFooter = "} catch { Write-Error `$_.Exception  } finally { Stop-Transcript -ErrorAction SilentlyContinue }"
         $script = ($scriptHeader, $script, $scriptFooter) -join "`r`n"
     }
 
