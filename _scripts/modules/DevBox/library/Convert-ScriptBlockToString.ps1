@@ -42,7 +42,7 @@ function Convert-ScriptBlockToString {
     }
 
     if ($Transcript) {
-        $scriptHeader = "Start-Transcript -Path '$Transcript' -Force; try { "
+        $scriptHeader = "`$ProgressPreference = 'SilentlyContinue'; Start-Transcript -Path '$Transcript' -Force -ErrorAction SilentlyContinue; try { "
         $scriptFooter = "} catch { Write-Error `$_.Exception  } finally { Stop-Transcript -ErrorAction SilentlyContinue }"
         $script = ($scriptHeader, $script, $scriptFooter) -join "`r`n"
     }
