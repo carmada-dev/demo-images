@@ -28,7 +28,9 @@ function Invoke-AsScheduledTask {
     Write-Host '----------------------------------------------------------------------------------------------------------'
     Write-Host $taskScript
     Write-Host '----------------------------------------------------------------------------------------------------------'
-
+    Write-Host "PowerShell -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $($taskScript | ConvertTo-Base64)"
+    Write-Host '----------------------------------------------------------------------------------------------------------'
+    
     $taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $($taskScript | ConvertTo-Base64)"
     $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
     $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew 

@@ -40,11 +40,11 @@ function Convert-ScriptBlockToString {
         $script = $script -replace "(?m)^\s{$indentationSize}", '' 
     }
 
-    # if ($Transcript) {
-    #     $scriptHeader = "`$ProgressPreference = 'SilentlyContinue'; Start-Transcript -Path '$Transcript' -Force -ErrorAction SilentlyContinue; try { "
-    #     $scriptFooter = "} catch { Write-Error `$_.Exception } finally { Stop-Transcript -ErrorAction SilentlyContinue }"
-    #     $script = ($scriptHeader, $script, $scriptFooter) -join "`r`n"
-    # }
+    if ($Transcript) {
+        $scriptHeader = "`$ProgressPreference = 'SilentlyContinue'; Start-Transcript -Path '$Transcript' -Force -ErrorAction SilentlyContinue; try { "
+        $scriptFooter = "} catch { Write-Error `$_.Exception } finally { Stop-Transcript -ErrorAction SilentlyContinue }"
+        $script = ($scriptHeader, $script, $scriptFooter) -join "`r`n"
+    }
 
     if ($EncodeBase64) {
         $script = $script | Convert-ToBase64
