@@ -28,6 +28,8 @@ function Invoke-AsScheduledTask {
     Write-Host '----------------------------------------------------------------------------------------------------------'
     Write-Host $taskScript
     Write-Host '----------------------------------------------------------------------------------------------------------'
+    Write-Host ($taskScript | ConvertTo-Base64)
+    Write-Host '----------------------------------------------------------------------------------------------------------'
 
     $taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $($taskScript | ConvertTo-Base64)"
     $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
@@ -44,18 +46,25 @@ function Invoke-AsScheduledTask {
 
     } finally {
 
-        Write-Host ">>> Reading transcript of Scheduled Task $taskFullname ($taskTranscript)"
-        $transcriptContent = Get-Content -Path $taskTranscript -Raw -ErrorAction SilentlyContinue
+        if (Test-Path $taskTranscript -PathType Leaf) {
 
-        if ($transcriptContent) {
+            Write-Host ">>> Reading transcript of Scheduled Task $taskFullname ($taskTranscript)"
+            $transcriptContent = Get-Content -Path $taskTranscript -Raw -ErrorAction SilentlyContinue
 
-            Write-Host '----------------------------------------------------------------------------------------------------------'
-            Write-Host $transcriptContent
-            Write-Host '----------------------------------------------------------------------------------------------------------'
+            if ($transcriptContent) {
+
+                Write-Host '----------------------------------------------------------------------------------------------------------'
+                Write-Host $transcriptContent
+                Write-Host '----------------------------------------------------------------------------------------------------------'
+            }
+
+            Write-Host ">>> Cleanup transcript of Scheduled Task $taskFullname ($taskTranscript)"
+            Remove-Item -Path $taskTranscript -Force -ErrorAction SilentlyContinue
+
+        } else {
+
+            Write-Host ">>> No transcript of Scheduled Task $taskFullname ($taskTranscript) available"
         }
-
-        Write-Host ">>> Cleanup transcript of Scheduled Task $taskFullname ($taskTranscript)"
-        Remove-Item -Path $taskTranscript -Force -ErrorAction SilentlyContinue
 
         if ($task) {
 
