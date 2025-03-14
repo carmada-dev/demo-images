@@ -11,6 +11,7 @@ function Convert-ScriptBlockToString {
         [switch] $EncodeBase64
     )    
 
+    
     # Convert the script block to a string
     $script = $ScriptBlock.ToString()
 
@@ -41,9 +42,9 @@ function Convert-ScriptBlockToString {
     }
 
     if ($Transcript) {
-        $taskHeader = "Start-Transcript -Path '$Transcript' -Force"
-        $taskFooter = "Stop-Transcript -ErrorAction SilentlyContinue"
-        $script = ($taskHeader, $script, $taskFooter) -join "`r`n"
+        $scriptHeader = "Start-Transcript -Path '$Transcript' -Force; try { "
+        $scriptFooter = "} finally { Stop-Transcript -ErrorAction SilentlyContinue }"
+        $script = ($scriptHeader, $script, $scriptFooter) -join "`r`n"
     }
 
     if ($EncodeBase64) {
