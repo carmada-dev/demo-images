@@ -37,27 +37,34 @@ function Invoke-AsScheduledTask {
     Write-Host ">>> Registering Scheduled Task $taskFullname"
     $task = Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal		
 
-    Write-Host ">>> Executing Scheduled Task $taskFullname ($Timeout minutes timeout)"
-    $exitCode = $task | Wait-ScheduledTask -Start
+    try {
 
-    if (Test-Path -Path $taskTranscript -PathType Leaf) {
+        Write-Host ">>> Executing Scheduled Task $taskFullname ($Timeout minutes timeout)"
+        $exitCode = $task | Wait-ScheduledTask -Start
 
-        $transcriptContent = Get-Content -Path $taskTranscript -Raw
+    } finally {
 
-        # cleanup transcript content - get only the actual content if possible
-        if ($transcriptContent -match "(?s)^(?:.*?\*{22}.*?\r?\n){2}(.*?)(?:\*{22}.*?\r?\n|$)") { $transcriptContent = $Matches[1] }
-        
-        Write-Host '----------------------------------------------------------------------------------------------------------'
-        Write-Host $transcriptContent
-        Write-Host '----------------------------------------------------------------------------------------------------------'
+        Write-Host ">>> Reading transcript of Scheduled Task $taskFullname ($taskTranscript)"
+        $transcriptContent = Get-Content -Path $taskTranscript -Raw -ErrorAction SilentlyContinue
 
-        Write-Host ">>> Cleanup transcript of Scheduled Task $taskFullname"
+        if ($transcriptContent) {
+
+            # cleanup transcript content - get only the actual content if possible
+            if ($transcriptContent -match "(?s)^(?:.*?\*{22}.*?\r?\n){2}(.*?)(?:\*{22}.*?\r?\n|$)") { $transcriptContent = $Matches[1] }
+            
+            Write-Host '----------------------------------------------------------------------------------------------------------'
+            Write-Host $transcriptContent
+            Write-Host '----------------------------------------------------------------------------------------------------------'
+        }
+
+        Write-Host ">>> Cleanup transcript of Scheduled Task $taskFullname ($taskTranscript)"
         Remove-Item -Path $taskTranscript -Force -ErrorAction SilentlyContinue
-    } 
 
-    if ($task) {
-        Write-Host ">>> Unregister Scheduled Task $taskFullname"
-        $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+        if ($task) {
+
+            Write-Host ">>> Unregister Scheduled Task $taskFullname"
+            $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+        }
     }
 
     return $exitCode
