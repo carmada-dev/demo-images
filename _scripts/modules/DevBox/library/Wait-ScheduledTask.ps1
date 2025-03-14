@@ -16,11 +16,8 @@ function Wait-ScheduledTask {
 
     if ($Start) { 
 
-        ">>> Starting Scheduled Task $taskFullname ($Timeout minutes timeout)"
+        Write-Host ">>> Starting Scheduled Task $taskFullname ($Timeout minutes timeout)"
         $Task | Start-ScheduledTask -ErrorAction Stop | Out-Null
-
-        # wait a bit to ensure the Task is in running state
-        Start-Sleep -Seconds 5 
     }
 
     while ($true) {
