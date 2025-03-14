@@ -44,7 +44,7 @@ function Wait-ScheduledTask {
 
                 $exitCode = $Task | Get-ScheduledTaskInfo | Select-Object -ExpandProperty LastTaskResult
                 Write-Host ">>> Scheduled Task $taskFullname finished with exit code $exitCode"
-                
+
                 break # exit the loop
             }
 

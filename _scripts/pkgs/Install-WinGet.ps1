@@ -93,16 +93,16 @@ if (Test-IsPacker) {
 						Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
 					}
 				
-					Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object {
-						Write-Host ">>> Installing WinGet Package Source: $_"
+					# Get-ChildItem -Path '[WINGETOFFLINE]' -Filter '*.msix' | Select-Object -ExpandProperty FullName -First 1 | ForEach-Object {
+					# 	Write-Host ">>> Installing WinGet Package Source: $_"
 
-						Add-AppxProvisionedPackage `
-							-Online  -SkipLicense `
-							-PackagePath "$_" `
-							-ErrorAction SilentlyContinue | Out-Null
+					# 	Add-AppxProvisionedPackage `
+					# 		-Online  -SkipLicense `
+					# 		-PackagePath "$_" `
+					# 		-ErrorAction SilentlyContinue | Out-Null
 
-						Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
-					}
+					# 	Add-AppxPackage -Path $_ -ForceTargetApplicationShutdown -ErrorAction SilentlyContinue
+					# }
 
 				} catch {
 

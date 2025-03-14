@@ -39,7 +39,7 @@ function Invoke-AsScheduledTask {
 
     try {
 
-        Write-Host ">>> Executing Scheduled Task $taskFullname ($Timeout minutes timeout)"
+        Write-Host ">>> Executing Scheduled Task $taskFullname"
         $exitCode = $task | Wait-ScheduledTask -Start
 
     } catch {
