@@ -38,8 +38,7 @@ function Invoke-AsScheduledTask {
     $task = Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal		
 
     Write-Host ">>> Executing Scheduled Task $taskFullname ($Timeout minutes timeout)"
-    $task | Start-ScheduledTask -ErrorAction Stop | Out-Null
-    $task | Wait-ScheduledTask
+    $exitCode = $task | Wait-ScheduledTask -Start
 
     if (Test-Path -Path $taskTranscript -PathType Leaf) {
 
@@ -61,7 +60,6 @@ function Invoke-AsScheduledTask {
         $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
     }
 
-    Write-Host ">>> Returning Scheduled Task $taskFullname exit code $exitCode"
     return $exitCode
 }
 

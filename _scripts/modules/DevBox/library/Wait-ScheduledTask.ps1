@@ -4,12 +4,21 @@ function Wait-ScheduledTask {
         [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [CimInstance] $Task,
         [Parameter(Mandatory=$false)]
-        [timespan] $Timeout = (New-TimeSpan -Minutes 5)
+        [timespan] $Timeout = (New-TimeSpan -Minutes 5),
+        [Parameter(Mandatory=$false)]
+        [switch] $Start = $false
     )
 
     $taskFullname = "$($Task.Path)$($Task.TaskName)"
     $timeoutEnd = (Get-Date).Add($Timeout)
     $running = $false
+    $exitCode = 0
+
+    if ($Start) { 
+
+        ">>> Starting Scheduled Task $taskFullname ($Timeout minutes timeout)"
+        $Task | Start-ScheduledTask -ErrorAction Stop | Out-Null
+    }
 
     while ($true) {
     
@@ -42,7 +51,7 @@ function Wait-ScheduledTask {
             }
 
             Write-Host ">>> Waiting for Scheduled Task $taskFullname to finish ..."
-            Start-Sleep -Seconds 5 # give the Task some time to finish
+            Start-Sleep -Seconds 1 # give the Task some time to finish
 
         } else {
 
@@ -56,6 +65,7 @@ function Wait-ScheduledTask {
         }
     }
 
+    return $exitCode
 }
 
 Export-ModuleMember -Function Wait-ScheduledTask
