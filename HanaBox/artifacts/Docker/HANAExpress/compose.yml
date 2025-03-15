@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
       
   hana:
-    image: store/saplabs/hanaexpress:latest
+    image: saplabs/hanaexpress
     restart: on-failure
     ports:
       - 39013:39013
