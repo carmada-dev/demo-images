@@ -28,8 +28,6 @@ function Invoke-AsScheduledTask {
     Write-Host '----------------------------------------------------------------------------------------------------------'
     Write-Host $taskScript
     Write-Host '----------------------------------------------------------------------------------------------------------'
-    Write-Host "PowerShell -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $($taskScript | ConvertTo-Base64)"
-    Write-Host '----------------------------------------------------------------------------------------------------------'
     
     $taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $($taskScript | ConvertTo-Base64)"
     $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
@@ -57,6 +55,9 @@ function Invoke-AsScheduledTask {
             $transcriptContent = Get-Content -Path $taskTranscript -Raw -ErrorAction SilentlyContinue
 
             if ($transcriptContent) {
+
+                # cleanup transcript content - get only the actual content if possible
+                if ($transcriptContent -match "(?s)^(?:.*?\*{22}.*?\r?\n){2}(.*?)(?:\*{22}.*?\r?\n|$)") { $transcriptContent = $Matches[1] }
 
                 Write-Host '----------------------------------------------------------------------------------------------------------'
                 Write-Host $transcriptContent
