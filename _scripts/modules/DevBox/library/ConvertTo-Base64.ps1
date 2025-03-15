@@ -5,7 +5,7 @@ function ConvertTo-Base64 {
         [string] $Value
     )
 
-    $buffer = [System.Text.Encoding]::Default.GetBytes($Value)
+    $buffer = [System.Text.Encoding]::Unicode.GetBytes($Value)
 
     return [Convert]::ToBase64String($buffer)
 }
