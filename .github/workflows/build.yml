@@ -64,10 +64,10 @@ jobs:
 
       - name: Resolve Image Information
         id: image
-        run: |
-          echo "imageName=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
-          echo "imageChanged=$(git diff --name-only HEAD^ HEAD | grep -q '^${{ matrix.image }}/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
-          echo "imageMatch=$((git log -1 --pretty=%B | grep -qi "#ALL#" || git log -1 --pretty=%B | grep -qi "#$(basename "${{ matrix.image }}")#") && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+        run: |        
+          echo "imageName=$(basename '${{ matrix.image }}')" >> $GITHUB_OUTPUT
+          echo "imageChanged=$(git diff --name-only HEAD^ HEAD | grep -q "^$(basename '${{ matrix.image }}')/" && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "imageMatch=$((git log -1 --pretty=%B | grep -qi "#ALL#" || git log -1 --pretty=%B | grep -qi "#$(basename '${{ matrix.image }}')#") && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
       - name: Trigger Image Build

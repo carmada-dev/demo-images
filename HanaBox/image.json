@@ -4,7 +4,7 @@
 	"offer": "CarmadaDev",
 	"sku": "win11-hana-devbox",
 	"regions": [ "West Europe" ],
-	"updates": "all",
+	"updates": "all", 
 
 	"base": {
 		"publisher": "MicrosoftVisualStudio",
