@@ -3,19 +3,7 @@ Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-O
 	Import-Module -Name $_
 } 
 
-$vswhere = Get-Command 'vswhere.exe' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty path
-
-if (-not $vswhere) {
-	Write-Warning "!!! Missing VSWhere to identify installed Visual Studio versions - please install"
-	exit 1
-} 
-
-$instances = [array](Invoke-CommandLine -Command $vswhere -Arguments '-all -prerelease -utf8 -format json' -Silent | Select-Object -ExpandProperty Output | ConvertFrom-Json)
-
-if (-not $instances) {
-	Write-Host ">>> Not applicable: no Visual Studio instances found"
-	exit 0
-} elseif (Test-IsPacker) {
+if (Test-IsPacker) {
 	Write-Host ">>> Register ActiveSetup"
 	Register-ActiveSetup  -Path $MyInvocation.MyCommand.Path -Name 'Configure-VSWhere.ps1'
 } else { 
@@ -28,19 +16,25 @@ $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
 # ==============================================================================
 
-Invoke-ScriptSection -Title "Configure Visual Studio" -ScriptBlock {
+$vswhere = Get-Command 'vswhere.exe' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty path
+if (-not $vswhere) { throw 'Could not find vswhere.exe' }
 
-	$instances = [array](Invoke-CommandLine -Command $vswhereExe -Arguments '-all -prerelease -utf8 -format json' | Select-Object -ExpandProperty Output | ConvertFrom-Json)
-	$instances | ForEach-Object { 
+$instances = [array](Invoke-CommandLine -Command $vswhere -Arguments '-all -prerelease -utf8 -format json' | Select-Object -ExpandProperty Output | ConvertFrom-Json)
+$instances | ForEach-Object { 
 
-		$edition = "$($_.displayName) $(if ($_.isPrerelease) {'PRE'} else {''})".Trim()
+	$edition = "$($_.displayName) $(if ($_.isPrerelease) {'Preview'} else {''})".Trim()
+
+	Invoke-ScriptSection -Title "Configure $edition" -ScriptBlock {
+
 		$vsixInstaller = Join-Path -Path ($_.enginePath) -ChildPath 'VSIXInstaller.exe'
-		$vsixArtifacts = Join-Path -Path $env:DEVBOX_HOME -ChildPath "Artifacts/$edition"
-		
-		Get-ChildItem -Path $vsixArtifacts -Filter '*.visx' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object {
-			Write-Host ">>> Installing extension for $($edition): $_"
-			Invoke-CommandLine -Command $vsixInstaller -Argument "$(if (Test-IsPacker) { '/a' }) /q `"$_`"".Trim() | Select-Object -ExpandProperty Output
-		}
+		if (-not (Test-Path -Path $vsixInstaller -PathType Leaf)) { throw "Could not find VSIXInstaller.exe in folder $($_.enginePath)" }
 
+		$vsixArtifacts = New-Item -Path (Join-Path -Path $env:DEVBOX_HOME -ChildPath "Artifacts/$edition") -ItemType Directory -Force | Select-Object -ExpandProperty FullName
+		Write-Host ">>> Installing VSIX extensions from folder $vsixArtifacts ..."
+
+		Get-ChildItem -Path $vsixArtifacts -Filter '*.visx' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName | ForEach-Object {
+			Write-Host "- Installing extension: $_"
+			Invoke-CommandLine -Command $vsixInstaller -Argument "$(if (Test-IsPacker) { '/a' }) /q `"$_`"".Trim() | Select-Object -ExpandProperty Output | Write-Host
+		}
 	}
 }	
