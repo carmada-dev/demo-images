@@ -20,13 +20,6 @@ jobs:
 
       - name: Download Source
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: List Changed Files
-        id: list-changed-files
-        run: |
-          echo "$(git diff --name-only HEAD^ HEAD)"
           
       - name: Generate Image Matrix
         id: set-imageMatrix
@@ -64,11 +57,16 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: List Changed Files
+        id: list-changed-files
+        run: |
+          echo "$(git diff --name-only HEAD^ HEAD)"
+
       - name: Resolve Image Information
         id: image
         run: |
           echo "imageName=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
-          echo "imageChanged=$(git diff --name-only HEAD^ HEAD | grep -q "^$(echo '${{ matrix.image }}/')" && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "imageChanged=$(git diff --name-only HEAD^ HEAD | grep -q '^${{ matrix.image }}/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           echo "imageMatch=$((git log -1 --pretty=%B | grep -qi "#ALL#" || git log -1 --pretty=%B | grep -qi "#$(basename "${{ matrix.image }}")#") && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
