@@ -61,18 +61,8 @@ jobs:
         id: image
         run: |
           echo "imageName=$(basename "${{ matrix.image }}")" >> $GITHUB_OUTPUT
-          if git diff --name-only HEAD^ HEAD | grep -q "^/$(echo '${{ matrix.image }}' | sed 's|^\.*||')"; then
-            echo "imageChanged=true" >> $GITHUB_OUTPUT
-          else
-            echo "imageChanged=false" >> $GITHUB_OUTPUT
-          fi
-          if git log -1 --pretty=%B | grep -qi "#ALL#"; then
-            echo "imageMatch=true" >> $GITHUB_OUTPUT
-          elif git log -1 --pretty=%B | grep -qi "#$(basename "${{ matrix.image }}")#"; then
-            echo "imageMatch=true" >> $GITHUB_OUTPUT
-          else
-            echo "imageMatch=false" >> $GITHUB_OUTPUT
-          fi
+          echo "imageChanged=$(git diff --name-only HEAD^ HEAD | grep -q "^$(echo '${{ matrix.image }}/')" && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "imageMatch=$((git log -1 --pretty=%B | grep -qi "#ALL#" || git log -1 --pretty=%B | grep -qi "#$(basename "${{ matrix.image }}")#") && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
       - name: Trigger Image Build
