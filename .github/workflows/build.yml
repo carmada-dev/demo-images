@@ -20,7 +20,14 @@ jobs:
 
       - name: Download Source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
+      - name: List Changed Files
+        id: list-changed-files
+        run: |
+          echo "$(git diff --name-only HEAD^ HEAD)"
+          
       - name: Generate Image Matrix
         id: set-imageMatrix
         run: |
