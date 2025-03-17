@@ -25,8 +25,10 @@ function Get-ShortcutTargetPath() {
 $downloadKeyVaultArtifact = {
 	param([string] $Source, [string] $Destination, [string] $TokenEndpoint)
 
-	Write-Host ">>> Acquire KeyVault Access Token"
+	Write-Host ">>> Connecting to Azure"
 	Connect-AzAccount -Identity -ErrorAction SilentlyContinue -WarningAction SilentlyContinue | Out-Null
+
+	Write-Host ">>> Acquire KeyVault Access Token"
 	$KeyVaultToken = Get-AzAccessToken -ResourceUrl $TokenEndpoint -ErrorAction Stop -WarningAction SilentlyContinue
 
 	Write-Host ">>> Downloading KeyVault Artifact $Source"
@@ -51,21 +53,16 @@ $downloadStorageArtifact = {
 	} 
 
 	$azcopy = Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Tools') -Recurse -Filter 'azcopy.exe' | Select-Object -ExpandProperty FullName -First 1
-	if (-not($azcopy)) { 
+	if (-not $azcopy) { throw "AzCopy not found" } 
 
-		Throw "AzCopy not found" 
+	Write-Host ">>> Downloading Storage Artifact $Source" 
+	Invoke-CommandLine -Command $azcopy -Arguments "copy `"$Source`" `"$Destination`" --output-level=quiet" | Select-Object -ExpandProperty Output | Write-Host
 
+	if (Test-Path -Path $Destination -PathType Leaf) { 
+		Write-Host ">>> Resolved Artifact $Destination" 
 	} else {
-
-		Write-Host ">>> Downloading Storage Artifact $Source" 
-		Invoke-CommandLine -Command $azcopy -Arguments "copy `"$Source`" `"$Destination`" --output-level=quiet" | Select-Object -ExpandProperty Output | Write-Host
-	
-		if (Test-Path -Path $Destination -PathType Leaf) { 
-			Write-Host ">>> Resolved Artifact $Destination" 
-		} else {
-			Write-Error "!!! Missing Artifact $Destination"
-		}	
-	}
+		Write-Error "!!! Missing Artifact $Destination"
+	}	
 }
 
 $downloadArtifact = {

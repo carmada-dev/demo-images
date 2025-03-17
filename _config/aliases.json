@@ -184,28 +184,6 @@
 		]
 	},
 
-	"dockerDesktopWSL4WindowsContainer": {
-		"name": "Docker.DockerDesktop",
-		"scope": "machine",
-		"override": [
-			"install",
-			"--quiet",
-			"--accept-license"
-		],
-		"features": [
-			"Microsoft-Windows-Subsystem-Linux",
-			"VirtualMachinePlatform"
-		],
-		"prepare": [
-			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
-		],
-		"configure": [
-			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1",
-			"[IMAGEROOT]/../_scripts/Configure-WindowsContainer.ps1",
-			"[IMAGEROOT]/../_scripts/Configure-DockerCompose.ps1"
-		]
-	},
-
 	"dockerDesktopHyperV": {
 		"name": "Docker.DockerDesktop",
 		"scope": "machine",
@@ -224,6 +202,29 @@
 		],
 		"configure": [
 			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1",
+			"[IMAGEROOT]/../_scripts/Configure-DockerCompose.ps1"
+		]
+	},
+
+	"dockerDesktopWindowsContainer": {
+		"name": "Docker.DockerDesktop",
+		"scope": "machine",
+		"override": [
+			"install",
+			"--quiet",
+			"--accept-license",
+			"--backend=hyper-v"
+		],
+		"features": [
+			"Microsoft-Hyper-V-All",
+			"Containers"
+		],
+		"prepare": [
+			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
+		],
+		"configure": [
+			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1",
+			"[IMAGEROOT]/../_scripts/Configure-WindowsContainer.ps1",
 			"[IMAGEROOT]/../_scripts/Configure-DockerCompose.ps1"
 		]
 	},

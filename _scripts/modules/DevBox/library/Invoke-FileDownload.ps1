@@ -23,14 +23,14 @@ function Invoke-FileDownload {
 
                 $response = Invoke-WebRequest -Uri $url -UseBasicParsing -Method Head -ErrorAction Stop
 
-                if ($response.StatusCode -eq 308) {
+                if ($response.StatusCode -eq 308 -or $response.StatusCode -eq 301 -or $response.StatusCode -eq 302) {
                     Write-Host ">>> Redirecting to $Url to $($response.Headers.Location)"
                     $Url = $response.Headers.Location
                 } 
 
                 Write-Host ">>> Downloading $Url > $path $(&{ if ($retryCount -gt 0) { " (Retry: $retryCount of $Retries)" } else { '' } })".Trim() 
                 Invoke-WebRequest -Uri $Url -OutFile $path -UseBasicParsing; break
-                
+
             }
             catch {
                 $retryCount = $retryCount + 1
