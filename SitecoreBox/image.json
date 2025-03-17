@@ -2,7 +2,7 @@
 	"$schema": "../_schemas/image.schema.json",
 	"publisher": "CarmadaRnD",
 	"offer": "CarmadaDev",
-	"sku": "win11-sitecore-1003C-devbox",
+	"sku": "win11-sitecore-devbox",
 	"regions": [ "West Europe" ],
 	"updates": "all",
 
