@@ -16,13 +16,6 @@ $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
 # ==============================================================================
 
-Invoke-ScriptSection -Title "Starting Docker Desktop" -ScriptBlock {
-
-    $started = Start-Docker -Tool 'DockerDesktop' -Container 'Windows'
-	if (-not $started) { throw "Failed to start Docker Desktop with Windows Container support" }
-
-}
-
 if (Test-IsPacker) {
 
 	Invoke-ScriptSection -Title "Prepare Sitecore Container" -ScriptBlock {

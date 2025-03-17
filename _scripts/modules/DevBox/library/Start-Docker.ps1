@@ -56,7 +56,7 @@ function Start-Docker() {
     )
 
     $docker = Get-Command 'docker' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
-    if (-not $docker) { throw "Could not find docker CLI" }
+    if (-not $docker) { throw "Could not find docker" }
 
     $result = Invoke-CommandLine -Command $docker -Arguments 'info' -Silent -ErrorAction SilentlyContinue
     $started = ($result.ExitCode -eq 0)
