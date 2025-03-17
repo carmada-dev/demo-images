@@ -59,14 +59,6 @@ Invoke-ScriptSection -Title "Configure Docker Desktop" -ScriptBlock {
             $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'DisplayedOnboarding' -Value $true
         }
 
-        if ($dockerDesktopSettingsJson | Get-Member -Name 'UseWindowsContainers' -ErrorAction SilentlyContinue) {
-            Write-Host "- Updating UseWindowsContainers property (false) in Docker Desktop settings file"
-            $dockerDesktopSettingsJson.DisplayedOnboarding = $false
-        } else {
-            Write-Host "- Adding UseWindowsContainers property (false) to Docker Desktop settings file"
-            $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'UseWindowsContainers' -Value $false
-        }
-
         Write-Host ">>> Updating Docker Desktop settings file: $dockerDesktopSettings"
         $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings -PassThru | Write-Host    
 
