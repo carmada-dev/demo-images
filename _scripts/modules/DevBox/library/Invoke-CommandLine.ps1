@@ -46,12 +46,12 @@ function Invoke-CommandLine {
         $processInfo.Arguments = "-accepteula -nobanner -s $Command $Arguments"
 
         if (-not $Silent) {
-            Write-Host "| EXEC $WorkingDirectory> $psexec -accepteula -nobanner -s $Command $($Arguments | ConvertTo-MaskedString -Mask $Mask)"
+            Write-Host "| EXEC $WorkingDirectory> $psexec -accepteula -nobanner -s $Command $("$Arguments" | ConvertTo-MaskedString -Mask $Mask)"
         }
 
     } elseif (-not $Silent) {
 
-        Write-Host "| EXEC $WorkingDirectory> $Command $($Arguments | ConvertTo-MaskedString -Mask $Mask)"
+        Write-Host "| EXEC $WorkingDirectory> $Command $("$Arguments" | ConvertTo-MaskedString -Mask $Mask)"
     }
 
     Using-Object ($process = New-Object System.Diagnostics.Process) {        
