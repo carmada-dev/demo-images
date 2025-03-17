@@ -48,34 +48,75 @@ function Start-Docker() {
     param (
         [Parameter(Mandatory=$false)]
         [ValidateSet('DockerDesktop', 'Podman')]
-        [string] $Tool
+        [string] $Tool,
+
+        [Parameter(Mandatory=$false)]
+        [ValidateSet('Linux', 'Windows')]
+        [string] $Container = 'Linux'
     )
 
     $docker = Get-Command 'docker' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
-
-    if (-not $docker) { 
-        # docker CLI not found - assuming docker is not installed
-        throw "Could not find docker CLI" 
-    }
+    if (-not $docker) { throw "Could not find docker CLI" }
 
     $result = Invoke-CommandLine -Command $docker -Arguments 'info' -Silent -ErrorAction SilentlyContinue
+    $started = ($result.ExitCode -eq 0)
 
-    if ($result.ExitCode -eq 0) { 
+    if  ($started) {
+
         Write-Host ">>> Docker is already running"
-        return $true 
+
+    } else {
+
+        switch ($Tool) {
+            'DockerDesktop' { 
+                $started = Start-DockerDesktop 
+            }
+            'Podman' { 
+                $started = Start-Podman 
+            }
+            default { 
+                $started = (Start-Docker -Tool DockerDesktop -Container $Container) -or (Start-Docker -Tool Podman -Container $Container)
+            }
+        }
     }
 
-    switch ($Tool) {
-        'DockerDesktop' { 
-            return Start-DockerDesktop 
+    if ($started -and $Container) {
+
+        if ($Tool -eq 'DockerDesktop') {
+
+            $dockerDesktopUseWindowsContainers = $false 
+
+            $dockerDesktopSettings = Get-ChildItem -Path (Join-Path $env:APPDATA 'Docker') -Include 'settings-store.json' -Include 'settings.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+            if (-not $dockerDesktopSettings) { throw "Could not find Docker Desktop settings file" }
+        
+            Write-Host ">>> Loading Docker Desktop settings file: $dockerDesktopSettings"
+            $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw | ConvertFrom-Json
+
+            try {
+                $dockerDesktopUseWindowsContainers = [bool] ($dockerDesktopSettingsJson.UseWindowsContainers)
+            } catch {
+                $dockerDesktopUseWindowsContainers = $false
+            } 
+
+            if ((-not $dockerDesktopUseWindowsContainers -and $Container -eq 'Windows') -or ($dockerDesktopUseWindowsContainers -and $Container -eq 'Linux')) {
+
+                $dockerKey = Get-ChildItem 'HKLM:\SOFTWARE\Docker Inc.\Docker' -ErrorAction SilentlyContinue | Select-Object -Last 1
+                $dockerCli = Join-Path ($dockerKey | Get-ItemPropertyValue -Name AppPath -ErrorAction SilentlyContinue) 'dockercli.exe' -ErrorAction SilentlyContinue
+
+                if (-not $dockerCli) { throw "Could not find docker CLI" }
+
+                Write-Host ">>> Changing Docker Desktop to use $Container containers"
+                Invoke-CommandLine -Command $dockerCli -Arguments '-SwitchDaemon' | select-Object -ExpandProperty Output | Write-Host
+            }
+
+        } elseif ($Container -ne 'Linux') {
+
+            throw "$Tool does not support container types other than Linux"
         }
-        'Podman' { 
-            return Start-Podman 
-        }
-        default { 
-            return Start-DockerDesktop -or Start-Podman
-        }
+        
     }
+
+    return $started
 }
 
 Export-ModuleMember -Function Start-Docker

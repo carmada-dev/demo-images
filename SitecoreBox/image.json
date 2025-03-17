@@ -2,7 +2,7 @@
 	"$schema": "../_schemas/image.schema.json",
 	"publisher": "CarmadaRnD",
 	"offer": "CarmadaDev",
-	"sku": "win11-sitecore-1003H-devbox",
+	"sku": "win11-sitecore-1003C-devbox",
 	"regions": [ "West Europe" ],
 	"updates": "all",
 
@@ -44,25 +44,17 @@
 	],
 
 	"prepare": [
-
+		"[IMAGEROOT]/../_scripts/Prepare-Sitecore.ps1"
 	],
 
 	"packages": [
 		{
-			"name": "dockerDesktopHyperV",
+			"name": "dockerDesktopWSL",
 			"source": "alias"
-		},
-		{
-			"name": "RedHat.Podman",
-			"scope": "machine"			
-		},
-		{
-			"name": "RedHat.Podman-Desktop",
-			"scope": "machine"
 		}
 	],
 
 	"configure": [
-		"[IMAGEROOT]/../_scripts/Install-SitecoreXP0-1003H.ps1"
+		
 	]
 }
