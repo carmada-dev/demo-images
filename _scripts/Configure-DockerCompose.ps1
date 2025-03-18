@@ -28,7 +28,7 @@ if (-not (Test-IsPacker)) {
             # ensure docker artifacts directory exists
             $dockerArtifacts = (New-Item -Path (Join-Path $env:DEVBOX_HOME 'Artifacts\Docker') -ItemType Directory -Force).FullName
 
-            $jobs = Get-ChildItem -Path $dockerArtifacts -Include "docker-compose.yml", "docker-compose.yaml" -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
+            $jobs = Get-ChildItem -Path "$dockerArtifacts\*" -Include "docker-compose.yml", "docker-compose.yaml" -File | Select-Object -ExpandProperty FullName | ForEach-Object {
                 
                 Invoke-Command -AsJob -ScriptBlock {
 

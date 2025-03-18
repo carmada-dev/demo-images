@@ -36,7 +36,7 @@ Invoke-ScriptSection -Title "Starting Docker Desktop" -ScriptBlock {
 
 Invoke-ScriptSection -Title "Configure Docker Desktop" -ScriptBlock {
 
-    $dockerDesktopSettings = Get-ChildItem -Path (Join-Path $env:APPDATA 'Docker') -Include 'settings-store.json', 'settings.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+    $dockerDesktopSettings = Get-ChildItem -Path (Join-Path $env:APPDATA 'Docker\*') -Include 'settings-store.json', 'settings.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
     if (-not $dockerDesktopSettings) { throw "Could not find Docker Desktop settings file" }
 
     Write-Host ">>> Loading Docker Desktop settings file: $dockerDesktopSettings"
