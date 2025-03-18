@@ -28,32 +28,35 @@ if (-not (Test-IsPacker)) {
             # ensure docker artifacts directory exists
             $dockerArtifacts = (New-Item -Path (Join-Path $env:DEVBOX_HOME 'Artifacts\Docker') -ItemType Directory -Force).FullName
 
-            $jobs = Get-ChildItem -Path "$dockerArtifacts\*" -Include "docker-compose.yml", "docker-compose.yaml" -File | Select-Object -ExpandProperty FullName | ForEach-Object {
+            $jobs = Get-ChildItem -Path $dockerArtifacts -Include "docker-compose.yml", "docker-compose.yaml" -File -Recurse -Depth 1 | Select-Object -ExpandProperty FullName | ForEach-Object { 
                 
                 Invoke-Command -AsJob -ScriptBlock {
 
                     param($dockerCompose, $composeFile)
 
-                    $composeDirectory = Split-Path $composeFile -Parent
-                    $composeEnvironment = @{ "ROOT" = "/$($composeDirectory.Replace('\', '/').Replace(':', ''))" }
-    
-                    $envFile = Join-Path $composeDirectory '.env'
-                    $envVars = "$(Get-Content -Path $envFile -Raw -ErrorAction SilentlyContinue)"
-    
-                    $envVars = (($envVars -split "`r?`n" | Where-Object { 
-                        if ([string]::IsNullOrWhiteSpace($_)) { return $false }
-                        $key = "$(($_ -split '=') | Select-Object -First 1 -ErrorAction SilentlyContinue)".Trim()
-                        return (-not $composeEnvironment.ContainsKey($key))
-                    }) + ($composeEnvironment.Keys | ForEach-Object { "$_=$($composeEnvironment[$_])" })) | Out-String
-                    
-                    Write-Host ">>> Writing environment variables to .env file: $envFile"
-                    $envVars | Set-Utf8Content -Path $envFile -ErrorAction SilentlyContinue
-    
-                    Write-Host ">>> Starting Docker Compose at $(Split-Path $_ -Parent) ..."
-                    Invoke-CommandLine -Command $dockerCompose -Arguments "up --wait" -WorkingDirectory $composeDirectory | select-Object -ExpandProperty Output | Write-Host
+                    Push-Location -Path (Split-Path $composeFile -Parent) -ErrorAction SilentlyContinue
 
-                } -ArgumentList $dockerCompose, $_ -ErrorAction SilentlyContinue
-                
+                    try{
+
+                        $composeScript = [Path]::ChangeExtension($composeFile, '.ps1')
+                        
+                        if (Test-Path -Path $composeScript -PathType Leaf) {
+                        
+                            Write-Host ">>> Running Docker Compose script: $composeScript"
+                            Invoke-CommandLine -Command 'powershell' -Arguments "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -File `"$composeScript`"" -WorkingDirectory (Split-Path $composeFile -Parent) | select-Object -ExpandProperty Output | Write-Host
+                        
+                        } else {
+
+                            Write-Host ">>> Starting Docker Compose at $(Split-Path $composeFile -Parent) ..."
+                            Invoke-CommandLine -Command $dockerCompose -Arguments "up --detach --yes" -Capture 'StdErr'  -WorkingDirectory (Split-Path $composeFile -Parent) | select-Object -ExpandProperty Output | Write-Host
+                        }
+                    }
+                    finally {
+                    
+                        Pop-Location -ErrorAction SilentlyContinue
+                    }
+
+                } -ArgumentList $dockerCompose, $_ -ErrorAction SilentlyContinue 
             }
 
             Write-Host ">>> Waiting for Docker Compose jobs to finish ..."

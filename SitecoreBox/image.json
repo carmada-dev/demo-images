@@ -44,7 +44,7 @@
 	],
 
 	"prepare": [
-		"[IMAGEROOT]/../_scripts/Prepare-Sitecore.ps1"
+
 	],
 
 	"packages": [
