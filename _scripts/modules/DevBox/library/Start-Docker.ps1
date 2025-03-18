@@ -90,7 +90,7 @@ function Start-Docker() {
             if (-not $dockerDesktopSettings) { throw "Could not find Docker Desktop settings file" }
         
             Write-Host ">>> Loading Docker Desktop settings file: $dockerDesktopSettings"
-            $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw | ConvertFrom-Json
+            $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json -ErrorAction SilentlyContinue
 
             try {
                 $dockerDesktopUseWindowsContainers = [bool] ($dockerDesktopSettingsJson.UseWindowsContainers)
