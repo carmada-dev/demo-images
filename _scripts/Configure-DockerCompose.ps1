@@ -28,7 +28,7 @@ if (-not (Test-IsPacker)) {
             # ensure docker artifacts directory exists
             $dockerArtifacts = (New-Item -Path (Join-Path $env:DEVBOX_HOME 'Artifacts\Docker') -ItemType Directory -Force).FullName
 
-            $dockerJobs = Get-ChildItem -Path $dockerArtifacts -Include "docker-compose.yml", "docker-compose.yaml" -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
+            $jobs = Get-ChildItem -Path $dockerArtifacts -Include "docker-compose.yml", "docker-compose.yaml" -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object {
                 
                 Invoke-Command -AsJob -ScriptBlock {
 
@@ -57,7 +57,7 @@ if (-not (Test-IsPacker)) {
             }
 
             Write-Host ">>> Waiting for Docker Compose jobs to finish ..."
-            $dockerJobs | Wait-Job -ErrorAction SilentlyContinue | Out-Null
+            $jobs | Receive-Job -Wait -AutoRemoveJob
         }
     }
 }
