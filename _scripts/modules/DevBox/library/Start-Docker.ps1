@@ -1,3 +1,59 @@
+function Set-DockerDesktopSetting() {
+    
+    param (
+        [Parameter(Mandatory=$true)]
+        [string] $Key,
+    
+        [Parameter(Mandatory=$true)]
+        [bool] $Value
+    )
+
+    $dockerDesktopSettings = Get-ChildItem -Path (Join-Path $env:APPDATA 'Docker\*') -Include 'settings-store.json', 'settings.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+    $dockerDesktopSettingsChanged = $false
+
+    if ($dockerDesktopSettings -and (Test-Path -Path $dockerDesktopSettings -PathType Leaf)) {
+
+        $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw | ConvertFrom-Json
+        $dockerDesktopSettingsMember = $dockerDesktopSettingsJson | Get-Member -Name $Key -ErrorAction SilentlyContinue
+        $dockerDesktopSettingsChanged = (-not $dockerDesktopSettingsMember) -or (($dockerDesktopSettingsJson | Select-Object -ExpandProperty $Key) -ne $Value)
+
+        if ($dockerDesktopSettingsChanged) { 
+            $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name $Key -Value $Value -Force
+            $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings 
+        }
+    }
+
+    return $dockerDesktopSettingsChanged
+}
+
+function Wait-DockerInfo() {
+
+    param (
+        [Parameter(Mandatory=$false)]
+        [timespan] $Timeout = (New-TimeSpan -Minutes 5)
+    )
+
+    Write-Host ">>> Waiting for Docker CLI to be functional ..."
+    $timeoutEnd = (Get-Date).Add($Timeout)
+
+    while ($true) {
+
+        $docker = Get-Command 'docker' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
+        $result = Invoke-CommandLine -Command $docker -Arguments 'info' -Silent -ErrorAction SilentlyContinue 
+
+        if ($result.ExitCode -eq 0) { 
+            Write-Host ">>> Docker CLI is now functional"
+            break 
+        } elseif ((Get-Date) -le $timeoutEnd) { 
+            Write-Host ">>> Waiting for Docker CLI to be functional ..."
+            Start-Sleep -Seconds 5
+        } else { 
+            # we reach our timeout - blow it up
+            throw "Docker CLI did not become functional within $Timeout"                
+        }
+    } 
+}
+
 function  Start-DockerDesktop() {
     
     $dockerKey = Get-ChildItem 'HKLM:\SOFTWARE\Docker Inc.\Docker' -ErrorAction SilentlyContinue | Select-Object -Last 1
@@ -7,26 +63,23 @@ function  Start-DockerDesktop() {
 
         Write-Host ">>> Starting Docker Desktop ..."
         Invoke-CommandLine -Command $dockerDesktop -NoWait
-        
-        $timeout = (get-date).AddMinutes(5)
-        Start-Sleep -Seconds 10 # give it a moment to start
+        Wait-DockerInfo
 
-        while ($true) {
+        $dockerDesktopSettingsChanged = $false
+        $dockerDesktopSettingsChanged = (Set-DockerDesktopSetting -Key 'AutoStart' -Value $true) -or $dockerDesktopSettingsChanged
+        $dockerDesktopSettingsChanged = (Set-DockerDesktopSetting -Key 'DisplayedOnboarding' -Value $false) -or $dockerDesktopSettingsChanged
 
-            $docker = Get-Command 'docker' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
-            $result = Invoke-CommandLine -Command $docker -Arguments 'info' -Silent -ErrorAction SilentlyContinue 
+        if ($dockerDesktopSettingsChanged) { 
 
-            if ($result.ExitCode -eq 0) { 
-                Write-Host ">>> Docker Desktop is running"
-                break 
-            } elseif ((Get-Date) -le $timeout) { 
-                Write-Host ">>> Waiting for Docker Desktop to start"
-                Start-Sleep -Seconds 5
-            } else { 
-                # we reach our timeout - blow it up
-                throw "Docker Desktop failed to start"                
-            }
-        } 
+            Write-Host ">>> Stopping Docker Desktop ..."
+            Get-Process *docker* | Where-Object { $_.SessionId -gt 0 } | Stop-Process -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 5
+            
+            Write-Host ">>> Starting Docker Desktop ..."
+            Invoke-CommandLine -Command $dockerDesktop -NoWait
+            Wait-DockerInfo
+
+        }
 
         return $true
 
@@ -39,7 +92,7 @@ function  Start-DockerDesktop() {
 
 function Start-Podman() {
 
-    Write-Host ">>> Starting Podman ..."
+    Write-Host ">>> Starting Podman is not supported yet ..."
     return $false
 }
 
