@@ -54,10 +54,10 @@ function Register-ActiveSetup {
     } 
 
     # delete any existing task with the same name
-    Get-ScheduledTask -TaskName $activeSetupId -TaskPath '\' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -Force | Out-Null
+    Get-ScheduledTask -TaskName $activeSetupId -TaskPath '\' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
 
     # register our newly defined task
-    Register-ScheduledTask -Force -TaskName $activeSetupId -TaskPath '\' -Action $taskAction -Settings $taskSettings -Principal $taskPrincipal | Out-Null
+    Register-ScheduledTask -Force -TaskName $activeSetupId -TaskPath '\' -Action $taskAction -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
 
     # grant authenticated users permissions to run the task
     Grant-AuthenticatedUsersPermissions -TaskName $activeSetupId -TaskPath '\'
@@ -66,7 +66,7 @@ function Register-ActiveSetup {
 
         $task = Get-ScheduledTask -TaskName '[ActiveSetupId]' -TaskPath '\' -ErrorAction SilentlyContinue
         if ($task) { $task | Wait-ScheduledTask -Start }
-        $task | Unregister-ScheduledTask -Confirm:$false -Force | Out-Null
+        $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
 
     } | Convert-ScriptBlockToString -ScriptTokens @{ 'ActiveSetupId' = $activeSetupId } -Transcript (Join-Path $env:TEMP "$activeSetupId.log") -EncodeBase64
 
