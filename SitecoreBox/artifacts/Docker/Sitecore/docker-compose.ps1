@@ -25,11 +25,13 @@ if (-not (Test-Path -Path $sitecoreLicenseXml -PathType Leaf)) {
 }
 
 if (-not (Test-Path -Path $sitecoreLicenseXml -PathType Leaf)) { throw "Sitecore license file not found: $sitecoreLicenseXml" }
-
 if (-not (Test-Path -Path $sitecoreInitScript -PathType Leaf)) { throw "Sitecore init script not found: $sitecoreInitScript" }
 
 Write-Host ">>> Prepare Sitecore deployment ..."
-Invoke-CommandLine -Command 'powershell' -Arguments "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -File `"$sitecoreInitScript`" -LicenseXmlPath `"$sitecoreLicenseXml`"" | select-Object -ExpandProperty Output | Write-Host
+$result = Invoke-CommandLine -Command 'powershell' -Arguments "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -File `"$sitecoreInitScript`" -LicenseXmlPath `"$sitecoreLicenseXml`"" 
+
+if ($result.ExitCode -ne 0) { throw "Failed to run script '$sitecoreInitScript'" }
+$result | select-Object -ExpandProperty Output | Write-Host
 
 Write-Host ">>> Starting Docker Compose at $sitecoreHome ..."
-Invoke-CommandLine -Command $dockerCompose -Arguments "up --detach --yes" -Capture 'StdErr' | select-Object -ExpandProperty Output | Write-Host
+Invoke-CommandLine -Command $dockerCompose -Arguments "up --detach" -Capture 'StdErr' | select-Object -ExpandProperty Output | Write-Host
