@@ -54,7 +54,7 @@ function Register-ActiveSetup {
     } 
 
     # delete any existing task with the same name
-    Get-ScheduledTask -TaskName $activeSetupId -TaskPath '\' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+    Get-ScheduledTask -TaskName $activeSetupId -TaskPath '\' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
 
     # register our newly defined task
     Register-ScheduledTask -Force -TaskName $activeSetupId -TaskPath '\' -Action $taskAction -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
@@ -66,7 +66,7 @@ function Register-ActiveSetup {
 
         $task = Get-ScheduledTask -TaskName '[ActiveSetupId]' -TaskPath '\' -ErrorAction SilentlyContinue
         if ($task) { $task | Wait-ScheduledTask -Start }
-        $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+        $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
 
     } | Convert-ScriptBlockToString -ScriptTokens @{ 'ActiveSetupId' = $activeSetupId } -Transcript (Join-Path $env:TEMP "$activeSetupId.log") -EncodeBase64
 

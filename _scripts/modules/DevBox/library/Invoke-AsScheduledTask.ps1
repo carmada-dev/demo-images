@@ -75,7 +75,7 @@ function Invoke-AsScheduledTask {
         if ($task) {
 
             Write-Host ">>> Unregister Scheduled Task $taskFullname"
-            $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+            $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
         }
     }
 
