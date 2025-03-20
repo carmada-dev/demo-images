@@ -65,8 +65,11 @@ function Register-ActiveSetup {
     $activeSetupScript = {
 
         $task = Get-ScheduledTask -TaskName '[ActiveSetupId]' -TaskPath '\' -ErrorAction SilentlyContinue
-        if ($task) { $task | Wait-ScheduledTask -Start }
-        $task | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+        if (-not $task) { throw 'Could not find Scheduled Task \[ActiveSetupId]'  }
+
+        # NEVER delete the task after execution - scheduled tasks are not user specific !!!
+        # So we need to keep the task alive for potential other users logging in
+        $task | Wait-ScheduledTask -Start
 
     } | Convert-ScriptBlockToString -ScriptTokens @{ 'ActiveSetupId' = $activeSetupId } -Transcript (Join-Path $env:TEMP "$activeSetupId.log") -EncodeBase64
 
