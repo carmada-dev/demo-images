@@ -1,12 +1,16 @@
 function Convert-ScriptBlockToString {
     
     param(
+
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [scriptblock] $ScriptBlock,
+
         [Parameter(Mandatory=$false)]
         [Hashtable] $ScriptTokens = @{},
+
         [Parameter(Mandatory = $false)]
         [string] $Transcript,
+
         [Parameter(Mandatory = $false)]
         [switch] $EncodeBase64
     )    
@@ -15,9 +19,7 @@ function Convert-ScriptBlockToString {
     $script = $ScriptBlock.ToString()
 
     # Replace script tokens
-    $ScriptTokens.Keys | ForEach-Object { 
-        $script = $script -replace "\[$_\]", $ScriptTokens[$_] 
-    }
+    $ScriptTokens.Keys | ForEach-Object { $script = $script -replace "\[$_\]", $ScriptTokens[$_] }
 
     # Remove single-line comments (starting with #)
     $script = $script -replace '(?m)^\s*#.*$', ''   
@@ -36,19 +38,21 @@ function Convert-ScriptBlockToString {
         | Measure-Object -Minimum).Minimum
 
     # Remove the indentation size if possible (>0)
-    if ($indentationSize -gt 0) { 
-        $script = $script -replace "(?m)^\s{$indentationSize}", '' 
-    }
+    if ($indentationSize -gt 0) { $script = $script -replace "(?m)^\s{$indentationSize}", '' }
 
     if ($Transcript) {
-        $scriptHeader = "`$ProgressPreference = 'SilentlyContinue'; Start-Transcript -Path '$Transcript' -Force -ErrorAction SilentlyContinue; try { "
+
+        # Define the transcript header and footer
+        $scriptConfig = "`$ProgressPreference = 'SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
+        $scriptHeader = "Start-Transcript -Path '$Transcript' -Force -ErrorAction SilentlyContinue; try { "
         $scriptFooter = "} catch { Write-Error `$_.Exception } finally { Stop-Transcript -ErrorAction SilentlyContinue }"
-        $script = ($scriptHeader, $script, $scriptFooter) -join "`r`n"
+
+        # Wrap the original script with the transcript header and footer
+        $script = ($scriptConfig, $scriptHeader, $script, $scriptFooter) -join "`r`n"
     }
 
-    if ($EncodeBase64) {
-        $script = $script | Convert-ToBase64
-    } 
+    # Encode the script to Base64 if requested
+    if ($EncodeBase64) { $script = $script | ConvertTo-Base64 } 
 
     return $script
 }
