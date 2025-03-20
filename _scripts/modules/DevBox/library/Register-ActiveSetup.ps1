@@ -57,15 +57,15 @@ function Register-ActiveSetup {
     Get-ScheduledTask -TaskName $activeSetupId -TaskPath '\' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
 
     # register our newly defined task
-    Register-ScheduledTask -Force -TaskName $activeSetupId -TaskPath '\' -Action $taskAction -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
+    Register-ScheduledTask -Force -TaskName "DevBox-$activeSetupId" -TaskPath '\' -Action $taskAction -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
 
     # grant authenticated users permissions to run the task
     Grant-AuthenticatedUsersPermissions -TaskName $activeSetupId -TaskPath '\'
 
     $activeSetupScript = {
 
-        $task = Get-ScheduledTask -TaskName '[ActiveSetupId]' -TaskPath '\' -ErrorAction SilentlyContinue
-        if (-not $task) { throw 'Could not find Scheduled Task \[ActiveSetupId]'  }
+        $task = Get-ScheduledTask -TaskName 'DevBox-[ActiveSetupId]' -TaskPath '\' -ErrorAction SilentlyContinue
+        if (-not $task) { throw 'Could not find Scheduled Task \DevBox-[ActiveSetupId]'  }
 
         # NEVER delete the task after execution - scheduled tasks are not user specific !!!
         # So we need to keep the task alive for potential other users logging in
