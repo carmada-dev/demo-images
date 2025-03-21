@@ -44,6 +44,8 @@ function Register-ActiveSetup {
         $Path = Copy-Item -Path $Path -Destination $activeSetupScript -Force -PassThru | Select-Object -ExpandProperty Fullname
     }
 
+    $taskName = "DevBox-$activeSetupId"
+    $taskPath = '\'
     $taskAction = New-ScheduledTaskAction -Execute 'powershell' -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Path`""
     $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -Priority 0 -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -DontStopIfGoingOnBatteries -DontStopOnIdleEnd -Hidden
     $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
@@ -54,13 +56,13 @@ function Register-ActiveSetup {
     } 
 
     # delete any existing task with the same name
-    Get-ScheduledTask -TaskName $activeSetupId -TaskPath '\' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+    Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
 
     # register our newly defined task
-    Register-ScheduledTask -Force -TaskName "DevBox-$activeSetupId" -TaskPath '\' -Action $taskAction -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
+    Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
 
     # grant authenticated users permissions to run the task
-    Grant-AuthenticatedUsersPermissions -TaskName $activeSetupId -TaskPath '\'
+    Grant-AuthenticatedUsersPermissions -TaskName $taskName -TaskPath $taskPath
 
     $activeSetupScript = {
 
@@ -68,15 +70,15 @@ function Register-ActiveSetup {
             Write-Host ">>> Importing PowerShell Module: $_"
             Import-Module -Name $_
         } 
-        
-        $task = Get-ScheduledTask -TaskName 'DevBox-[ActiveSetupId]' -TaskPath '\' -ErrorAction SilentlyContinue
-        if (-not $task) { throw 'Could not find Scheduled Task \DevBox-[ActiveSetupId]'  }
+
+        $task = Get-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]' -ErrorAction SilentlyContinue
+        if (-not $task) { throw 'Could not find Scheduled Task [TaskPath][TaskName]'  }
 
         # NEVER delete the task after execution - scheduled tasks are not user specific !!!
         # So we need to keep the task alive for potential other users logging in
         $task | Wait-ScheduledTask -Start
 
-    } | Convert-ScriptBlockToString -ScriptTokens @{ 'ActiveSetupId' = $activeSetupId } -Transcript (Join-Path $env:TEMP "$activeSetupId.log") -EncodeBase64
+    } | Convert-ScriptBlockToString -ScriptTokens @{ 'TaskName' = $taskName; 'TaskPath' = $taskPath } -Transcript (Join-Path $env:DEVBOX_HOME "ActiveSetup\$activeSetupId.log") -EncodeBase64
 
     $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $activeSetupScript"
 
