@@ -64,6 +64,11 @@ function Register-ActiveSetup {
 
     $activeSetupScript = {
 
+        Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
+            Write-Host ">>> Importing PowerShell Module: $_"
+            Import-Module -Name $_
+        } 
+        
         $task = Get-ScheduledTask -TaskName 'DevBox-[ActiveSetupId]' -TaskPath '\' -ErrorAction SilentlyContinue
         if (-not $task) { throw 'Could not find Scheduled Task \DevBox-[ActiveSetupId]'  }
 

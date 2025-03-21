@@ -2,4 +2,4 @@
 Prop3=19,11
 [InternetShortcut]
 IDList=
-URL=https://carmada.vault.azure.net/secrets/SitecoreLicense/0a97b83fd0e747d4ac3da31f0ddf725b
+URL=https://carmada.blob.core.windows.net/artifacts/Sitecore/license.xml
