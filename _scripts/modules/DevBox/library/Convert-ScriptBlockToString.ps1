@@ -43,12 +43,11 @@ function Convert-ScriptBlockToString {
     if ($Transcript) {
 
         # Define the transcript header and footer
-        $scriptConfig = "`$ProgressPreference = 'SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
-        $scriptHeader = "Start-Transcript -Path '$Transcript' -Force -ErrorAction SilentlyContinue; try { "
+        $scriptHeader = "Start-Transcript -Path '$Transcript' -Force -ErrorAction SilentlyContinue; try {"
         $scriptFooter = "} catch { Write-Error `$_.Exception } finally { Stop-Transcript -ErrorAction SilentlyContinue }"
 
         # Wrap the original script with the transcript header and footer
-        $script = ($scriptConfig, $scriptHeader, $script, $scriptFooter) -join "`r`n"
+        $script = ($scriptHeader, $script, $scriptFooter) -join "`r`n"
     }
 
     # Encode the script to Base64 if requested
