@@ -67,13 +67,19 @@ function  Start-DockerDesktop() {
 
         $dockerDesktopSettingsChanged = $false
         $dockerDesktopSettingsChanged = (Set-DockerDesktopSetting -Key 'AutoStart' -Value $true) -or $dockerDesktopSettingsChanged
-        $dockerDesktopSettingsChanged = (Set-DockerDesktopSetting -Key 'DisplayedOnboarding' -Value $false) -or $dockerDesktopSettingsChanged
+        $dockerDesktopSettingsChanged = (Set-DockerDesktopSetting -Key 'DisplayedOnboarding' -Value $true) -or $dockerDesktopSettingsChanged
 
         if ($dockerDesktopSettingsChanged) { 
 
-            Write-Host ">>> Stopping Docker Desktop ..."
-            Get-Process *docker* | Where-Object { $_.SessionId -gt 0 } | Stop-Process -Force -ErrorAction SilentlyContinue
-            Start-Sleep -Seconds 5
+            Write-Host ">>> Docker Desktop settings changed - restarting Docker Desktop ..."
+            do {
+                $processes = Get-Process *docker* | Where-Object { $_.SessionId -gt 0 } 
+                if ($processes) { 
+                    $processes | Stop-Process -Force -ErrorAction SilentlyContinue
+                    Write-Host '- Waiting for processes to stop'
+                    Start-Sleep -Seconds 1
+                }
+            } while ($processes -and $processes.Count -gt 0)
             
             Write-Host ">>> Starting Docker Desktop ..."
             Invoke-CommandLine -Command $dockerDesktop -NoWait

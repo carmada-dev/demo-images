@@ -40,8 +40,9 @@ function Register-ActiveSetup {
     $activeSetupKeyEnabled = [int]$Enabled.ToBool()
 
     if (-not($Path.StartsWith($activeSetupFolder))) {
-        # copy the script to the active setup folder
+        # copy the script to the active setup folder and create a new ID based on the new path
         $Path = Copy-Item -Path $Path -Destination $activeSetupScript -Force -PassThru | Select-Object -ExpandProperty Fullname
+        $activeSetupId = $Path | ConvertTo-GUID
     }
 
     $taskName = "DevBox-$activeSetupId"
@@ -65,8 +66,8 @@ function Register-ActiveSetup {
     # grant authenticated users permissions to run the task
     Grant-AuthenticatedUsersPermissions -TaskName $taskName -TaskPath $taskPath
 
-    $activeSetupScript = Join-Path $env:DEVBOX_HOME "ActiveSetup\$taskName.log"
-    $activeSetupLog = [System.IO.Path]::ChangeExtension($activeSetupScript, '.log')
+    $activeSetupPS1 = Join-Path $env:DEVBOX_HOME "ActiveSetup\$taskName.ps1"
+    $activeSetupLog = [System.IO.Path]::ChangeExtension($activeSetupPS1, '.log')
 
     $activeSetupScript = {
 
@@ -81,10 +82,9 @@ function Register-ActiveSetup {
     $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $($activeSetupScript | ConvertTo-Base64)"
 
     if ($activeSetupCmd.Length -gt 8192) {
-
         Write-Host ">>> ActiveSetup command is too long, using script '$activeSetupScript' instead"
         $activeSetupScript | Out-File -FilePath $activeSetupScript -Force -ErrorAction SilentlyContinue
-        $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$activeSetupScript`""
+        $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$activeSetupPS1`""
     }
 
     $activeSetupKey = Get-ChildItem -Path $activeSetupKeyPath `
@@ -93,26 +93,23 @@ function Register-ActiveSetup {
         | Select-Object -First 1 -ErrorAction SilentlyContinue
 
     if ($activeSetupKey) {
-
-        Write-Host "- Update ActiveSetup Task: $activeSetupKey"
-
-        Set-ItemProperty -Path $activeSetupKey -Name 'StubPath' -Value $activeSetupCmd -ErrorAction SilentlyContinue | Out-Null
-        Set-ItemProperty -Path $activeSetupKey -Name 'IsInstalled' -Value $activeSetupKeyEnabled -ErrorAction SilentlyContinue | Out-Null
+        
+        Write-Host "- Updating ActiveSetup Task: $activeSetupKey"
 
     } else {
 
+        # create a new key for the active setup task (combination of timestamp - to keep execution order - and ID)
         $activeSetupTimestamp = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds().ToString()
         $activeSetupKey = Join-Path $activeSetupKeyPath "devbox-$activeSetupTimestamp-$activeSetupId"
-
-        Write-Host "- Register ActiveSetup Task: $activeSetupKey"
-
-        New-Item -Path $activeSetupKey -ErrorAction SilentlyContinue | Out-Null
-		New-ItemProperty -Path $activeSetupKey -Name '(Default)' -Value ([System.IO.Path]::GetFileNameWithoutExtension($Path)) -ErrorAction SilentlyContinue | Out-Null
-		New-ItemProperty -Path $activeSetupKey -Name 'StubPath' -Value $activeSetupCmd -PropertyType 'ExpandString' -ErrorAction SilentlyContinue | Out-Null
-		New-ItemProperty -Path $activeSetupKey -Name 'Version' -Value ((Get-Date -Format 'yyyy,MMdd,HHmm').ToString()) -ErrorAction SilentlyContinue | Out-Null
-		New-ItemProperty -Path $activeSetupKey -Name 'IsInstalled' -Value $activeSetupKeyEnabled -PropertyType 'DWord' -ErrorAction SilentlyContinue | Out-Null
-
+        
+        Write-Host "- Registering ActiveSetup Task: $activeSetupKey"
     }
+
+    $registryKey = New-Item -Path $activeSetupKey -Force -ErrorAction SilentlyContinue
+    $registryKey | New-ItemProperty -Force -Name '(Default)' -Value ([System.IO.Path]::GetFileNameWithoutExtension($Path)) -ErrorAction SilentlyContinue
+    $registryKey | New-ItemProperty -Force -Name 'StubPath' -Value $activeSetupCmd -PropertyType 'ExpandString' -ErrorAction SilentlyContinue 
+    $registryKey | New-ItemProperty -Force -Name 'Version' -Value ((Get-Date -Format 'yyyy,MMdd,HHmm').ToString()) -ErrorAction SilentlyContinue 
+    $registryKey | New-ItemProperty -Force -Name 'IsInstalled' -Value $activeSetupKeyEnabled -PropertyType 'DWord' -ErrorAction SilentlyContinue
 }
 
 Export-ModuleMember -Function Register-ActiveSetup
