@@ -106,10 +106,10 @@ function Register-ActiveSetup {
     }
 
     $registryKey = New-Item -Path $activeSetupKey -Force -ErrorAction SilentlyContinue
-    $registryKey | New-ItemProperty -Force -Name '(Default)' -Value ([System.IO.Path]::GetFileNameWithoutExtension($Path)) -ErrorAction SilentlyContinue
-    $registryKey | New-ItemProperty -Force -Name 'StubPath' -Value $activeSetupCmd -PropertyType 'ExpandString' -ErrorAction SilentlyContinue 
-    $registryKey | New-ItemProperty -Force -Name 'Version' -Value ((Get-Date -Format 'yyyy,MMdd,HHmm').ToString()) -ErrorAction SilentlyContinue 
-    $registryKey | New-ItemProperty -Force -Name 'IsInstalled' -Value $activeSetupKeyEnabled -PropertyType 'DWord' -ErrorAction SilentlyContinue
+    $registryKey | New-ItemProperty -Force -Name '(Default)' -Value ([System.IO.Path]::GetFileNameWithoutExtension($Path)) -ErrorAction SilentlyContinue | Out-Null
+    $registryKey | New-ItemProperty -Force -Name 'StubPath' -Value $activeSetupCmd -PropertyType 'ExpandString' -ErrorAction SilentlyContinue | Out-Null
+    $registryKey | New-ItemProperty -Force -Name 'Version' -Value ((Get-Date -Format 'yyyy,MMdd,HHmm').ToString()) -ErrorAction SilentlyContinue | Out-Null
+    $registryKey | New-ItemProperty -Force -Name 'IsInstalled' -Value $activeSetupKeyEnabled -PropertyType 'DWord' -ErrorAction SilentlyContinue | Out-Null
 }
 
 Export-ModuleMember -Function Register-ActiveSetup
