@@ -39,7 +39,7 @@ function Convert-ScriptBlockToString {
 
         $script = ($script -split "`r?`n" `
             | ForEach-Object { "$_".Trim() } `
-            | Out-String -replace '\r?\n$', '') 
+            | Out-String) -replace '\r?\n$', ''
 
     } else {
 
