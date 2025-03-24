@@ -47,7 +47,8 @@ function Register-ActiveSetup {
     $taskName = "DevBox-$activeSetupId"
     $taskPath = '\'
     $taskAction = New-ScheduledTaskAction -Execute 'powershell' -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Path`""
-    $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -Priority 0 -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -DontStopIfGoingOnBatteries -DontStopOnIdleEnd -Hidden
+    $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -Priority 0 -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -DontStopIfGoingOnBatteries -DontStopOnIdleEnd 
+    $taskTrigger = New-ScheduledTaskTrigger -AtLogOn
     $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
     
     if ($AsSystem) {
@@ -59,10 +60,13 @@ function Register-ActiveSetup {
     Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
 
     # register our newly defined task
-    Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
+    Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Trigger $taskTrigger -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
 
     # grant authenticated users permissions to run the task
     Grant-AuthenticatedUsersPermissions -TaskName $taskName -TaskPath $taskPath
+
+    $activeSetupScript = Join-Path $env:DEVBOX_HOME "ActiveSetup\$taskName.log"
+    $activeSetupLog = [System.IO.Path]::ChangeExtension($activeSetupScript, '.log')
 
     $activeSetupScript = {
 
@@ -90,9 +94,16 @@ function Register-ActiveSetup {
         # So we need to keep the task alive for potential other users logging in
         $task | Wait-ScheduledTask -Start
 
-    } | Convert-ScriptBlockToString -ScriptTokens @{ 'TaskName' = $taskName; 'TaskPath' = $taskPath } -Transcript (Join-Path $env:DEVBOX_HOME "ActiveSetup\$taskName.log") -EncodeBase64
+    } | Convert-ScriptBlockToString -ScriptTokens @{ 'TaskName' = $taskName; 'TaskPath' = $taskPath } -Transcript $activeSetupLog
 
-    $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $activeSetupScript"
+    $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $($activeSetupScript | ConvertTo-Base64)"
+
+    if ($activeSetupCmd.Length -gt 8192) {
+
+        Write-Host ">>> ActiveSetup command is too long, using script '$activeSetupScript' instead"
+        $activeSetupScript | Out-File -FilePath $activeSetupScript -Force -ErrorAction SilentlyContinue
+        $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$activeSetupScript`""
+    }
 
     $activeSetupKey = Get-ChildItem -Path $activeSetupKeyPath `
         | ForEach-Object { Split-Path -Path ($_.Name) -Leaf } `
