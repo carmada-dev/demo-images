@@ -12,7 +12,10 @@ function Convert-ScriptBlockToString {
         [string] $Transcript,
 
         [Parameter(Mandatory = $false)]
-        [switch] $EncodeBase64
+        [switch] $EncodeBase64,
+
+        [Parameter(Mandatory = $false)]
+        [switch] $Ugly
     )    
     
     # Convert the script block to a string
@@ -32,13 +35,23 @@ function Convert-ScriptBlockToString {
         | ForEach-Object { $_ -replace "`t", "    " } `
         | Out-String) -replace '\r?\n$', ''
 
-    # Resolve the indentation size we can safely remove
-    $indentationSize = ($script -split "`r?`n" `
-        | ForEach-Object { if ($_ -match '^\s*') { $Matches[0].Length } else { 0 } } `
-        | Measure-Object -Minimum).Minimum
+    if ($Ugly) {
 
-    # Remove the indentation size if possible (>0)
-    if ($indentationSize -gt 0) { $script = $script -replace "(?m)^\s{$indentationSize}", '' }
+        $script = ($script -split "`r?`n" `
+            | ForEach-Object { "$_".Trim() } `
+            | Out-String -replace '\r?\n$', '') 
+
+    } else {
+
+        # Resolve the indentation size we can safely remove
+        $indentationSize = ($script -split "`r?`n" `
+            | ForEach-Object { if ($_ -match '^\s*') { $Matches[0].Length } else { 0 } } `
+            | Measure-Object -Minimum).Minimum
+
+        # Remove the indentation size if possible (>0)
+        if ($indentationSize -gt 0) { $script = $script -replace "(?m)^\s{$indentationSize}", '' }
+
+    }
 
     if ($Transcript) {
 

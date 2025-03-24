@@ -70,31 +70,13 @@ function Register-ActiveSetup {
 
     $activeSetupScript = {
 
-        $ProgressPreference = 'SilentlyContinue'
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-        Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object {
-            Write-Host ">>> Importing PowerShell Module: $_"
-            Import-Module -Name $_
-        } 
-
-        # ensure scheduled task service is running
+        Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { Import-Module -Name $_ } 
         $service = Get-Service -Name 'Schedule' -ErrorAction SilentlyContinue
-        if (-not $service) { throw 'Could not find Scheduled Task service' }
-
-        if ($service.Status -ne 'Running') {
-            Write-Host ">>> Starting Scheduled Task service ..."
-            Start-Service -Name 'Schedule' -ErrorAction SilentlyContinue | Out-Null
-        }
-
+        if ($service -and $service.Status -ne 'Running') { Start-Service -Name 'Schedule' -ErrorAction SilentlyContinue | Out-Null }
         $task = Get-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]' -ErrorAction SilentlyContinue
-        if (-not $task) { throw 'Could not find Scheduled Task [TaskPath][TaskName]'  }
+        if ($task) { $task | Wait-ScheduledTask -Start }
 
-        # NEVER delete the task after execution - scheduled tasks are not user specific !!!
-        # So we need to keep the task alive for potential other users logging in
-        $task | Wait-ScheduledTask -Start
-
-    } | Convert-ScriptBlockToString -ScriptTokens @{ 'TaskName' = $taskName; 'TaskPath' = $taskPath } -Transcript $activeSetupLog
+    } | Convert-ScriptBlockToString -ScriptTokens @{ 'TaskName' = $taskName; 'TaskPath' = $taskPath } -Transcript $activeSetupLog -Ugly
 
     $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $($activeSetupScript | ConvertTo-Base64)"
 
