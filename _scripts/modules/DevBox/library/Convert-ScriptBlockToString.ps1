@@ -15,7 +15,10 @@ function Convert-ScriptBlockToString {
         [switch] $EncodeBase64,
 
         [Parameter(Mandatory = $false)]
-        [switch] $Ugly
+        [switch] $Ugly,
+
+        [Parameter(Mandatory = $false)]
+        [switch] $Swallow
     )    
     
     # Convert the script block to a string
@@ -55,9 +58,11 @@ function Convert-ScriptBlockToString {
 
     if ($Transcript) {
 
+        $handleException = "$(&{ if ($Swallow) { 'Write-Host' } else { 'Write-Error' } })"
+
         # Define the transcript header and footer
         $scriptHeader = "Start-Transcript -Path '$Transcript' -Force -ErrorAction SilentlyContinue; try {"
-        $scriptFooter = "} catch { Write-Error `$_.Exception } finally { Stop-Transcript -ErrorAction SilentlyContinue }"
+        $scriptFooter = "} catch { $handleException `$_.Exception.Message } finally { Stop-Transcript -ErrorAction SilentlyContinue }"
 
         # Wrap the original script with the transcript header and footer
         $script = ($scriptHeader, $script, $scriptFooter) -join "`r`n"

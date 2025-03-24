@@ -69,6 +69,10 @@ function Register-ActiveSetup {
     $activeSetupPS1 = Join-Path $env:DEVBOX_HOME "ActiveSetup\$taskName.ps1"
     $activeSetupLog = [System.IO.Path]::ChangeExtension($activeSetupPS1, '.log')
 
+    # we use two special feature of the Convert-ScriptBlockToString function below:
+    # -Ugly: this will remove as many unnecessary characters from the script text as possible
+    # -Swallow: the wrapping try/catch/finally block will swallow any errors 
+
     $activeSetupScript = {
 
         Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { Import-Module -Name $_ } 
@@ -77,14 +81,15 @@ function Register-ActiveSetup {
         $task = Get-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]' -ErrorAction SilentlyContinue
         if ($task) { $task | Wait-ScheduledTask -Start }
 
-    } | Convert-ScriptBlockToString -ScriptTokens @{ 'TaskName' = $taskName; 'TaskPath' = $taskPath } -Transcript $activeSetupLog -Ugly
+    } | Convert-ScriptBlockToString -ScriptTokens @{ 'TaskName' = $taskName; 'TaskPath' = $taskPath } -Transcript $activeSetupLog -Ugly -Swallow
 
-    $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $($activeSetupScript | ConvertTo-Base64)"
+    # CAUTION: Don't use the -NonInteractive switch here, as it will cause the script to ignore the Start-Transcript command
+    $activeSetupCmd = "PowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $($activeSetupScript | ConvertTo-Base64)"
 
     if ($activeSetupCmd.Length -gt 8192) {
         Write-Host ">>> ActiveSetup command is too long, using script '$activeSetupScript' instead"
         $activeSetupScript | Out-File -FilePath $activeSetupScript -Force -ErrorAction SilentlyContinue
-        $activeSetupCmd = "PowerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$activeSetupPS1`""
+        $activeSetupCmd = "PowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$activeSetupPS1`""
     }
 
     $activeSetupKey = Get-ChildItem -Path $activeSetupKeyPath `
