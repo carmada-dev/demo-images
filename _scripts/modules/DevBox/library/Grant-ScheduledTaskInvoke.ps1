@@ -11,7 +11,7 @@ function Grant-ScheduledTaskInvoke {
         [string] $TaskPath = '\',
 
         [Parameter(ParameterSetName='ByTask', Mandatory=$true, ValueFromPipeline=$true)]
-        [CimInstance] $Task,
+        [CimInstance] $Task
     )
 
     switch ($psCmdlet.ParameterSetName) {
@@ -34,6 +34,7 @@ function Grant-ScheduledTaskInvoke {
             $GetSecurityDescriptor = $GetTask.GetSecurityDescriptor(0xF)
         
             if ($GetSecurityDescriptor -notmatch 'A;;0x1200a9;;;AU') {
+
                 $GetSecurityDescriptor = $GetSecurityDescriptor + '(A;;GRGX;;;AU)'
                 $GetTask.SetSecurityDescriptor($GetSecurityDescriptor, 0)
             }
