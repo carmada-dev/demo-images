@@ -38,12 +38,12 @@ function  Start-DockerDesktop() {
         if (-not (Test-Path $dockerDesktopSettings -ErrorAction SilentlyContinue)) { 
 
             Write-Host ">>> Preconfigure Docker Desktop ..."
-
+            
             @{
                 'AutoStart' = $true
                 'DisplayedOnboarding' = $true
 
-            } | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings
+            } | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings -Force
         }
 
         Write-Host ">>> Starting Docker Desktop ..."
