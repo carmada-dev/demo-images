@@ -121,7 +121,7 @@ build {
     environment_vars  = local.environment
     scripts           = distinct(concat(
       ["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
-      fileset("${local.path.imageRoot}", "../_scripts/pkgs/[^(x_)]*.ps1")
+      list(fileset("${local.path.imageRoot}", "../_scripts/pkgs/[^(x_)]*.ps1"))
     )) 
   }
 
