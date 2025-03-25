@@ -45,7 +45,6 @@ function Invoke-ScheduledTask {
 
             'ByTask' {
                         
-                $Task | Start-ScheduledTask -ErrorAction Stop 
                 $TaskName = $Task.TaskName
                 $TaskPath = $Task.TaskPath
 
@@ -100,7 +99,7 @@ function Invoke-ScheduledTask {
                 Write-Host '----------------------------------------------------------------------------------------------------------'
 
                 Write-Host ">>> Registering Scheduled Task '$TaskName' under '$TaskPath'"
-                $task = Register-ScheduledTask -Force -TaskName $TaskName -TaskPath $TaskPath `
+                $Task = Register-ScheduledTask -Force -TaskName $TaskName -TaskPath $TaskPath `
                     -Action (New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $taskEncoded") `
                     -Settings (New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew) `
                     -Principal (New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest)
@@ -109,10 +108,10 @@ function Invoke-ScheduledTask {
 
                     if (Test-IsLocalAdmin) {
                         Write-Host ">>> Granting authenticated users permissions to run Scheduled Task '$TaskName' under '$TaskPath'"
-                        $task | Grant-ScheduledTaskInvoke | Out-Null
+                        $Task | Grant-ScheduledTaskInvoke | Out-Null
                     }
 
-                    $exitCode = $task | Invoke-ScheduledTask -Timeout $Timeout
+                    $exitCode = $Task | Invoke-ScheduledTask -Timeout $Timeout
 
                 } finally {
 
