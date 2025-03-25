@@ -37,9 +37,9 @@ function Invoke-FileDownload {
                     $retryCount = $retryCount + 1
 
                     if ($retryCount -gt $Retries) { 
-											Write-Host "Downloading $Url failed: $($_.Exception.Message)"
-											throw $_.Exception.Message 
-										}
+                        Write-Host ">>> Downloading $Url failed: $($_.Exception.Message)"
+                        throw $_.Exception.Message 
+                    }
                 }
             }
         }
