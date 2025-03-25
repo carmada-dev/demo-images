@@ -125,7 +125,7 @@ if (Test-IsPacker) {
 			if ($winget) { Write-Host ">>> WinGet is available at $winget"; exit 0 }
 		}
 		
-		$exitCode = $taskScript | Invoke-AsScheduledTask -TaskName 'Install-WinGet' -ScriptTokens @{ 'WINGETOFFLINE' = $offlineDirectory } 
+		$exitCode = $taskScript | Invoke-ScheduledTask -ScriptTokens @{ 'WINGETOFFLINE' = $offlineDirectory } 
 		if ($exitCode -ne 0) { throw "WinGet installation using Scheduled Task failed with exit code $exitCode" }
 
 		$winget = (Get-Command -Name 'winget' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source) 
