@@ -1,23 +1,4 @@
-function Grant-AuthenticatedUsersPermissions() {
 
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string] $Task
-    )
-
-    $Scheduler = New-Object -ComObject "Schedule.Service"
-    $Scheduler.Connect()
-
-    $GetTask = $Scheduler.GetFolder($Task.TaskPath).GetTask($Task.TaskName)
-    $GetSecurityDescriptor = $GetTask.GetSecurityDescriptor(0xF)
-
-    if ($GetSecurityDescriptor -notmatch 'A;;0x1200a9;;;AU') {
-        $GetSecurityDescriptor = $GetSecurityDescriptor + '(A;;GRGX;;;AU)'
-        $GetTask.SetSecurityDescriptor($GetSecurityDescriptor, 0)
-    }
-
-    return $Task
-}
 
 function Invoke-ScheduledTask {
 
@@ -112,21 +93,26 @@ function Invoke-ScheduledTask {
                 Write-Host ">>> Preparing Scheduled Task '$TaskName' under '$TaskPath'"
                 $taskTranscript = Join-Path $env:temp "$taskName.log"
                 $taskScript = $ScriptBlock | Convert-ScriptBlockToString -ScriptTokens $ScriptTokens -Transcript $taskTranscript
+                $taskEncoded = $taskScript | ConvertTo-Base64
             
                 Write-Host '----------------------------------------------------------------------------------------------------------'
                 Write-Host $taskScript
                 Write-Host '----------------------------------------------------------------------------------------------------------'
 
-                $taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $($taskScript | ConvertTo-Base64)"
-                $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
-                $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew 
-                
                 Write-Host ">>> Registering Scheduled Task '$TaskName' under '$TaskPath'"
-                $task = Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Settings $taskSettings -Principal $taskPrincipal		
+                $task = Register-ScheduledTask -Force -TaskName $TaskName -TaskPath $TaskPath `
+                    -Action (New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $taskEncoded") `
+                    -Settings (New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew) `
+                    -Principal (New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest)
 
                 try {
 
-                    $exitCode = $task | Grant-AuthenticatedUsersPermissions | Invoke-ScheduledTask -Timeout $Timeout
+                    if (Test-IsLocalAdmin) {
+                        Write-Host ">>> Granting authenticated users permissions to run Scheduled Task '$TaskName' under '$TaskPath'"
+                        $task | Grant-ScheduledTaskInvoke | Out-Null
+                    }
+
+                    $exitCode = $task | Invoke-ScheduledTask -Timeout $Timeout
 
                 } finally {
 

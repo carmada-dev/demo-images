@@ -1,24 +1,3 @@
-function Grant-AuthenticatedUsersPermissions() {
-
-    param(
-        [Parameter(Mandatory = $true)]
-        [string] $TaskName,
-        [Parameter(Mandatory = $false)]
-        [string] $TaskPath = "\"
-    )
-
-    $Scheduler = New-Object -ComObject "Schedule.Service"
-    $Scheduler.Connect()
-
-    $GetTask = $Scheduler.GetFolder($TaskPath).GetTask($TaskName)
-    $GetSecurityDescriptor = $GetTask.GetSecurityDescriptor(0xF)
-
-    if ($GetSecurityDescriptor -notmatch 'A;;0x1200a9;;;AU') {
-        $GetSecurityDescriptor = $GetSecurityDescriptor + '(A;;GRGX;;;AU)'
-        $GetTask.SetSecurityDescriptor($GetSecurityDescriptor, 0)
-    }
-}
-
 function Register-ActiveSetup {
 
     param(
@@ -64,7 +43,7 @@ function Register-ActiveSetup {
     Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Trigger $taskTrigger -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
 
     # grant authenticated users permissions to run the task
-    Grant-AuthenticatedUsersPermissions -TaskName $taskName -TaskPath $taskPath
+    Grant-ScheduledTaskInvoke -TaskName $taskName -TaskPath $taskPath | Out-Null
 
     $activeSetupPS1 = Join-Path $env:DEVBOX_HOME "ActiveSetup\$taskName.ps1"
     $activeSetupLog = [System.IO.Path]::ChangeExtension($activeSetupPS1, '.log')

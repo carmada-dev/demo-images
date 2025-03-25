@@ -89,15 +89,13 @@ if (Test-IsPacker) {
 
         }
 
+        $taskScriptEncoded = $scriptBlock | Convert-ScriptBlockToString -EncodeBase64
+
         Write-Host ">>> Register scheduled task to configure git"
-
-        $taskScriptSource = $scriptBlock | Out-String -Width ([int]::MaxValue)
-        $taskScriptEncoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes(($taskScriptSource)))
-        $taskAction = New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $taskScriptEncoded"
-        $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
-        $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew 
-        $taskTriggers = @( New-ScheduledTaskTrigger -AtLogOn -RandomDelay (New-TimeSpan -Minutes 5) )
-
-        Register-ScheduledTask -Force -TaskName 'Configure Git' -TaskPath '\' -Action $taskAction -Trigger $taskTriggers -Settings $taskSettings -Principal $taskPrincipal | Out-Null
+        Register-ScheduledTask -Force -TaskName 'Configure Git' -TaskPath '\' `
+            -Action (New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $taskScriptEncoded") `
+            -Trigger @(New-ScheduledTaskTrigger -AtLogOn -RandomDelay (New-TimeSpan -Minutes 5)) `
+            -Settings (New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew) `
+            -Principal (New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest) | Out-Null
     } 
 }
