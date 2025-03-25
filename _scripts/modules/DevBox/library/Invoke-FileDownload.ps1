@@ -27,8 +27,16 @@ function Invoke-FileDownload {
 
             } catch {
 
-                $retryCount = $retryCount + 1
-                if ($retryCount -gt $Retries) { throw }
+                if ($_.Exception.Response.StatusCode -eq 308 -and $_.Exception.Response.Headers.Keys -contains 'Location') {
+
+                    $Url = $_.Exception.Response.Headers['Location']
+                    Write-Host ">>> Following redirect to $Url".Trim() 
+
+                } else {
+
+                    $retryCount = $retryCount + 1
+                    if ($retryCount -gt $Retries) { throw $_.Exception.Message }
+                }
             }
         }
     }
