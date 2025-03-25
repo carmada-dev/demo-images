@@ -31,12 +31,12 @@ build {
   # =============================================================================================
 
   provisioner "powershell" {
-    environment_vars = setunion(local.environment, [
+    environment_vars = distinct(concat(local.environment, [
       "ADMIN_USERNAME=${build.User}",
       "ADMIN_PASSWORD=${build.Password}",
       "AZCOPY_AUTO_LOGIN_TYPE=MSI",
       "AZCOPY_MSI_RESOURCE_STRING=${local.factory.identity}",
-    ])
+    ]))
     script            = "${local.path.imageRoot}/../_scripts/core/Initialize-VM.ps1"
   }
 
@@ -119,10 +119,10 @@ build {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.environment
-    scripts           = setunion(
+    scripts           = distinct(concat(
       ["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
       fileset("${local.path.imageRoot}", "../_scripts/pkgs/[^(x_)]*.ps1")
-    ) 
+    )) 
   }
 
   provisioner "windows-restart" {
@@ -138,10 +138,10 @@ build {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.environment
-    scripts           = setunion(
+    scripts           = distinct(concat(
       ["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
       local.resolved.prepare
-    ) 
+    ))
   }
   
   provisioner "windows-restart" {
@@ -175,10 +175,10 @@ build {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.environment
-    scripts           = setunion(
+    scripts           = distinct(concat(
       ["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
       local.resolved.configure
-    ) 
+    )) 
   }
 
   provisioner "windows-restart" {
@@ -237,9 +237,9 @@ build {
     elevated_user     = build.User
     elevated_password = build.Password
     environment_vars  = local.environment
-    scripts           = setunion(
+    scripts           = distinct(concat(
       ["${local.path.imageRoot}/../_scripts/core/NOOP.ps1"],
       fileset("${local.path.imageRoot}", "../_scripts/error/*.ps1")
-    ) 
+    ))
   }
 }

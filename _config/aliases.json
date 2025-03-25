@@ -198,7 +198,7 @@
 			"Containers"
 		],
 		"prepare": [
-
+			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
 		],
 		"configure": [
 			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1",
@@ -220,7 +220,7 @@
 			"Containers"
 		],
 		"prepare": [
-
+			"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
 		],
 		"configure": [
 			"[IMAGEROOT]/../_scripts/Configure-DockerDesktop.ps1",

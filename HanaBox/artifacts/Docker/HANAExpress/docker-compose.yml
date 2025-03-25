@@ -11,4 +11,4 @@ services:
       - 59013-59014:59013-59014
     command: "--passwords-url file:///hana/mounts/config.json --agree-to-sap-license"
     volumes:
-      - $ROOT/hana/:/hana/mounts
+      - ./hana/:/hana/mounts

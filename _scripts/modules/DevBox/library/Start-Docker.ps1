@@ -1,31 +1,3 @@
-function Set-DockerDesktopSetting() {
-    
-    param (
-        [Parameter(Mandatory=$true)]
-        [string] $Key,
-    
-        [Parameter(Mandatory=$true)]
-        [bool] $Value
-    )
-
-    $dockerDesktopSettings = Get-ChildItem -Path (Join-Path $env:APPDATA 'Docker\*') -Include 'settings-store.json', 'settings.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-    $dockerDesktopSettingsChanged = $false
-
-    if ($dockerDesktopSettings -and (Test-Path -Path $dockerDesktopSettings -PathType Leaf)) {
-
-        $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw | ConvertFrom-Json
-        $dockerDesktopSettingsMember = $dockerDesktopSettingsJson | Get-Member -Name $Key -ErrorAction SilentlyContinue
-        $dockerDesktopSettingsChanged = (-not $dockerDesktopSettingsMember) -or (($dockerDesktopSettingsJson | Select-Object -ExpandProperty $Key) -ne $Value)
-
-        if ($dockerDesktopSettingsChanged) { 
-            $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name $Key -Value $Value -Force
-            $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings 
-        }
-    }
-
-    return $dockerDesktopSettingsChanged
-}
-
 function Wait-DockerInfo() {
 
     param (
@@ -61,31 +33,22 @@ function  Start-DockerDesktop() {
 
     if (Test-Path $dockerDesktop -ErrorAction SilentlyContinue) {
 
+        $dockerDesktopSettings = Join-Path $env:APPDATA 'Docker\settings-store.json'
+
+        if (-not (Test-Path $dockerDesktopSettings -ErrorAction SilentlyContinue)) { 
+
+            Write-Host ">>> Preconfigure Docker Desktop ..."
+
+            @{
+                'AutoStart' = $true
+                'DisplayedOnboarding' = $true
+
+            } | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings
+        }
+
         Write-Host ">>> Starting Docker Desktop ..."
         Invoke-CommandLine -Command $dockerDesktop -NoWait
         Wait-DockerInfo
-
-        $dockerDesktopSettingsChanged = $false
-        $dockerDesktopSettingsChanged = (Set-DockerDesktopSetting -Key 'AutoStart' -Value $true) -or $dockerDesktopSettingsChanged
-        $dockerDesktopSettingsChanged = (Set-DockerDesktopSetting -Key 'DisplayedOnboarding' -Value $true) -or $dockerDesktopSettingsChanged
-
-        if ($dockerDesktopSettingsChanged) { 
-
-            Write-Host ">>> Docker Desktop settings changed - restarting Docker Desktop ..."
-            do {
-                $processes = Get-Process *docker* | Where-Object { $_.SessionId -gt 0 } 
-                if ($processes) { 
-                    $processes | Stop-Process -Force -ErrorAction SilentlyContinue
-                    Write-Host '- Waiting for processes to stop'
-                    Start-Sleep -Seconds 1
-                }
-            } while ($processes -and $processes.Count -gt 0)
-            
-            Write-Host ">>> Starting Docker Desktop ..."
-            Invoke-CommandLine -Command $dockerDesktop -NoWait
-            Wait-DockerInfo
-
-        }
 
         return $true
 
@@ -145,17 +108,16 @@ function Start-Docker() {
 
             $dockerDesktopUseWindowsContainers = $false 
 
-            $dockerDesktopSettings = Get-ChildItem -Path (Join-Path $env:APPDATA 'Docker\*') -Include 'settings-store.json', 'settings.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-            if (-not $dockerDesktopSettings) { throw "Could not find Docker Desktop settings file" }
-        
-            Write-Host ">>> Loading Docker Desktop settings file: $dockerDesktopSettings"
+            $dockerDesktopSettings = Join-Path $env:APPDATA 'Docker\settings-store.json'
             $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json -ErrorAction SilentlyContinue
 
-            try {
-                $dockerDesktopUseWindowsContainers = [bool] ($dockerDesktopSettingsJson.UseWindowsContainers)
-            } catch {
-                $dockerDesktopUseWindowsContainers = $false
-            } 
+            if ($dockerDesktopSettingsJson) {
+                try {
+                    $dockerDesktopUseWindowsContainers = [bool] ($dockerDesktopSettingsJson.UseWindowsContainers)
+                } catch {
+                    $dockerDesktopUseWindowsContainers = $false
+                } 
+            }
 
             if ((-not $dockerDesktopUseWindowsContainers -and $Container -eq 'Windows') -or ($dockerDesktopUseWindowsContainers -and $Container -eq 'Linux')) {
 
