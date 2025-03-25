@@ -1,4 +1,4 @@
-function Grant-ScheduledTaskInvoke() {
+function Grant-ScheduledTaskInvoke {
 
     [Cmdletbinding(defaultParameterSetName='ByName')]
 
