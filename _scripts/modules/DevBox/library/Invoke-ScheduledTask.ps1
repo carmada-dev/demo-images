@@ -1,5 +1,4 @@
 
-
 function Invoke-ScheduledTask {
 
     [Cmdletbinding(defaultParameterSetName='ByName')]
@@ -87,7 +86,7 @@ function Invoke-ScheduledTask {
             'ByScript' {
                 
                 $TaskName = "$([System.Guid]::NewGuid())"
-                $TaskPath = '/'
+                $TaskPath = '\'
 
                 Write-Host ">>> Preparing Scheduled Task '$TaskName' under '$TaskPath'"
                 $taskTranscript = Join-Path $env:temp "$taskName.log"
@@ -102,7 +101,8 @@ function Invoke-ScheduledTask {
                 $Task = Register-ScheduledTask -Force -TaskName $TaskName -TaskPath $TaskPath `
                     -Action (New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $taskEncoded") `
                     -Settings (New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew) `
-                    -Principal (New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest)
+                    -Principal (New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest) `
+                    -ErrorAction Stop 
 
                 try {
 
