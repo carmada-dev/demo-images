@@ -11,17 +11,24 @@ function Wait-DockerInfo() {
     while ($true) {
 
         $docker = Get-Command 'docker' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
+        $dockerCompose = Get-Command 'docker-compose' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
+
         $result = Invoke-CommandLine -Command $docker -Arguments 'info' -Silent -ErrorAction SilentlyContinue 
 
+        if ($result.ExitCode -eq 0 -and $dockerCompose) { 
+            # docker-compose is available - check if it is functional as well
+            $result = Invoke-CommandLine -Command $dockerCompose -Arguments 'info' -Silent -ErrorAction SilentlyContinue 
+        } 
+
         if ($result.ExitCode -eq 0) { 
-            Write-Host ">>> Docker CLI is now functional"
+            Write-Host ">>> Docker CLI / Docker Compose is now functional"
             break 
         } elseif ((Get-Date) -le $timeoutEnd) { 
-            Write-Host ">>> Waiting for Docker CLI to be functional ..."
+            Write-Host ">>> Waiting for Docker CLI / Docker Compose to be functional ..."
             Start-Sleep -Seconds 5
         } else { 
             # we reach our timeout - blow it up
-            throw "Docker CLI did not become functional within $Timeout"                
+            throw "Docker CLI / Docker Compose did not become functional within $Timeout"                
         }
     } 
 }
