@@ -13,21 +13,25 @@ function Wait-DockerInfo() {
         $docker = Get-Command 'docker' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
         $dockerCompose = Get-Command 'docker-compose' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
 
-        $result = Invoke-CommandLine -Command $docker -Arguments 'version' -Silent -Capture StdErr -ErrorAction SilentlyContinue 
+        $result = Invoke-CommandLine -Command $docker -Arguments 'version' -Silent -ErrorAction SilentlyContinue 
         $dockerVersion = $result.Output
 
         if ($result.ExitCode -eq 0 -and $dockerCompose) { 
-            
-            $result = Invoke-CommandLine -Command $dockerCompose -Arguments 'version' -Silent -Capture StdErr -ErrorAction SilentlyContinue 
+
+            $result = Invoke-CommandLine -Command $dockerCompose -Arguments 'version' -Silent -ErrorAction SilentlyContinue 
             $dockerVersion = ($dockerVersion, $result.Output) -join "`r`n"
         } 
 
         if ($result.ExitCode -eq 0) {
 
             Write-Host ">>> Docker CLI / Docker Compose is now functional"
-            Write-Host '----------------------------------------------------------------------------------------------------------'
-            Write-Host $dockerVersion
-            Write-Host '----------------------------------------------------------------------------------------------------------'
+
+            if ($dockerVersion) {
+
+                Write-Host '----------------------------------------------------------------------------------------------------------'
+                Write-Host $dockerVersion
+                Write-Host '----------------------------------------------------------------------------------------------------------'
+            }
 
             break
 
