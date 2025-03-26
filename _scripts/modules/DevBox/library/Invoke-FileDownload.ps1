@@ -1,5 +1,6 @@
 function Invoke-FileDownload {
 
+    [CmdletBinding()]
 	param(
 		[Parameter(Mandatory=$true)]
         [string] $Url,
@@ -10,7 +11,6 @@ function Invoke-FileDownload {
         [switch] $Expand		
 	)
 
-	
     $path = Join-Path -path $env:temp -ChildPath (Split-Path $Url -leaf)
 	if ($Name) { $path = Join-Path -Path $env:temp -ChildPath $Name }
 	
@@ -35,10 +35,10 @@ function Invoke-FileDownload {
                 } else {
 
                     $retryCount = $retryCount + 1
-
+          
                     if ($retryCount -gt $Retries) { 
-                        Write-Host ">>> Downloading $Url failed: $($_.Exception.Message)"
-                        throw $_.Exception.Message 
+                        Write-Error "Downloading $Url failed: $($_.Exception.Message)" -ErrorAction SilentlyContinue 
+                        break # we need to break the loop - just in case the function is called with ErrorAction Continue or SilentlyContinue
                     }
                 }
             }
