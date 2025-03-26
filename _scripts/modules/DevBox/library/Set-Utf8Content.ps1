@@ -25,7 +25,7 @@ function Set-Utf8Content() {
 
     } catch {
 
-        Write-Error "!!! Failed to write content to $Path: $($_.Exception.Message)" -ErrorAction $ErrorActionPreference
+        Write-Error "!!! Failed to write content to ${Path}: $($_.Exception.Message)" -ErrorAction $ErrorActionPreference
     }
 }
 
