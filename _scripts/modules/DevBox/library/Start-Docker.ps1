@@ -2,7 +2,7 @@ function Wait-DockerInfo() {
 
     param (
         [Parameter(Mandatory=$false)]
-        [timespan] $Timeout = (New-TimeSpan -Minutes 5)
+        [timespan] $Timeout = (New-TimeSpan -Minutes 10)
     )
 
     Write-Host ">>> Waiting for Docker CLI to be functional ..."
@@ -13,20 +13,31 @@ function Wait-DockerInfo() {
         $docker = Get-Command 'docker' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
         $dockerCompose = Get-Command 'docker-compose' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
 
-        $result = Invoke-CommandLine -Command $docker -Arguments 'info' -Silent -ErrorAction SilentlyContinue 
+        $result = Invoke-CommandLine -Command $docker -Arguments 'version' -Silent -Capture StdErr -ErrorAction SilentlyContinue 
+        $dockerVersion = $result.Output
 
         if ($result.ExitCode -eq 0 -and $dockerCompose) { 
-            # docker-compose is available - check if it is functional as well
-            $result = Invoke-CommandLine -Command $dockerCompose -Arguments 'info' -Silent -ErrorAction SilentlyContinue 
+            
+            $result = Invoke-CommandLine -Command $dockerCompose -Arguments 'version' -Silent -Capture StdErr -ErrorAction SilentlyContinue 
+            $dockerVersion = ($dockerVersion, $result.Output) -join "`r`n"
         } 
 
-        if ($result.ExitCode -eq 0) { 
+        if ($result.ExitCode -eq 0) {
+
             Write-Host ">>> Docker CLI / Docker Compose is now functional"
-            break 
+            Write-Host '----------------------------------------------------------------------------------------------------------'
+            Write-Host $dockerVersion
+            Write-Host '----------------------------------------------------------------------------------------------------------'
+
+            break
+
         } elseif ((Get-Date) -le $timeoutEnd) { 
+            
             Write-Host ">>> Waiting for Docker CLI / Docker Compose to be functional ..."
-            Start-Sleep -Seconds 5
+            Start-Sleep -Seconds 30
+
         } else { 
+            
             # we reach our timeout - blow it up
             throw "Docker CLI / Docker Compose did not become functional within $Timeout"                
         }
