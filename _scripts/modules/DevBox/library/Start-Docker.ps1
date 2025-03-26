@@ -41,21 +41,20 @@ function  Start-DockerDesktop() {
     if (Test-Path $dockerDesktop -ErrorAction SilentlyContinue) {
 
         $dockerDesktopSettings = Join-Path $env:APPDATA 'Docker\settings-store.json'
-
-        if (-not (Test-Path $dockerDesktopSettings -ErrorAction SilentlyContinue)) { 
-
-            Write-Host ">>> Preconfigure Docker Desktop ..."
-            
-            @{
-                'AutoStart' = $true
-                'DisplayedOnboarding' = $true
-
-            } | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings -Force
-        }
+        $dockerDesktopInitialStart = [bool](-not (Test-Path $dockerDesktopSettings -PathType Leaf -ErrorAction SilentlyContinue))
 
         Write-Host ">>> Starting Docker Desktop ..."
         Invoke-CommandLine -Command $dockerDesktop -NoWait
         Wait-DockerInfo
+
+        $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json -ErrorAction SilentlyContinue
+        if ($dockerDesktopInitialStart -and $dockerDesktopSettingsJson) { 
+
+            Write-Host ">>> Configure Docker Desktop ..."
+            $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'AutoStart' -Value $true -Force | Out-Null
+            $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'DisplayedOnboarding' -Value $true -Force | Out-Null
+            $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings -Force -ErrorAction SilentlyContinue
+        }
 
         return $true
 
