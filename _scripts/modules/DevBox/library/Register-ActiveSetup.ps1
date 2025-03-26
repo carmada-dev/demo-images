@@ -49,14 +49,19 @@ function Register-ActiveSetup {
     $activeSetupLog = [System.IO.Path]::ChangeExtension($activeSetupPS1, '.log')
 
     $activeSetupScript = {
-        Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { Import-Module -Name $_ } 
+        Write-Host "$(Get-Date) - Starting Scheduled Task [TaskName] under [TaskPath] ..." | Out-File -Append -FilePath '[LogFile]' -ErrorAction SilentlyContinue
+        Get-ChildItem -Path '[Modules]' -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { Import-Module -Name $_ } 
         Get-Service -Name 'Schedule' -ErrorAction SilentlyContinue | Start-Service -ErrorAction SilentlyContinue | Out-Null 
-        return Invoke-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]'
+        $result = Invoke-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]'
+        Write-Host "$(Get-Date) - Finished Scheduled Task [TaskName] under [TaskPath] with exit code $result" | Out-File -Append -FilePath '[LogFile]' -ErrorAction SilentlyContinue
+        exit $result
     } 
     
     $activeSetupTokens = @{
         'TaskName' = $taskName
         'TaskPath' = $taskPath
+        'Modules' = (Join-Path $env:DEVBOX_HOME 'Modules')
+        'LogFile' = $activeSetupLog
     }
 
     $activeSetupScriptEncoded = $activeSetupScript | Convert-ScriptBlockToString -ScriptTokens $activeSetupTokens -Ugly -EncodeBase64
