@@ -14,7 +14,7 @@ function Register-ActiveSetup {
 
     $activeSetupFolder =  New-Item -Path (Join-Path $env:DEVBOX_HOME 'ActiveSetup') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
     $activeSetupScript = Join-Path $activeSetupFolder (&{ if ($Name) { $Name } else { [System.IO.Path]::GetFileName($Path) } })
-    $activeSetupId = $Path | ConvertTo-GUID 
+    $activeSetupId = Get-Content -Path $Path -Raw | ConvertTo-GUID 
     $activeSetupKeyPath = 'HKLM:SOFTWARE\Microsoft\Active Setup\Installed Components'
     $activeSetupKeyEnabled = [int]$Enabled.ToBool()
 
@@ -49,19 +49,18 @@ function Register-ActiveSetup {
     $activeSetupLog = [System.IO.Path]::ChangeExtension($activeSetupPS1, '.log')
 
     $activeSetupScript = {
-        Write-Host "$(Get-Date) - Starting Scheduled Task [TaskName] under [TaskPath] ..." | Out-File -Append -FilePath '[LogFile]' -ErrorAction SilentlyContinue
-        Get-ChildItem -Path '[Modules]' -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { Import-Module -Name $_ } 
+        $log = Join-Path $env:DEVBOX_HOME "ActiveSetup\ActiveSetup.log"
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff') - Starting Scheduled Task [TaskName] under [TaskPath] ..." | Out-File -Append -FilePath $log -ErrorAction SilentlyContinue
+        Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { Import-Module -Name $_ } 
         Get-Service -Name 'Schedule' -ErrorAction SilentlyContinue | Start-Service -ErrorAction SilentlyContinue | Out-Null 
         $result = Invoke-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]'
-        Write-Host "$(Get-Date) - Finished Scheduled Task [TaskName] under [TaskPath] with exit code $result" | Out-File -Append -FilePath '[LogFile]' -ErrorAction SilentlyContinue
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff') - Finished Scheduled Task [TaskName] under [TaskPath] with exit code $result" | Out-File -Append -FilePath $log -ErrorAction SilentlyContinue
         exit $result
     } 
     
     $activeSetupTokens = @{
         'TaskName' = $taskName
         'TaskPath' = $taskPath
-        'Modules' = (Join-Path $env:DEVBOX_HOME 'Modules')
-        'LogFile' = $activeSetupLog
     }
 
     $activeSetupScriptEncoded = $activeSetupScript | Convert-ScriptBlockToString -ScriptTokens $activeSetupTokens -Ugly -EncodeBase64
@@ -73,25 +72,30 @@ function Register-ActiveSetup {
         $activeSetupCmd = "PowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$activeSetupPS1`""
     }
 
+    # By default we assume the ActiveSetup task is already registered and we need to update it.
+    # Therefore we check if the task is already registered by its naming pattern. If not found,
+    # we switch to registration mode and create a new task with a new ID.
+
+    # The task name follows the pattern "devbox-[UnixTimestamp]-[ScriptHashAsGUID]".
+    # UnixTimestamp - used to ensure the task is executed in the order of its registration.
+    # ScriptHashAsGUID - used to identify the script to ensure a script is executed only once.
+    
+    # CAUTION: If the same script is registered multiple times, we only create one task! 
+    # All subsequent registrations will only update the version information of the existing task. 
+
+    $activeSetupAction = 'Updating'
     $activeSetupKey = Get-ChildItem -Path $activeSetupKeyPath `
         | ForEach-Object { Split-Path -Path ($_.Name) -Leaf } `
         | Where-Object { $_ -match "devbox-\d+-$activeSetupId" } `
         | Select-Object -First 1 -ErrorAction SilentlyContinue
 
-    if ($activeSetupKey) {
-        
-        Write-Host "- Updating ActiveSetup Task: $activeSetupKey"
-
-    } else {
-
-        # create a new key for the active setup task (combination of timestamp - to keep execution order - and ID)
-        $activeSetupTimestamp = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds().ToString()
-        $activeSetupKey = Join-Path $activeSetupKeyPath "devbox-$activeSetupTimestamp-$activeSetupId"
-        
-        Write-Host "- Registering ActiveSetup Task: $activeSetupKey"
+    if (-not $activeSetupKey) {
+        $activeSetupAction = 'Registering'
+        $activeSetupKey = "devbox-$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds().ToString())-$activeSetupId"
     }
 
-    $registryKey = New-Item -Path $activeSetupKey -Force -ErrorAction SilentlyContinue
+    Write-Host "- $activeSetupAction ActiveSetup Task: $activeSetupKey"
+    $registryKey = New-Item -Path $activeSetupKeyPath -Name $activeSetupKey -Force -ErrorAction SilentlyContinue
     $registryKey | New-ItemProperty -Force -Name '(Default)' -Value ([System.IO.Path]::GetFileNameWithoutExtension($Path)) -ErrorAction SilentlyContinue | Out-Null
     $registryKey | New-ItemProperty -Force -Name 'StubPath' -Value $activeSetupCmd -PropertyType 'ExpandString' -ErrorAction SilentlyContinue | Out-Null
     $registryKey | New-ItemProperty -Force -Name 'Version' -Value ((Get-Date -Format 'yyyy,MMdd,HHmm').ToString()) -ErrorAction SilentlyContinue | Out-Null
