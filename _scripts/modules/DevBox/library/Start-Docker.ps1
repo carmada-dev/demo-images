@@ -5,7 +5,6 @@ function Wait-DockerInfo() {
         [timespan] $Timeout = (New-TimeSpan -Minutes 10)
     )
 
-    Write-Host ">>> Waiting for Docker CLI to be functional ..."
     $timeoutEnd = (Get-Date).Add($Timeout)
 
     while ($true) {
@@ -24,7 +23,7 @@ function Wait-DockerInfo() {
 
         if ($result.ExitCode -eq 0) {
 
-            Write-Host ">>> Docker CLI / Docker Compose is now functional"
+            Write-Host ">>> Docker CLI / Docker Compose is now responsive"
 
             if ($dockerVersion) {
 
@@ -37,13 +36,13 @@ function Wait-DockerInfo() {
 
         } elseif ((Get-Date) -le $timeoutEnd) { 
             
-            Write-Host ">>> Waiting for Docker CLI / Docker Compose to be functional ..."
+            Write-Host ">>> Waiting for Docker CLI / Docker Compose to be responsive ..."
             Start-Sleep -Seconds 30
 
         } else { 
             
             # we reach our timeout - blow it up
-            throw "Docker CLI / Docker Compose did not become functional within $Timeout"                
+            throw "Docker CLI / Docker Compose did not become responsive within $Timeout"                
         }
     } 
 }
