@@ -10,18 +10,18 @@ function Register-ActiveSetup {
         [switch] $AsSystem
     )
 
-    $Path = [System.IO.Path]::GetFullPath([System.Environment]::ExpandEnvironmentVariables($Path))
+    $Path = [System.IO.Path]::GetFullPath([System.Environment]::ExpandEnvironmentVariables($Path)).Trim()
 
     $activeSetupFolder =  New-Item -Path (Join-Path $env:DEVBOX_HOME 'ActiveSetup') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
     $activeSetupScript = Join-Path $activeSetupFolder (&{ if ($Name) { $Name } else { [System.IO.Path]::GetFileName($Path) } })
-    $activeSetupId = "$Path".ToLowerInvariant() | ConvertTo-GUID 
+    $activeSetupId = $Path | ConvertTo-GUID -Invariant
     $activeSetupKeyPath = 'HKLM:SOFTWARE\Microsoft\Active Setup\Installed Components'
     $activeSetupKeyEnabled = [int]$Enabled.ToBool()
 
     if (-not($Path.StartsWith($activeSetupFolder))) {
         # copy the script to the active setup folder and create a new ID based on the new path
         $Path = Copy-Item -Path $Path -Destination $activeSetupScript -Force -PassThru | Select-Object -ExpandProperty Fullname
-        $activeSetupId = $Path | ConvertTo-GUID
+        $activeSetupId = $Path | ConvertTo-GUID -Invariant
     }
 
     $taskName = "DevBox-$activeSetupId"
@@ -43,17 +43,11 @@ function Register-ActiveSetup {
     # grant authenticated users permissions to run the task
     Grant-ScheduledTaskInvoke -TaskName $taskName -TaskPath $taskPath | Out-Null
 
-    $activeSetupPS1 = Join-Path $env:DEVBOX_HOME "ActiveSetup\$taskName.ps1"
-    $activeSetupLog = [System.IO.Path]::ChangeExtension($activeSetupPS1, '.log')
 
     $activeSetupScript = {
-        $log = Join-Path $env:DEVBOX_HOME "ActiveSetup\ActiveSetup.log"
-        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff') - Starting Scheduled Task [TaskName] under [TaskPath] ..." | Out-File -Append -FilePath $log -ErrorAction SilentlyContinue
         Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { Import-Module -Name $_ } 
         Get-Service -Name 'Schedule' -ErrorAction SilentlyContinue | Start-Service -ErrorAction SilentlyContinue | Out-Null 
-        $result = Invoke-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]'
-        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff') - Finished Scheduled Task [TaskName] under [TaskPath] with exit code $result" | Out-File -Append -FilePath $log -ErrorAction SilentlyContinue
-        exit $result
+        exit (Invoke-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]')
     } 
     
     $activeSetupTokens = @{
@@ -61,14 +55,11 @@ function Register-ActiveSetup {
         'TaskPath' = $taskPath
     }
 
-    $activeSetupScriptEncoded = $activeSetupScript | Convert-ScriptBlockToString -ScriptTokens $activeSetupTokens -Ugly -EncodeBase64
-    $activeSetupCmd = "PowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $activeSetupScriptEncoded"
+    $activeSetupPS1 = Join-Path $env:DEVBOX_HOME "ActiveSetup\$taskName.ps1"
+    $activeSetupLog = [System.IO.Path]::ChangeExtension($activeSetupPS1, '.log')
 
-    if ($activeSetupCmd.Length -gt 8192) {
-        Write-Host ">>> ActiveSetup command is too long, using script '$activeSetupPS1' instead"
-        $activeSetupScript | Convert-ScriptBlockToString -ScriptTokens $activeSetupTokens -Transcript $activeSetupLog | Out-File -FilePath $activeSetupPS1 -Force -ErrorAction SilentlyContinue
-        $activeSetupCmd = "PowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$activeSetupPS1`""
-    }
+    $activeSetupScript | Convert-ScriptBlockToString -ScriptTokens $activeSetupTokens -Transcript $activeSetupLog | Out-File -FilePath $activeSetupPS1 -Force -ErrorAction SilentlyContinue
+    $activeSetupCmd = "PowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$activeSetupPS1`""
 
     # By default we assume the ActiveSetup task is already registered and we need to update it.
     # Therefore we check if the task is already registered by its naming pattern. If not found,
