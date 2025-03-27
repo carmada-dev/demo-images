@@ -37,12 +37,6 @@ $downloadKeyVaultArtifact = {
 		
 	Write-Host ">>> Decoding KeyVault Artifact $Source"
 	[System.Convert]::FromBase64String($KeyVaultResponse.value) | Set-Content -Path $Destination -Encoding Byte -Force
-
-	if (Test-Path -Path $Destination -PathType Leaf) {  
-		Write-Host ">>> Resolved Artifact $Destination" 
-	} else {
-		Write-Error "!!! Missing Artifact $Destination"
-	}
 }
 
 $downloadStorageArtifact = {
@@ -57,12 +51,6 @@ $downloadStorageArtifact = {
 
 	Write-Host ">>> Downloading Storage Artifact $Source" 
 	Invoke-CommandLine -Command $azcopy -Arguments "copy `"$Source`" `"$Destination`" --output-level=quiet" | Select-Object -ExpandProperty Output | Write-Host
-
-	if (Test-Path -Path $Destination -PathType Leaf) { 
-		Write-Host ">>> Resolved Artifact $Destination" 
-	} else {
-		Write-Error "!!! Missing Artifact $Destination"
-	}	
 }
 
 $downloadArtifact = {
@@ -72,14 +60,8 @@ $downloadArtifact = {
 		Import-Module -Name $_
 	} 
 
-	$Temp = Invoke-FileDownload -Url $Source -Name ([System.IO.Path]::GetFileName($Destination))
-	Move-Item -Path $Temp -Destination $Destination -Force
-
-	if (Test-Path -Path $Destination -PathType Leaf) { 
-		Write-Host ">>> Resolved Artifact $Destination" 
-	} else {
-		Write-Error "!!! Missing Artifact $Destination"
-	}
+	# no need to add output here - the Invoke-FileDownload function will do that
+	Invoke-FileDownload -Url $Source -Name ([System.IO.Path]::GetFileName($Destination)) | Move-Item -Destination $Destination -Force
 }
 
 Invoke-ScriptSection -Title 'Setting DevBox environment variables' -ScriptBlock {
@@ -263,7 +245,7 @@ if (Test-Path -Path $Artifacts -PathType Container) {
 
 				if ($jobs) {
 					Write-Host ">>> Waiting for downloads ..."
-					$jobs | Receive-Job -Wait -AutoRemoveJob
+					$jobs | Wait-Job | Receive-Job -AutoRemoveJob
 				}
 			}
 		}

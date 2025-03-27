@@ -23,21 +23,26 @@ function Invoke-FileDownload {
             try {
 
                 Write-Host ">>> Downloading $Url > $path $(&{ if ($retryCount -gt 0) { " (Retry: $retryCount of $Retries)" } else { '' } })".Trim() 
-                Invoke-WebRequest -Uri $Url -OutFile $path -UseBasicParsing -WarningAction SilentlyContinue; break
+                Invoke-WebRequest -Uri $Url -OutFile $path -UseBasicParsing -WarningAction SilentlyContinue
+                
+                break # if we reach this point, the download was successful - we can break the retry loop
 
             } catch {
 
                 if ($_.Exception.Response.StatusCode -eq 308 -and $_.Exception.Response.Headers.Keys -contains 'Location') {
 
-                    $Url = $_.Exception.Response.Headers['Location']
-                    Write-Host ">>> Following redirect to $Url".Trim() 
+                    # get the redirect location from the respnse headers
+                    $location = $_.Exception.Response.Headers['Location']
+
+                    Write-Host ">>> Following redirect from $Url to $location".Trim() 
+                    $Url = $location # update the URL to the new location
 
                 } else {
 
                     $retryCount = $retryCount + 1
           
                     if ($retryCount -gt $Retries) { 
-                        Write-Error "Downloading $Url failed: $($_.Exception.Message)" -ErrorAction SilentlyContinue 
+                        Write-Error "Downloading $Url failed: $($_.Exception.Message)" -ErrorAction $ErrorActionPreference 
                         break # we need to break the loop - just in case the function is called with ErrorAction Continue or SilentlyContinue
                     }
                 }
