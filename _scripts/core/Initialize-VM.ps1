@@ -245,7 +245,7 @@ if (Test-Path -Path $Artifacts -PathType Container) {
 
 				if ($jobs) {
 					Write-Host ">>> Waiting for downloads ..."
-					$jobs | Wait-Job | Receive-Job -AutoRemoveJob
+					$jobs | Wait-Job | Receive-Job
 				}
 			}
 		}
