@@ -68,5 +68,5 @@ if (-not (Test-IsPacker) -and (Test-IsElevated) -and (Start-Docker)) {
     }
 
     Write-Host ">>> Waiting for Docker Compose jobs to finish ..."
-    $jobs | Wait-Job | Receive-Job -Wait -AutoRemoveJob
+    $jobs | Wait-Job | Receive-Job -AutoRemoveJob
 }
