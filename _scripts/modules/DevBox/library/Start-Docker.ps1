@@ -67,7 +67,7 @@ function  Start-DockerDesktop() {
             Write-Host ">>> Configure Docker Desktop ..."
             $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'AutoStart' -Value $true -Force | Out-Null
             $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'DisplayedOnboarding' -Value $true -Force | Out-Null
-            $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings -Force -ErrorAction SilentlyContinue
+            $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings -Force -PassThru -ErrorAction SilentlyContinue | Write-Host
         }
 
         return $true
