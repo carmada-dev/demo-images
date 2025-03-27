@@ -14,7 +14,7 @@ function Register-ActiveSetup {
 
     $activeSetupFolder =  New-Item -Path (Join-Path $env:DEVBOX_HOME 'ActiveSetup') -ItemType Directory -Force | Select-Object -ExpandProperty FullName
     $activeSetupScript = Join-Path $activeSetupFolder (&{ if ($Name) { $Name } else { [System.IO.Path]::GetFileName($Path) } })
-    $activeSetupId = Get-Content -Path $Path -Raw | ConvertTo-GUID 
+    $activeSetupId = "$Path".ToLowerInvariant() | ConvertTo-GUID 
     $activeSetupKeyPath = 'HKLM:SOFTWARE\Microsoft\Active Setup\Installed Components'
     $activeSetupKeyEnabled = [int]$Enabled.ToBool()
 
@@ -26,21 +26,19 @@ function Register-ActiveSetup {
 
     $taskName = "DevBox-$activeSetupId"
     $taskPath = '\'
-    $taskAction = New-ScheduledTaskAction -Execute 'powershell' -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Path`""
-    $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -Priority 0 -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -DontStopIfGoingOnBatteries -DontStopOnIdleEnd 
-    $taskTrigger = New-ScheduledTaskTrigger -AtLogOn
+
     $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
-    
-    if ($AsSystem) {
-        # The task will be run as SYSTEM, so we need to set the principal to SYSTEM
-        $taskPrincipal = New-ScheduledTaskPrincipal -UserId 'System' -RunLevel Highest
-    } 
+    if ($AsSystem) { $taskPrincipal = New-ScheduledTaskPrincipal -UserId 'System' -RunLevel Highest } 
 
     # delete any existing task with the same name
     Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
 
     # register our newly defined task
-    Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath -Action $taskAction -Trigger $taskTrigger -Settings $taskSettings -Principal $taskPrincipal -ErrorAction Stop | Out-Null
+    Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath `
+        -Action (New-ScheduledTaskAction -Execute 'powershell' -Argument "-NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Path`"") `
+        -Settings (New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -Priority 0 -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -DontStopIfGoingOnBatteries -DontStopOnIdleEnd) `
+        -Principal $taskPrincipal `
+        -ErrorAction Stop | Out-Null
 
     # grant authenticated users permissions to run the task
     Grant-ScheduledTaskInvoke -TaskName $taskName -TaskPath $taskPath | Out-Null

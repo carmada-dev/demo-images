@@ -99,7 +99,7 @@ function Invoke-ScheduledTask {
 
                 Write-Host ">>> Registering Scheduled Task '$TaskName' under '$TaskPath'"
                 $Task = Register-ScheduledTask -Force -TaskName $TaskName -TaskPath $TaskPath `
-                    -Action (New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $taskEncoded") `
+                    -Action (New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $taskEncoded") `
                     -Settings (New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew) `
                     -Principal (New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest) `
                     -ErrorAction Stop 
