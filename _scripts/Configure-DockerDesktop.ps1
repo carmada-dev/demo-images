@@ -25,12 +25,39 @@ if (Test-IsPacker) {
             Write-Host ">>> Adding 'Authenticated Users' to docker-users group ..."
             Add-LocalGroupMember -Group "docker-users" -Member "NT AUTHORITY\Authenticated Users"
         }
-
     } 
 }
 
 Invoke-ScriptSection -Title "Starting Docker Desktop" -ScriptBlock {
 
     Start-Docker -Tool 'DockerDesktop'
+
+    $dockerDesktopSettings = Join-Path $env:APPDATA 'Docker\settings-store.json'
+    if (Test-Path -Path $dockerDesktopSettings -PathType Leaf) {
+
+        $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json -ErrorAction SilentlyContinue
+        $dockerDesktopSettingsHash = Get-FileHash -Path $dockerDesktopSettings -Algorithm SHA256 -ErrorAction SilentlyContinue
+
+        if ($dockerDesktopSettingsJson) { 
+
+            Write-Host ">>> Configuring Docker Desktop ..."
+            $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'AutoStart' -Value $true -Force | Out-Null
+            $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'DisplayedOnboarding' -Value $true -Force | Out-Null
+            $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings -Force -PassThru -ErrorAction SilentlyContinue | Write-Host
+
+            if ($dockerDesktopSettingsHash -ne (Get-FileHash -Path $dockerDesktopSettings -Algorithm SHA256 -ErrorAction SilentlyContinue)) {
+
+                Write-Host ">>> Restarting Docker Desktop ..."
+                do {
+                    
+                    $dockerProcesses = Get-Process -Name *Docker* | Where-Object { $_.SessionId -gt 0 } | Stop-Process -Force -Passthru -ErrorAction SilentlyContinue
+                    if ($dockerProcesses.Count -gt 0) { Start-Sleep -Seconds 5 } # as long as there was a process to stop we give it a few seconds to finish
+
+                } until ($dockerProcesses.Count -eq 0)
+
+                
+            }
+        }
+    }
 }
 
