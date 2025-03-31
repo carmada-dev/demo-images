@@ -36,7 +36,7 @@ Invoke-ScriptSection -Title "Starting Docker Desktop" -ScriptBlock {
     if (Test-Path -Path $dockerDesktopSettings -PathType Leaf) {
 
         $dockerDesktopSettingsJson = Get-Content -Path $dockerDesktopSettings -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json -ErrorAction SilentlyContinue
-        $dockerDesktopSettingsHash = Get-FileHash -Path $dockerDesktopSettings -Algorithm SHA256 -ErrorAction SilentlyContinue
+        $dockerDesktopSettingsHash = Get-FileHash -Path $dockerDesktopSettings -ErrorAction SilentlyContinue
 
         if ($dockerDesktopSettingsJson) { 
 
@@ -45,7 +45,7 @@ Invoke-ScriptSection -Title "Starting Docker Desktop" -ScriptBlock {
             $dockerDesktopSettingsJson | Add-Member -MemberType NoteProperty -Name 'DisplayedOnboarding' -Value $true -Force | Out-Null
             $dockerDesktopSettingsJson | ConvertTo-Json -Depth 100 | Set-Utf8Content -Path $dockerDesktopSettings -Force -PassThru -ErrorAction SilentlyContinue | Write-Host
 
-            if ($dockerDesktopSettingsHash -ne (Get-FileHash -Path $dockerDesktopSettings -Algorithm SHA256 -ErrorAction SilentlyContinue)) {
+            if ($dockerDesktopSettingsHash -ne (Get-FileHash -Path $dockerDesktopSettings -ErrorAction SilentlyContinue)) {
 
                 Write-Host ">>> Restarting Docker Desktop ..."
                 do {
@@ -55,7 +55,7 @@ Invoke-ScriptSection -Title "Starting Docker Desktop" -ScriptBlock {
 
                 } until ($dockerProcesses.Count -eq 0)
 
-                
+                Start-Docker -Tool 'DockerDesktop'
             }
         }
     }
