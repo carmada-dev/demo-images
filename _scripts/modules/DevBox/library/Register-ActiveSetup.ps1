@@ -1,14 +1,18 @@
 function Register-ActiveSetup {
 
     param(
+
         [Parameter(Mandatory = $true)]
         [string] $Path,
+    
         [Parameter(Mandatory = $false)]
         [string] $Name,
+    
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('AsUser', 'AsSystem')]
+        [string] $Elevate,
 
-        [switch] $Enabled,
-        [switch] $Direct,
-        [switch] $AsSystem
+        [switch] $Enabled
     )
 
     $Path = [System.IO.Path]::GetFullPath([System.Environment]::ExpandEnvironmentVariables($Path)).Trim()
@@ -24,19 +28,19 @@ function Register-ActiveSetup {
         $Path = Copy-Item -Path $Path -Destination $activeSetupScript -Force -PassThru | Select-Object -ExpandProperty Fullname
         $activeSetupId = $Path | ConvertTo-GUID -Invariant
     }
+    
+    $taskName = "DevBox-$activeSetupId"
+    $taskPath = '\'
 
-    $activeSetupCmd = "PowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Path`""
+    # delete any existing task with the same name
+    Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue `
+        | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue `
+        | Out-Null
 
-    if (-not $Direct) {
-
-        $taskName = "DevBox-$activeSetupId"
-        $taskPath = '\'
+    if ($Elevate) {
 
         $taskPrincipal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest
-        if ($AsSystem) { $taskPrincipal = New-ScheduledTaskPrincipal -UserId 'System' -RunLevel Highest } 
-
-        # delete any existing task with the same name
-        Get-ScheduledTask -TaskName $taskName -TaskPath $taskPath -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+        if ($Elevate -eq 'AsSystem') { $taskPrincipal = New-ScheduledTaskPrincipal -UserId 'System' -RunLevel Highest } 
 
         # register our newly defined task
         Register-ScheduledTask -Force -TaskName $taskName -TaskPath $taskPath `
@@ -51,7 +55,7 @@ function Register-ActiveSetup {
         $activeSetupScript = {
             Get-ChildItem -Path (Join-Path $env:DEVBOX_HOME 'Modules') -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { Import-Module -Name $_ } 
             Get-Service -Name 'Schedule' -ErrorAction SilentlyContinue | Start-Service -ErrorAction SilentlyContinue | Out-Null 
-            exit (Invoke-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]')
+            exit (Invoke-ScheduledTask -TaskName '[TaskName]' -TaskPath '[TaskPath]' -Timeout ([System.TimeSpan]::MaxValue))
         } 
         
         $activeSetupTokens = @{
@@ -65,6 +69,10 @@ function Register-ActiveSetup {
 
         $activeSetupScript | Convert-ScriptBlockToString -ScriptTokens $activeSetupTokens -Transcript $activeSetupTaskLog | Out-File -FilePath $activeSetupTaskScript -Force -ErrorAction SilentlyContinue
         $activeSetupCmd = "PowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$activeSetupTaskScript`""
+
+    } else {
+
+        $activeSetupCmd = "PowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Path`""
     }
 
     # By default we assume the ActiveSetup task is already registered and we need to update it.
