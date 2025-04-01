@@ -5,7 +5,7 @@ function Clear-DockerProgress {
         [string] $DockerOutput
     )
     
-    if ($DockerOutput) { $DockerOutput = $DockerOutput -split "`r?`n" | Where-Object { "$_" -notmatch '\[=*>\s+\]' } | Out-String }
+    if ($DockerOutput) { $DockerOutput = $DockerOutput -split "`r?`n" | Where-Object { "$_" -notmatch '\[=*>\s+\]' } | Select-Object -Unique | Out-String }
 
     return $DockerOutput
 }

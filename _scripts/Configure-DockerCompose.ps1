@@ -19,7 +19,7 @@ if (Test-IsPacker) {
 $dockerCompose = Get-Command 'docker-compose' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
 if (-not $dockerCompose) { throw 'Could not find docker-compose.exe' }
 
-if (-not (Test-IsPacker) -and (Test-IsElevated) -and (Start-Docker)) {
+if (-not (Test-IsPacker) -and (Start-Docker)) {
 
     # ensure docker artifacts directory exists
     $dockerArtifacts = (New-Item -Path (Join-Path $env:DEVBOX_HOME 'Artifacts\Docker') -ItemType Directory -Force).FullName
@@ -67,6 +67,9 @@ if (-not (Test-IsPacker) -and (Test-IsElevated) -and (Start-Docker)) {
         } -ArgumentList $_ -ErrorAction SilentlyContinue 
     }
 
-    Write-Host ">>> Waiting for Docker Compose jobs to finish ..."
-    $jobs | Wait-Job | Receive-Job
+    if ($jobs) { 
+
+        Write-Host ">>> Waiting for Docker Compose jobs to finish ..."
+        $jobs | Wait-Job | Receive-Job -ErrorAction SilentlyContinue
+    }
 }
