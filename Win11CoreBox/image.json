@@ -9,6 +9,11 @@
 	],
 	"updates": "all",
 
+	"language": {
+		"prefered": "de-DE",
+		"additional": []
+	},
+
 	"base": {
 		"publisher": "MicrosoftVisualStudio",
 		"offer": "windowsplustools",
