@@ -101,7 +101,7 @@ function Invoke-ScheduledTask {
                 $Task = Register-ScheduledTask -Force -TaskName $TaskName -TaskPath $TaskPath `
                     -Action (New-ScheduledTaskAction -Execute 'PowerShell' -Argument "-NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $taskEncoded") `
                     -Settings (New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew) `
-                    -Principal (New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Highest) `
+                    -Principal (New-ScheduledTaskPrincipal -GroupId 'S-1-5-32-545' -RunLevel Highest) `
                     -ErrorAction Stop 
 
                 try {
