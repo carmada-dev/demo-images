@@ -72,7 +72,7 @@ Invoke-ScriptSection -Title 'Enable Defrag Schedule' -ScriptBlock {
 
 Invoke-ScriptSection -Title 'Uninstall User Apps' -ScriptBlock {
 
-	Get-AppxPackage -AllUsers | Remove-AppxPackage | Out-String | Write-Host
+	Get-AppxPackage -AllUsers | Remove-AppxPackage -ErrorAction SilentlyContinue | Out-String | Write-Host
 }
 
 Invoke-ScriptSection -Title 'Shrink System Partition' -ScriptBlock {
