@@ -70,6 +70,11 @@ Invoke-ScriptSection -Title 'Enable Defrag Schedule' -ScriptBlock {
 	Get-ScheduledTask ScheduledDefrag | Enable-ScheduledTask | Out-String | Write-Host
 }
 
+Invoke-ScriptSection -Title 'Uninstall User Apps' -ScriptBlock {
+
+	Get-AppxPackage -AllUsers | Remove-AppxPackage | Out-String | Write-Host
+}
+
 Invoke-ScriptSection -Title 'Shrink System Partition' -ScriptBlock {
 
 	$partition = Get-Partition | Where-Object { -not($_.IsHidden) } | Sort-Object { $_.DriveLetter } | Select-Object -First 1
