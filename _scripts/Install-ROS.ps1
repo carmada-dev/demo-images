@@ -20,7 +20,7 @@ function New-RosInstallScript() {
 
 	$rosInstallScript = Join-Path $env:TEMP 'install_ros.sh'
 
-	if (not(Test-Path $rosInstallScript -PathType Leaf)) {
+	if (-not(Test-Path $rosInstallScript -PathType Leaf)) {
 
 @"
 #!/bin/bash
