@@ -111,10 +111,6 @@ function Wait-DistroReady() {
 	throw "Distro '$DistroName' did not become ready after $($maxRetries * $delaySeconds) seconds."
 }
 
-function Optimize-WSL {
-
-}
-
 Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 
 	$DistroHome = Join-Path $env:DEVBOX_HOME "WSL\ROS"
@@ -136,7 +132,7 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 
 		# Build .wslconfig content
 		Write-Host ">>> Configuring WSL with $memGB GB memory and $cpuCount processors ..."
-		$wslConfig = @"
+@"
 [wsl2]
 memory=${memGB}GB
 processors=${cpuCount}
@@ -145,7 +141,7 @@ localhostForwarding=true
 nestedVirtualization=true
 "@ | Set-Content -Path "$env:USERPROFILE\.wslconfig" -Force
 
-		Write-Host "Restarting WSL ..."
+		Write-Host ">>> Restarting WSL ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--shutdown" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
 	}
@@ -174,14 +170,14 @@ nestedVirtualization=true
 
 		$DistroName = Split-Path $DistroHome -Leaf
 
-		write-Host ">>> Importing WSL Distro '$DistroName' from $DistroHome\rootfs.tar ..."
-		Invoke-CommandLine -Command 'wsl' -Arguments "--import $DistroName $env:USERPROFILE\WSL\$DistroName $DistroHome\rootfs.tar --version 2" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+		Write-Host ">>> Importing WSL Distro '$DistroName' from $DistroHome\rootfs.tar ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--import $DistroName $($env:USERPROFILE)\WSL\$DistroName $DistroHome\rootfs.tar --version 2" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
 		Write-Host ">>> Waiting for $DistroName WSL instance to be imported ..."
 		Wait-DistroReady -DistroName $DistroName
 
 		Write-Host ">>> Setting default user for $DistroName WSL instance ..."
-		Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName -u root -- bash -c 'echo '[user]\ndefault=$($env:USERNAME)' > /etc/wsl.conf'" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+		Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName -u root -- bash -c `"echo '[user]\ndefault=$($env:USERNAME)' > /etc/wsl.conf`"" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 	}
 
 }
