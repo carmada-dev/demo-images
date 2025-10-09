@@ -36,6 +36,7 @@ locals {
 			search = "BrowseOnly=0 and IsInstalled=0" 
 			filters = [
 				"exclude:$_.Title -like '*Preview*'",
+				"exclude:$_.InstallationBehavior.CanRequestUserInput",
 				"include:$true"
 			]
 		}
@@ -43,6 +44,7 @@ locals {
 			search = "AutoSelectOnWebSites=1 and IsInstalled=0" 
 			filters = [
 				"exclude:$_.Title -like '*Preview*'",
+				"exclude:$_.InstallationBehavior.CanRequestUserInput",
 				"include:$true"
 			]
 		}
