@@ -123,15 +123,19 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 		exit 1
 	} 
 
-	# Ensure WSL distro home exists
+	# Ensure WSL distro home and offline folder 
 	New-Item -Path $DistroOffline -ItemType Directory -Force | Out-Null
+	New-Item -Path $DistroHome -ItemType Directory -Force | Out-Null
 
 	if (Test-IsPacker) {
 
 		$ROSInstallScript = New-RosInstallScript | ConvertTo-MntPath
 
 		Write-Host ">>> Downloading distro rootfs ..."
-		Invoke-FileDownload -Url 'https://cloud-images.ubuntu.com/wsl/kinetic/current/ubuntu-kinetic-wsl-amd64-wsl.rootfs.tar.gz' | Move-Item -Destination $DistroRootFs -Force
+		$temp = Invoke-FileDownload -Url 'https://cloud-images.ubuntu.com/wsl/kinetic/current/ubuntu-kinetic-wsl-amd64-wsl.rootfs.tar.gz'
+
+		Write-Host ">>> Moving $temp to $DistroRootFs ..."
+		Move-Item -Path $temp -Destination $DistroRootFs -Force | Out-Null
 
 		Write-Host ">>> Importing $DistroName WSL instance ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--import $DistroName $DistroHome $DistroRootFs --version 2" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
@@ -175,7 +179,7 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 		# Build .wslconfig content		
 		Write-Host ">>> Configuring WSL with optimizations for ROS ..."
 		@(
-			
+
 			"[wsl2]",
 			"memory=${memGB}GB",
 			"processors=${cpuCount}",
