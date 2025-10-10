@@ -22,23 +22,23 @@ function New-RosInstallScript() {
 
 	if (-not(Test-Path $rosInstallScript -PathType Leaf)) {
 
-@"
-#!/bin/bash
-set -e
+		@(
+			"#!/bin/bash",
+			"set -e",
 
-# Setup sources
-sudo apt update && sudo apt install -y curl gnupg lsb-release
-sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-echo "deb [arch=`$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu `$(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+			"# Setup sources",
+			"sudo apt update && sudo apt install -y curl gnupg lsb-release",
+			"sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg",
+			"echo `"deb [arch=`$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu `$(lsb_release -cs) main`" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null",
 
-# Install ROS
-sudo apt update 
-sudo apt install -y ros-jazzy-desktop ros-dev-tools
+			"# Install ROS",
+			"sudo apt update ",
+			"sudo apt install -y ros-jazzy-desktop ros-dev-tools",
 
-# Source ROS environment
-echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
+			"# Source ROS environment",
+			"echo `"source /opt/ros/jazzy/setup.bash`" >> /etc/bash.bashrc"
 
-"@ -replace "`r`n", "`n" | Set-Content $rosInstallScript -Force
+		) -join "`n" | Set-Content $rosInstallScript -Force
 
 	}
 
@@ -131,7 +131,7 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 		$ROSInstallScript = New-RosInstallScript | ConvertTo-MntPath
 
 		Write-Host ">>> Downloading distro rootfs ..."
-		Invoke-FileDownload -Url 'https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64-wsl.rootfs.tar.gz' | Move-Item -Destination $DistroRootFs -Force
+		Invoke-FileDownload -Url 'https://cloud-images.ubuntu.com/wsl/kinetic/current/ubuntu-kinetic-wsl-amd64-wsl.rootfs.tar.gz' | Move-Item -Destination $DistroRootFs -Force
 
 		Write-Host ">>> Importing $DistroName WSL instance ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--import $DistroName $DistroHome $DistroRootFs --version 2" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
@@ -150,13 +150,16 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 
 	} else {
 
-		$adapter = Get-NetAdapter | Where-Object { $_.Status -ne 'Up' -and $_.Name -like 'Ethernet*' } | Select-Object -First 1
-		if ($adapter) {
-			Write-Host ">>> Creating external switch for ROS (adapter: $($adapter.Name)) ..."
-			$switch = New-VMSwitch -Name "ROS" -NetAdapterName $adapter.Name -AllowManagementOS $true -Notes "ROS WSL2 Switch" | Out-Null
+		# The following configuration follows the recommendations from: https://github.com/espenakk/ros2-wsl2-guide
+
+		# if there is only one network adapter, use it to create a new VM switch in Hyper-V
+		# otherwise, exit and let the user choose which adapter to use
+		Write-Host ">>> Configuring WSL networking ..."
+		if (Get-NetAdapter | Measure-Object | Select-Object -ExpandProperty Count -eq 1) {
+			$adapterName = Get-NetAdapter | Select-Object -ExpandProperty Name -First 1
+			$adapterSwitch = New-VMSwitch -Name "ROS" -NetAdapterName $adapterName -AllowManagementOS $true -Notes "ROS WSL2 Switch" 
 		} else {
-			Write-Host ">>> Could not find a network adapter to create ROS switch. Available adapters:"
-			Get-NetAdapter | Out-String | Write-Host
+			Write-Host "!!! More than one available adapter:`r`n$(Get-NetAdapter | Out-String)"
 			exit 1
 		}
 
@@ -169,17 +172,18 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 		$cpuCount = (Get-CimInstance -ClassName Win32_Processor).NumberOfLogicalProcessors
 		$cpuCount = [math]::Floor($cpuCount / 2)
 
-		# Build .wslconfig content
-		# The configuration follows the recommendations from: https://github.com/espenakk/ros2-wsl2-guide
+		# Build .wslconfig content		
 		Write-Host ">>> Configuring WSL with optimizations for ROS ..."
-@"
-[wsl2]
-memory=${memGB}GB
-processors=${cpuCount}
-swap=${swapGB}GB
-networkingMode=bridged
-vmSwitch="$($switch.Name)"
-"@ | Set-Content -Path "$env:USERPROFILE\.wslconfig" -Force
+		@(
+			
+			"[wsl2]",
+			"memory=${memGB}GB",
+			"processors=${cpuCount}",
+			"swap=${swapGB}GB",
+			"networkingMode=bridged"
+			"vmSwitch=`"$($adapterSwitch.Name)`""
+
+		) -join "`r`n" | Set-Content -Path "$env:USERPROFILE\.wslconfig" -Force
 
 		Write-Host ">>> Restarting WSL ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--shutdown" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
