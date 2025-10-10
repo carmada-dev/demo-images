@@ -116,42 +116,16 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 	$DistroHome = Join-Path $env:DEVBOX_HOME "WSL\ROS"
 
 	if (-not(Get-Command wsl -ErrorAction SilentlyContinue)) {
-
 		Write-Host "Could not find wsl.exe"
 		exit 1
-
-	} else {
-
-		# Get total system memory in MB
-		$memMB = (Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory / 1MB
-		$memGB = [math]::Round($memMB / 2048)  # Convert to GB and halve
-
-		# Get total logical processors
-		$cpuCount = (Get-CimInstance -ClassName Win32_Processor).NumberOfLogicalProcessors
-		$cpuCount = [math]::Floor($cpuCount / 2)
-
-		# Build .wslconfig content
-		Write-Host ">>> Configuring WSL with $memGB GB memory and $cpuCount processors ..."
-@"
-[wsl2]
-memory=${memGB}GB
-processors=${cpuCount}
-swap=0
-localhostForwarding=true
-nestedVirtualization=true
-"@ | Set-Content -Path "$env:USERPROFILE\.wslconfig" -Force
-
-		Write-Host ">>> Restarting WSL ..."
-		Invoke-CommandLine -Command 'wsl' -Arguments "--shutdown" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
-
-	}
+	} 
 
 	# Ensure WSL distro home exists
 	New-Item -Path $DistroHome -ItemType Directory -Force | Out-Null
 
 	if (Test-IsPacker) {
 
-		$DistroName = "Ubuntu-24.04"
+		$DistroName = "Ubuntu-22.04"
 		$ROSInstallScript = New-RosInstallScript | ConvertTo-MntPath
 
 		Write-Host ">>> Creating $DistroName WSL instance for ROS ..."
@@ -166,9 +140,46 @@ nestedVirtualization=true
 		Write-Host ">>> Exporting ROS WSL instance to $DistroHome\rootfs.tar ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--export $DistroName $DistroHome\rootfs.tar" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
+		Write-Host ">>> Unregistering temporary $DistroName WSL instance ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--unregister $DistroName"  | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+		
 	} else {
 
 		$DistroName = Split-Path $DistroHome -Leaf
+
+		$adapter = Get-NetAdapter | Where-Object { $_.Status -ne 'Up' -and $_.Name -like 'Ethernet*' } | Select-Object -First 1
+		if ($adapter) {
+			Write-Host ">>> Creating external switch for ROS (adapter: $($adapter.Name)) ..."
+			$switch = New-VMSwitch -Name "ROS" -NetAdapterName $adapter.Name -AllowManagementOS $true -Notes "ROS WSL2 Switch" | Out-Null
+		} else {
+			Write-Host ">>> Could not find a network adapter to create ROS switch. Available adapters:"
+			Get-NetAdapter | Out-String | Write-Host
+			exit 1
+		}
+
+		# Get total system memory in MB
+		$memMB = (Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory / 1MB
+		$memGB = [math]::Round($memMB / 2048)  # Convert to GB and halve
+		$swapGB = [math]::Round($memMB / 4096)  # Allocate 25% of total memory as swap
+
+		# Get total logical processors
+		$cpuCount = (Get-CimInstance -ClassName Win32_Processor).NumberOfLogicalProcessors
+		$cpuCount = [math]::Floor($cpuCount / 2)
+
+		# Build .wslconfig content
+		# The configuration follows the recommendations from: https://github.com/espenakk/ros2-wsl2-guide
+		Write-Host ">>> Configuring WSL with optimizations for ROS ..."
+@"
+[wsl2]
+memory=${memGB}GB
+processors=${cpuCount}
+swap=${swapGB}GB
+networkingMode=bridged
+vmSwitch="$($switch.Name)"
+"@ | Set-Content -Path "$env:USERPROFILE\.wslconfig" -Force
+
+		Write-Host ">>> Restarting WSL ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--shutdown" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
 		Write-Host ">>> Importing WSL Distro '$DistroName' from $DistroHome\rootfs.tar ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--import $DistroName $($env:USERPROFILE)\WSL\$DistroName $DistroHome\rootfs.tar --version 2" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
@@ -178,6 +189,13 @@ nestedVirtualization=true
 
 		Write-Host ">>> Setting default user for $DistroName WSL instance ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName -u root -- bash -c `"echo '[user]\ndefault=$($env:USERNAME)' > /etc/wsl.conf`"" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+
+		$vscode = Get-Command 'code' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+		if ($vscode) {
+
+			Write-Host ">>> Installing the Robotics Developer Environment (RDE) extension into VSCode ..."
+			Invoke-CommandLine -Command $vscode -Arguments "--install-extension ranch-hand-robotics.rde-pack" | Select-Object -ExpandProperty Output
+		}
 	}
 
 }
