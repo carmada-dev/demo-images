@@ -113,7 +113,10 @@ function Wait-DistroReady() {
 
 Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 
-	$DistroHome = Join-Path $env:DEVBOX_HOME "WSL\ROS"
+	$DistroName = "ROS2"
+	$DistroHome = Join-Path $env:USERPROFILE "WSL\$DistroName"
+	$DistroOffline = Join-Path $env:DEVBOX_HOME "WSL\$DistroName"
+	$DistroRootFs = Join-Path $DistroOffline "rootfs.tar.gz"
 
 	if (-not(Get-Command wsl -ErrorAction SilentlyContinue)) {
 		Write-Host "Could not find wsl.exe"
@@ -121,31 +124,31 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 	} 
 
 	# Ensure WSL distro home exists
-	New-Item -Path $DistroHome -ItemType Directory -Force | Out-Null
+	New-Item -Path $DistroOffline -ItemType Directory -Force | Out-Null
 
 	if (Test-IsPacker) {
 
-		$DistroName = "Ubuntu-22.04"
 		$ROSInstallScript = New-RosInstallScript | ConvertTo-MntPath
 
-		Write-Host ">>> Creating $DistroName WSL instance for ROS ..."
-		Invoke-CommandLine -Command 'wsl' -Arguments "--install -d $DistroName" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host	
+		Write-Host ">>> Downloading distro rootfs ..."
+		Invoke-FileDownload -Url 'https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64-wsl.rootfs.tar.gz' | Move-Item -Destination $DistroRootFs -Force
 
-		Write-Host ">>> Waiting for $DistroName WSL instance to be provisioned ..."
-		Wait-DistroReady -DistroName $DistroName
+		Write-Host ">>> Importing $DistroName WSL instance ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--import $DistroName $DistroHome $DistroRootFs --version 2" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
-		Write-Host ">>> Installing ROS into $DistroName WSL instance ..."
-		Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName -- bash -c 'chmod +x $ROSInstallScript && bash $ROSInstallScript'" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+		# Write-Host ">>> Register default user for $DistroName WSL instance ..."
+		# Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName --user root -- bash -c 'useradd -m $($env:USERNAME) && echo `\`"$($env:USERNAME):automation`\`" | chpasswd && echo `"$($env:USERNAME) ALL=(ALL) NOPASSWD:ALL` >> /etc/sudoers'" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
-		Write-Host ">>> Exporting ROS WSL instance to $DistroHome\rootfs.tar ..."
-		Invoke-CommandLine -Command 'wsl' -Arguments "--export $DistroName $DistroHome\rootfs.tar" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+		Write-Host ">>> Installing ROS2 into $DistroName WSL instance ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName --user root -- bash -c 'chmod +x $ROSInstallScript && bash $ROSInstallScript'" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+
+		Write-Host ">>> Exporting ROS2 WSL instance to $DistroRootFs ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--export $DistroName $DistroRootFs" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
 		Write-Host ">>> Unregistering temporary $DistroName WSL instance ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--unregister $DistroName"  | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
-		
-	} else {
 
-		$DistroName = Split-Path $DistroHome -Leaf
+	} else {
 
 		$adapter = Get-NetAdapter | Where-Object { $_.Status -ne 'Up' -and $_.Name -like 'Ethernet*' } | Select-Object -First 1
 		if ($adapter) {
@@ -181,8 +184,8 @@ vmSwitch="$($switch.Name)"
 		Write-Host ">>> Restarting WSL ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--shutdown" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
-		Write-Host ">>> Importing WSL Distro '$DistroName' from $DistroHome\rootfs.tar ..."
-		Invoke-CommandLine -Command 'wsl' -Arguments "--import $DistroName $($env:USERPROFILE)\WSL\$DistroName $DistroHome\rootfs.tar --version 2" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+		Write-Host ">>> Importing WSL Distro '$DistroName' from $DistroRootFs ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--import $DistroName $DistroHome $DistroRootFs --version 2" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
 		Write-Host ">>> Waiting for $DistroName WSL instance to be imported ..."
 		Wait-DistroReady -DistroName $DistroName
