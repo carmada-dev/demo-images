@@ -49,8 +49,7 @@
 	],
 
 	"prepare": [
-		"[IMAGEROOT]/../_scripts/Install-WSL2.ps1",
-		"[IMAGEROOT]/../_scripts/Install-ROS.ps1"
+		"[IMAGEROOT]/../_scripts/Install-WSL2.ps1"
 	],
 
 	"packages": [
@@ -61,7 +60,7 @@
 	],
 
 	"configure": [
-
+		"[IMAGEROOT]/../_scripts/Install-ROS.ps1"
 	]
 
 }
