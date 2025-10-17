@@ -24,19 +24,25 @@ function New-RosInstallScript() {
 
 		@(
 			"#!/bin/bash",
-			"set -e",
 
-			"# Setup sources",
-			"sudo apt update && sudo apt install -y curl gnupg lsb-release",
-			"sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg",
-			"echo `"deb [arch=`$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu `$(lsb_release -cs) main`" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null",
+            "sudo apt update",
+            "sudo apt install -y locales",
+            "sudo locale-gen en_US.UTF-8",
+            "sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8",
+            "export LANG=en_US.UTF-8",
 
-			"# Install ROS",
-			"sudo apt update ",
-			"sudo apt install -y ros-jazzy-desktop ros-dev-tools",
+            "sudo apt install -y software-properties-common",
+            "sudo add-apt-repository -y universe",
+            "sudo apt update",
+            "sudo apt install -y curl",
+            "curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo apt-key add -",
+            "sudo sh -c 'echo `"deb [arch=amd64 signed-by=/etc/apt/trusted.gpg] http://packages.ros.org/ros2/ubuntu jammy main`" > /etc/apt/sources.list.d/ros2.list'",
 
-			"# Source ROS environment",
-			"echo `"source /opt/ros/jazzy/setup.bash`" >> /etc/bash.bashrc"
+            "sudo apt update",
+            "sudo apt install -y ros-humble-desktop",
+
+            "echo `"source /opt/ros/humble/setup.bash`" >> /etc/bash.bashrc",
+            "source /etc/bash.bashrc"
 
 		) -join "`n" | Set-Content $rosInstallScript -Force
 
@@ -132,16 +138,13 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 		$ROSInstallScript = New-RosInstallScript | ConvertTo-MntPath
 
 		Write-Host ">>> Downloading distro rootfs ..."
-		$temp = Invoke-FileDownload -Url 'https://cloud-images.ubuntu.com/wsl/kinetic/current/ubuntu-kinetic-wsl-amd64-wsl.rootfs.tar.gz'
+		$temp = Invoke-FileDownload -Url 'https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-ubuntu22.04lts.rootfs.tar.gz'
 
 		Write-Host ">>> Moving $temp to $DistroRootFs ..."
 		Move-Item -Path $temp -Destination $DistroRootFs -Force | Out-Null
 
 		Write-Host ">>> Importing $DistroName WSL instance ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--import $DistroName $DistroHome $DistroRootFs --version 2" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
-
-		# Write-Host ">>> Register default user for $DistroName WSL instance ..."
-		# Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName --user root -- bash -c 'useradd -m $($env:USERNAME) && echo `\`"$($env:USERNAME):automation`\`" | chpasswd && echo `"$($env:USERNAME) ALL=(ALL) NOPASSWD:ALL` >> /etc/sudoers'" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
 		Write-Host ">>> Installing ROS2 into $DistroName WSL instance ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName --user root -- bash -c 'chmod +x $ROSInstallScript && bash $ROSInstallScript'" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
@@ -153,28 +156,7 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 		Invoke-CommandLine -Command 'wsl' -Arguments "--unregister $DistroName"  | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
 	} else {
-
-		# The following configuration follows the recommendations from: https://github.com/espenakk/ros2-wsl2-guide
-
-		# if there is only one network adapter, use it to create a new VM switch in Hyper-V
-		# otherwise, exit and let the user choose which adapter to use
-		# Write-Host ">>> Configuring WSL networking ..."
-		# $switchName = 'ROS'
-		# $switch = Get-VMSwitch | Where-Object { $_.Name -eq $switchName } | Select-Object -First 1
-		# if (-not $adapterSwitch) {
-
-		# 	$defaultRoute = Get-NetRoute | Where-Object { $_.DestinationPrefix -eq '0.0.0.0/0' -and $_.NextHop -ne '0.0.0.0' } | Select-Object -First 1 
-		# 	$defaultAdapter = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' -and $defaultRoute -ne $null -and $_.InterfaceIndex -eq $defaultRoute.InterfaceIndex } | Select-Object -First 1
-
-		# 	if ($defaultAdapter) {
-		# 		Write-Host ">>> Creating new Hyper-V VM Switch 'ROS' using adapter '$($defaultAdapter.Name)' ..."
-		# 		$switch = New-VMSwitch -Name $switchName -NetAdapterName $defaultAdapter.Name -AllowManagementOS $true
-		# 	} else {
-		# 		Write-Host ">>> Could not determine default network adapter. Please create a Hyper-V Virtual Switch named 'ROS' manually and re-run this script."
-		# 		exit 1
-		# 	}
-		# }
-		
+	
 		# Get total system memory in MB
 		$memMB = (Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory / 1MB
 		$memGB = [math]::Round($memMB / 2048)  # Convert to GB and halve
@@ -193,8 +175,6 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 			"processors=${cpuCount}",
 			"swap=${swapGB}GB",
 			"localhostForwarding=true"
-			# "networkingMode=bridged"
-			# "vmSwitch=`"$switchName`""
 
 		) -join "`r`n" | Set-Content -Path "$env:USERPROFILE\.wslconfig" -Force
 
@@ -207,8 +187,11 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 		Write-Host ">>> Waiting for $DistroName WSL instance to be imported ..."
 		Wait-DistroReady -DistroName $DistroName
 
-		Write-Host ">>> Setting default user for $DistroName WSL instance ..."
-		Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName -u root -- bash -c `"echo '[user]\ndefault=$($env:USERNAME)' > /etc/wsl.conf`"" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+		Write-Host ">>> Configure $DistroName WSL instance ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "-d $DistroName -u root -- bash -c 'echo -e `"[boot]`\nsystemd=true`" > /etc/wsl.conf'" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+
+        Write-Host ">>> Enforce $DistroName WSL instance to be the default ..."
+		Invoke-CommandLine -Command 'wsl' -Arguments "--set-default $DistroName" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
 		$vscode = Get-Command 'code' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 		if ($vscode) {

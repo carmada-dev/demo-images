@@ -58,30 +58,30 @@ Invoke-ScriptSection -Title "Installing WSL2" -ScriptBlock {
 	Write-Host ">>> WSL status ..."
 	Invoke-CommandLine -Command 'wsl' -Arguments "--status" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
-    # Fetching list of installed distributions
-    $distros = (Invoke-CommandLine -Command 'wsl' -Arguments "--list --quiet" -Silent | Select-Object -ExpandProperty Output | Clear-WslOutput) -split "\r?\n"
+    # # Fetching list of installed distributions
+    # $distros = (Invoke-CommandLine -Command 'wsl' -Arguments "--list --quiet" -Silent | Select-Object -ExpandProperty Output | Clear-WslOutput) -split "\r?\n"
 
-	if ($distros -notcontains 'Ubuntu') {
+	# if ($distros -notcontains 'Ubuntu') {
 
-		Write-Host ">>> Installing WSL default distribution (Ubuntu) ..."
-		Invoke-CommandLine -command 'wsl' -arguments "--install --distribution Ubuntu --no-launch" | select-object -expandproperty output | Clear-WslOutput | Write-Host
+	# 	Write-Host ">>> Installing WSL default distribution (Ubuntu) ..."
+	# 	Invoke-CommandLine -command 'wsl' -arguments "--install --distribution Ubuntu --no-launch" | select-object -expandproperty output | Clear-WslOutput | Write-Host
 
-        # Updating list of installed distributions
-        $distros = (Invoke-CommandLine -Command 'wsl' -Arguments "--list --quiet" -Silent | Select-Object -ExpandProperty Output | Clear-WslOutput) -split "\r?\n"
-	}
+    #     # Updating list of installed distributions
+    #     $distros = (Invoke-CommandLine -Command 'wsl' -Arguments "--list --quiet" -Silent | Select-Object -ExpandProperty Output | Clear-WslOutput) -split "\r?\n"
+	# }
 
-    $distros | ForEach-Object {
+    # $distros | ForEach-Object {
 
-		# determine if the distribution is running or not - we try to ensure that every distribution is running
-        $running = ((Invoke-CommandLine -Command 'wsl' -Arguments "--list --verbose" -Silent | Select-Object -ExpandProperty Output | Clear-WslOutput) -split "\r?\n" | Select-String -Pattern $_) -match 'Running'
+	# 	# determine if the distribution is running or not - we try to ensure that every distribution is running
+    #     $running = ((Invoke-CommandLine -Command 'wsl' -Arguments "--list --verbose" -Silent | Select-Object -ExpandProperty Output | Clear-WslOutput) -split "\r?\n" | Select-String -Pattern $_) -match 'Running'
 
-        if (-not $running) {
+    #     if (-not $running) {
 
-            Write-Host ">>> Starting WSL distribution '$_' ..."
-            Invoke-CommandLine -Command 'wsl' -Arguments "--distribution $_ --exec /bin/sh -c `"exit`"" | Out-Null
-        }
-    }
+    #         Write-Host ">>> Starting WSL distribution '$_' ..."
+    #         Invoke-CommandLine -Command 'wsl' -Arguments "--distribution $_ --exec /bin/sh -c `"exit`"" | Out-Null
+    #     }
+    # }
 
-	Write-Host ">>> WSL distributions overview ..."
-	Invoke-CommandLine -Command 'wsl' -Arguments "--list --verbose" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host	
+	# Write-Host ">>> WSL distributions overview ..."
+	# Invoke-CommandLine -Command 'wsl' -Arguments "--list --verbose" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host	
 }
