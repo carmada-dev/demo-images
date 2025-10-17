@@ -24,25 +24,29 @@ function New-RosInstallScript() {
 
 		@(
 			"#!/bin/bash",
+			"set -e",
 
-            "sudo apt update",
-            "sudo apt install -y locales",
-            "sudo locale-gen en_US.UTF-8",
-            "sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8",
-            "export LANG=en_US.UTF-8",
+			"# Initial update and base packages",
+			"sudo apt update",
+			"sudo apt install -y locales software-properties-common curl",
 
-            "sudo apt install -y software-properties-common",
-            "sudo add-apt-repository -y universe",
-            "sudo apt update",
-            "sudo apt install -y curl",
-            "curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo apt-key add -",
-            "sudo sh -c 'echo `"deb [arch=amd64 signed-by=/etc/apt/trusted.gpg] http://packages.ros.org/ros2/ubuntu jammy main`" > /etc/apt/sources.list.d/ros2.list'",
+			"# Locale setup",
+			"sudo locale-gen en_US.UTF-8",
+			"sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8",
+			"export LANG=en_US.UTF-8",
 
-            "sudo apt update",
-            "sudo apt install -y ros-humble-desktop",
+			"# Add universe repo and ROS key",
+			"sudo add-apt-repository -y universe",
+			"curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo apt-key add -",
+			"echo `"deb [arch=amd64 signed-by=/etc/apt/trusted.gpg] http://packages.ros.org/ros2/ubuntu jammy main`" | sudo tee /etc/apt/sources.list.d/ros2.list",
 
-            "echo `"source /opt/ros/humble/setup.bash`" >> /etc/bash.bashrc",
-            "source /etc/bash.bashrc"
+			"# Final update after all sources added",
+			"sudo apt update",
+			"sudo apt install -y ros-humble-desktop",
+
+			"# Shell integration",
+			"echo `"source /opt/ros/humble/setup.bash`" | sudo tee -a /etc/bash.bashrc",
+			"source /etc/bash.bashrc"
 
 		) -join "`n" | Set-Content $rosInstallScript -Force
 
