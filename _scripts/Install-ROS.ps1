@@ -159,14 +159,22 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 		# if there is only one network adapter, use it to create a new VM switch in Hyper-V
 		# otherwise, exit and let the user choose which adapter to use
 		Write-Host ">>> Configuring WSL networking ..."
-		if (Get-NetAdapter | Measure-Object | Select-Object -ExpandProperty Count -eq 1) {
-			$adapterName = Get-NetAdapter | Select-Object -ExpandProperty Name -First 1
-			$adapterSwitch = New-VMSwitch -Name "ROS" -NetAdapterName $adapterName -AllowManagementOS $true -Notes "ROS WSL2 Switch" 
-		} else {
-			Write-Host "!!! More than one available adapter:`r`n$(Get-NetAdapter | Out-String)"
-			exit 1
-		}
+		$switchName = 'ROS'
+		$switch = Get-VMSwitch | Where-Object { $_.Name -eq $switchName } | Select-Object -First 1
+		if (-not $adapterSwitch) {
 
+			$defaultRoute = Get-NetRoute | Where-Object { $_.DestinationPrefix -eq '0.0.0.0/0' -and $_.NextHop -ne '0.0.0.0' } | Select-Object -First 1 
+			$defaultAdapter = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' -and $defaultRoute -ne $null -and $_.InterfaceIndex -eq $defaultRoute.InterfaceIndex } | Select-Object -First 1
+
+			if ($defaultAdapter) {
+				Write-Host ">>> Creating new Hyper-V VM Switch 'ROS' using adapter '$($defaultAdapter.Name)' ..."
+				$switch = New-VMSwitch -Name $switchName -NetAdapterName $defaultAdapter.Name -AllowManagementOS $true
+			} else {
+				Write-Host ">>> Could not determine default network adapter. Please create a Hyper-V Virtual Switch named 'ROS' manually and re-run this script."
+				exit 1
+			}
+		}
+		
 		# Get total system memory in MB
 		$memMB = (Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory / 1MB
 		$memGB = [math]::Round($memMB / 2048)  # Convert to GB and halve
@@ -185,7 +193,7 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 			"processors=${cpuCount}",
 			"swap=${swapGB}GB",
 			"networkingMode=bridged"
-			"vmSwitch=`"$($adapterSwitch.Name)`""
+			"vmSwitch=`"$switchName`""
 
 		) -join "`r`n" | Set-Content -Path "$env:USERPROFILE\.wslconfig" -Force
 
