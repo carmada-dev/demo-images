@@ -60,6 +60,10 @@
 		{
 			"name": "vscode",
 			"source": "alias"
+		},
+		{
+			"name": "dockerDesktopWSL",
+			"source": "alias"
 		}
 	],
 
