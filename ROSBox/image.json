@@ -39,13 +39,17 @@
 	},
 	
 	"devDrive": {
-		"sizeGB": 0,
-		"filters": [],
-		"repositories": []
+		"sizeGB": 265,
+		"filters": [ ],
+		"repositories": [
+			{
+				"repoUrl": "https://github.com/ros2/examples.git"
+			}
+		]
 	},
 
 	"features": [
-		
+
 	],
 
 	"prepare": [
