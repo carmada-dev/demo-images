@@ -16,6 +16,36 @@ $ProgressPreference = 'SilentlyContinue'	# hide any progress output
 
 # ==============================================================================
 
+function New-ToolsShortcut() {
+
+	param (
+		[Parameter(Mandatory=$true)]
+		[string] $DistroName,
+
+		[Parameter(Mandatory=$true)]
+		[string] $ShortcutName,
+
+		[Parameter(Mandatory=$true)]
+		[string] $ShortcutCommand
+	)
+
+	Write-Host ">>> Creating shortcut '$ShortcutName' for distro '${DistroName}': $ShortcutCommand ..."
+
+	$shortcutPath = Join-Path $env:USERPROFILE "Desktop\$ShortcutName.lnk"
+	$bashCommand = "source /opt/ros/humble/setup.bash && $ShortcutCommand"
+
+	# Remove existing shortcut file if it exists
+	Remove-Item -Path $shortcutPath -Force -ErrorAction SilentlyContinue
+
+	$WshShell = New-Object -ComObject WScript.Shell
+	$Shortcut = $WshShell.CreateShortcut($shortcutPath)
+	$Shortcut.TargetPath = "C:\Windows\System32\wsl.exe"
+	$Shortcut.Arguments = "-d $DistroName -- bash -c `"$bashCommand`""
+	$Shortcut.IconLocation = "C:\Windows\System32\wsl.exe,0"
+	$Shortcut.WindowStyle = 7  # 7 = Minimized window
+	$Shortcut.Save()
+}
+
 function New-RosInstallScript() {
 
 	$rosInstallScript = Join-Path $env:TEMP 'install_ros.sh'
@@ -42,7 +72,7 @@ function New-RosInstallScript() {
 
 			"# Final update after all sources added",
 			"sudo apt update",
-			"sudo apt install -y ros-humble-desktop",
+			"sudo apt install -y ros-humble-desktop ros-humble-foxglove-bridge ros-humble-urdf-tutorial python3-launchpadlib python3-colcon-common-extensions python3-rosdep python3-argcomplete",
 
 			"# Shell integration",
 			"echo `"source /opt/ros/humble/setup.bash`" | sudo tee -a /etc/bash.bashrc",
@@ -197,11 +227,24 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
         Write-Host ">>> Enforce $DistroName WSL instance to be the default ..."
 		Invoke-CommandLine -Command 'wsl' -Arguments "--set-default $DistroName" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
 
+		New-ToolsShortcut -DistroName $DistroName -ShortcutName "RViz2" -ShortcutCommand "rviz2"
+		New-ToolsShortcut -DistroName $DistroName -ShortcutName "RQT" -ShortcutCommand "rqt"
+		New-ToolsShortcut -DistroName $DistroName -ShortcutName "Foxglove Bridge" -ShortcutCommand "ros2 run foxglove_bridge foxglove_bridge"
+		
+		Write-Host ">>> Installing Foxglove Studio ..."
+		Invoke-CommandLine -Command (Invoke-FileDownload -Url 'https://get.foxglove.dev/desktop/latest/foxglove-latest-win.exe') -Arguments "/S" | Select-Object -ExpandProperty Output
+
 		$vscode = Get-Command 'code' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 		if ($vscode) {
 
 			Write-Host ">>> Installing the Robotics Developer Environment (RDE) extension into VSCode ..."
 			Invoke-CommandLine -Command $vscode -Arguments "--install-extension ranch-hand-robotics.rde-pack" | Select-Object -ExpandProperty Output
+
+			Write-Host ">>> Install VSCode server into $DistroName WSL instance ..."
+			Invoke-CommandLine -Command $vscode -Arguments "--remote wsl+$DistroName ~" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
+
+			Write-Host ">>> Terminate all VSCode instances temporarily created ..."
+			Stop-Process -Name Code -Force | Out-Null
 		}
 	}
 
