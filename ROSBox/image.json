@@ -43,7 +43,8 @@
 		"filters": [ ],
 		"repositories": [
 			{
-				"repoUrl": "https://github.com/ros2/examples.git"
+				"repoUrl": "https://github.com/ros2/examples.git",
+				"repoPath": "ros2/examples"
 			}
 		]
 	},

@@ -133,7 +133,9 @@ if (Test-IsPacker) {
                         $repoUrl = $uriBuilder.Uri.ToString()
                     }
 
-                    Invoke-CommandLine -Command 'git' -Arguments "clone --quiet $repoUrl" -WorkingDirectory $repoHome -Mask @( $repoToken ) `
+                    $repoPath = $_ | Get-PropertyValue -Name "repoPath" -DefaultValue ''
+
+                    Invoke-CommandLine -Command 'git' -Arguments "clone --quiet $repoUrl $repoPath" -WorkingDirectory $repoHome -Mask @( $repoToken ) `
                         | Select-Object -ExpandProperty Output `
                         | Write-Host
                 }

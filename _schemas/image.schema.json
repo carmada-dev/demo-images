@@ -141,6 +141,10 @@
 								"type": "string",
 								"description": "The URL of the repository"
 							},
+							"repoPath": {
+								"type": "string",
+								"description": "The relative path of the repository inside the DevDrive"
+							},
 							"tokenUrl": {
 								"type": "string",
 								"description": "An Azure KeyVault secret URL containing the token to access the repository"
