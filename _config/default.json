@@ -41,6 +41,6 @@
 	],
 
 	"configure": [
-
+		"[IMAGEROOT]/../_scripts/Register-OpenInVSCodeWSLContextMenu.ps1"
 	]
 }
