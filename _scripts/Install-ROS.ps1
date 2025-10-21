@@ -230,22 +230,5 @@ Invoke-ScriptSection -Title "Installing ROS" -ScriptBlock {
 		New-ToolsShortcut -DistroName $DistroName -ShortcutName "RViz2" -ShortcutCommand "rviz2"
 		New-ToolsShortcut -DistroName $DistroName -ShortcutName "RQT" -ShortcutCommand "rqt"
 		New-ToolsShortcut -DistroName $DistroName -ShortcutName "Foxglove Bridge" -ShortcutCommand "ros2 run foxglove_bridge foxglove_bridge"
-		
-		Write-Host ">>> Installing Foxglove Studio ..."
-		Invoke-CommandLine -Command (Invoke-FileDownload -Url 'https://get.foxglove.dev/desktop/latest/foxglove-latest-win.exe') -Arguments "/S" | Select-Object -ExpandProperty Output
-
-		$vscode = Get-Command 'code' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-		if ($vscode) {
-
-			Write-Host ">>> Installing the Robotics Developer Environment (RDE) extension into VSCode ..."
-			Invoke-CommandLine -Command $vscode -Arguments "--install-extension ranch-hand-robotics.rde-pack" | Select-Object -ExpandProperty Output
-
-			Write-Host ">>> Install VSCode server into $DistroName WSL instance ..."
-			Invoke-CommandLine -Command $vscode -Arguments "--remote wsl+$DistroName ~" | Select-Object -ExpandProperty Output | Clear-WslOutput | Write-Host
-
-			Write-Host ">>> Terminate all VSCode instances temporarily created ..."
-			Stop-Process -Name Code -Force | Out-Null
-		}
 	}
-
 }

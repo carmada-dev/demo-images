@@ -69,7 +69,8 @@
 	],
 
 	"configure": [
-		"[IMAGEROOT]/../_scripts/Install-ROS.ps1"
+		"[IMAGEROOT]/../_scripts/Install-ROS.ps1",
+		"[IMAGEROOT]/../_scripts/Install-FoxgloveStudio.ps1"
 	]
 
 }
