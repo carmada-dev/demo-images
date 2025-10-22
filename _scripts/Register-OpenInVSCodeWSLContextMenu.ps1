@@ -242,7 +242,7 @@ if (-not `$distros) {
 # Export all locally install extsions
 code --list-extensions | Where-Object { -not [string]::IsNullOrWhiteSpace("`$_") } | ForEach-Object {
     Write-Host "Installing extension '`$_' into WSL distro '`$distro'"
-    Invoke-WSL -Distro `$distro -Arguments @('--', 'bash', '-c', ("code --install-extension `$_ --force" | Quote-String -UseSingleQuotes))
+    Invoke-WSL -Distro `$distro -Arguments @('--', 'bash', '-c', ("code --install-extension `$_ --force" | Quote-String -UseSingleQuotes)) -NoWait
 }
 
 "@ | Set-Content -Path $utilsScriptPath -Force
