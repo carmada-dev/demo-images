@@ -177,7 +177,8 @@ function Invoke-WSL {
         [Parameter(Mandatory = `$true)]
         [string[]]`$Arguments,
         [Parameter(Mandatory = `$false)]
-        [string]`$Distro = `$null
+        [string]`$Distro = `$null,
+        [switch]`$NoWait
     )
 
     # Build argument string
@@ -191,13 +192,18 @@ function Invoke-WSL {
     `$psi.UseShellExecute = `$false
     `$psi.StandardOutputEncoding = if (`$Distro) { [System.Text.Encoding]::UTF8 } else { [System.Text.Encoding]::Unicode }
 
-    # Start process and capture output
+    # Start process
     `$proc = [System.Diagnostics.Process]::Start(`$psi)
-    `$output = `$proc.StandardOutput.ReadToEnd()
-    `$proc.WaitForExit()
 
-    # Emit clean lines
-    return `$output -split "`\r?`\n" | ForEach-Object { `$_.Trim() } | Where-Object { `$_ -ne "" }
+    if (-not `$NoWait) {
+
+        # Capture output
+        `$output = `$proc.StandardOutput.ReadToEnd()
+        `$proc.WaitForExit()
+
+        # Emit clean lines
+        return `$output -split "`\r?`\n" | ForEach-Object { `$_.Trim() } | Where-Object { `$_ -ne "" }
+    }
 }
 
 # Check if WSL is available
@@ -213,7 +219,7 @@ if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
 }
 
 # Fetch default WSL distro
-`$distros = Invoke-WSL -Arguments @('-l', '-q')
+`$distros = Invoke-WSL -Arguments @('-l', '-q') | Where-Object { `$_ -ne 'docker-desktop' }
 `$distro = `$distros | Select-Object -First 1
 
 if (-not `$distros) {
@@ -232,6 +238,12 @@ if (-not `$distros) {
 
 # Open VS Code with remoting into WSL
 & code --remote "wsl+`$distro" "`$wslPath"
+
+# Export all locally install extsions
+code --list-extensions | Where-Object { -not [string]::IsNullOrWhiteSpace("`$_") } | ForEach-Object {
+    Write-Host "Installing extension '`$_' into WSL distro '`$distro'"
+    Invoke-WSL -Distro `$distro -Arguments @('--', 'bash', '-c', ("code --install-extension `$_ --force" | Quote-String -UseSingleQuotes))
+}
 
 "@ | Set-Content -Path $utilsScriptPath -Force
 
